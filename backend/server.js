@@ -12,7 +12,10 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: "https://nahid-enter-prise.vercel.app",
+  credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 
