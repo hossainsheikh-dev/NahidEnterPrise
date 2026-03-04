@@ -8,8 +8,7 @@ import { showAddSuccessToast } from "../../../utils/toast/successAddToast";
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast";
 
-const API = process.env.REACT_APP_API_URL;
-
+const API = "https://nahidenterprise-api.onrender.com/api/links";
 
 
 const sortOptions = [
