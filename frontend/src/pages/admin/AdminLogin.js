@@ -41,15 +41,17 @@ const AdminLogin = () => {
       setLoading(true);
       setError("");
 
+
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/auth/login`,{
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+  "https://nahidenterprise-api.onrender.com/api/auth/login",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(form),
+  }
+);
 
       // ✅ Ensure response is JSON
       const contentType = response.headers.get("content-type");
