@@ -8,7 +8,9 @@ import { showAddSuccessToast } from "../../../utils/toast/successAddToast";
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast";
 
-const API = "http://localhost:5000/api/links";
+const API = process.env.REACT_APP_API_URL;
+
+
 
 const sortOptions = [
   { label: "Sort by Position", value: "order" },

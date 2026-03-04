@@ -8,8 +8,13 @@ import { showAddSuccessToast } from "../../../utils/toast/successAddToast";
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast";
 
-const SUBLINK_API = "http://localhost:5000/api/sublinks";
-const LINK_API = "http://localhost:5000/api/links";
+
+const API = process.env.REACT_APP_API_URL;
+
+const SUBLINK_API = `${API}/api/sublinks`;
+const LINK_API = `${API}/api/links`;
+
+
 
 const sortOptions = [
   { label: "Sort by Name", value: "name" },
