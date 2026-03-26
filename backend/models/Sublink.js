@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+
+//sublink schema
 const sublinkSchema = new mongoose.Schema(
   {
     name: {

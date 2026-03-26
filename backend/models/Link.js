@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 
+
+//link shcema
 const linkSchema = new mongoose.Schema(
   {
     name: {
@@ -22,12 +24,12 @@ const linkSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ Import Sublink model
+
+
+//import sublink
 const Sublink = require("./Sublink");
 
-/* ===============================
-   AUTO DELETE RELATED SUBLINKS
-================================= */
+//delete related sublinks
 linkSchema.pre("findOneAndDelete", async function () {
   const link = await this.model.findOne(this.getFilter());
 
