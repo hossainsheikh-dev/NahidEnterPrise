@@ -19,12 +19,10 @@ export const showAddSuccessToast = (linkName = "Link") => {
           ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
         `}
       >
-        {/* Icon */}
         <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 shrink-0">
           <CheckCircle className="text-emerald-400" size={18} />
         </div>
 
-        {/* Text */}
         <div className="flex flex-col leading-tight">
           <span className="text-xs sm:text-sm font-semibold">
             Link Created Successfully

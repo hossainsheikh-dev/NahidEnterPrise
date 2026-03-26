@@ -18,12 +18,12 @@ export const showLogoutToast = (adminName = "Admin") => {
           ${t.visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
         `}
       >
-        {/* Icon */}
+        {/* icon */}
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 border border-red-100">
           <LogOut className="text-red-500" size={20} />
         </div>
 
-        {/* Text */}
+        {/* text */}
         <div className="flex flex-col">
           <span className="text-sm font-semibold">
             Logged Out Successfully
