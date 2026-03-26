@@ -8,7 +8,7 @@ import {
 import { useSubLang } from "../../context/SubAdminLangContext";
 import { showUpdateSuccessToast } from "../../utils/toast/successUpdateToast";
 
-const API          = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API          = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const PROFILE_API  = `${API}/api/subadmin/profile`;
 const PASSWORD_API = `${API}/api/subadmin/change-password`;
 const REQUEST_API  = `${API}/api/subadmin/request-change`;

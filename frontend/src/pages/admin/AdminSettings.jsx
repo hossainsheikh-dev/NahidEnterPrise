@@ -4,7 +4,7 @@ import { Languages, CheckCircle, Settings, Truck, Save, Loader2 } from "lucide-r
 import { useAdminLang } from "../../context/AdminLangContext";
 import toast from "react-hot-toast";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 export default function AdminSettings() {
   const { lang, switchLang, t } = useAdminLang();

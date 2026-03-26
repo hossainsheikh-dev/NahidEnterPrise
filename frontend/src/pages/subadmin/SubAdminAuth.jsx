@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { showLoginToast } from "../../utils/toast/loginToast";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const INVITE_TOKEN = process.env.REACT_APP_SUBADMIN_TOKEN || "nahid-enterprise-secret-2024";
 const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 

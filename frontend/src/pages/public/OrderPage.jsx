@@ -12,7 +12,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useT } from "../../context/LanguageContext";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 /* ══ Cookie helpers — fallback (not logged in) ══ */
 const PHONE_KEY   = "nahid_tracked_phones";

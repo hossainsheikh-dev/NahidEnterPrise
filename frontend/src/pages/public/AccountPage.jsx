@@ -14,7 +14,7 @@ import { useCart } from "../../context/CartContext";
 import BD_LOCATIONS from "../../data/Bdlocations";
 import logo from "../../assets/logo.png";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 const notify = () => window.dispatchEvent(new Event("customerAuthChanged"));
 

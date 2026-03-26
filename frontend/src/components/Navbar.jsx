@@ -13,7 +13,7 @@ import { useCart } from "../context/CartContext";
 import { useLang, useT } from "../context/LanguageContext";
 import { useWishlist } from "../context/WishlistContext";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const RECENT_KEY = "ne_recent_searches";
 
 const getRecent       = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch { return []; } };

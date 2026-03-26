@@ -11,7 +11,7 @@ import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast"
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { useSubLang } from "../../../context/SubAdminLangContext";
 
-const API       = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API       = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ORDER_API = `${API}/api/orders`;
 const getToken  = () => localStorage.getItem("subAdminToken") || "";
 

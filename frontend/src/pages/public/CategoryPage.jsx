@@ -11,7 +11,7 @@ import { useT } from "../../context/LanguageContext";
 import NotFoundPage from "./NotFoundPage";
 import { SortFilterDropdown, applySortFilter } from "../../components/SortFilter";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 function getImage(p) {
   if (p.image?.url) return p.image.url;

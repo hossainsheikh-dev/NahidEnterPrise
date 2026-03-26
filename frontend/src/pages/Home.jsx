@@ -11,7 +11,7 @@ import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { SortFilterDropdown, applySortFilter } from "../components/SortFilter";
 
-const API          = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API          = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ITEMS_PER_PAGE = 12;
 
 

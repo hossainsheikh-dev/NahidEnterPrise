@@ -12,7 +12,7 @@ import { SubAdminLangProvider, useSubLang } from "../../context/SubAdminLangCont
 import SubAdminOrderBell from "../../components/SubAdminOrderBell";
 import FloatingChat from "../../components/FloatingChat";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 const MENU_ITEMS = [
   { key: "dashboard", icon: LayoutDashboard, path: "/subadmin/dashboard", color: "#6366f1", grad: "linear-gradient(135deg,#6366f1,#4f46e5)", bn: "ড্যাশবোর্ড",  en: "Dashboard" },

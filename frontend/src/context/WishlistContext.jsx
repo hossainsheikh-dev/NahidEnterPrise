@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 const WishlistContext = createContext();
-const API       = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API       = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const LOCAL_KEY = "ne_wishlist";
 
 // localStorage helpers

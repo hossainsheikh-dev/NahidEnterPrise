@@ -11,7 +11,7 @@ import {
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { useAdminLang } from "../../../context/AdminLangContext";
 
-const API       = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API       = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ORDER_API = `${API}/api/orders`;
 
 const STATUS_CFG = {

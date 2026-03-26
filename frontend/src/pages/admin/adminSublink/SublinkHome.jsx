@@ -8,7 +8,7 @@ import { showAddSuccessToast } from "../../../utils/toast/successAddToast";
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast";
 
-const API         = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API         = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const SUBLINK_API = `${API}/api/sublinks`;
 const LINK_API    = `${API}/api/links`;
 const getToken    = () => localStorage.getItem("token") || "";

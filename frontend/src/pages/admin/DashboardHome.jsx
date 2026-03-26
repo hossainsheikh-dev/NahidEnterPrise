@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useAdminLang } from "../../context/AdminLangContext";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 const getToken = () =>
   localStorage.getItem("adminToken") ||
