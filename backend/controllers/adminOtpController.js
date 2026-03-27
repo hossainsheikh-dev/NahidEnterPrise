@@ -1,25 +1,13 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 const crypto = require("crypto");
 const User = require("../models/User");
 
 const otpStore = new Map();
 
 const sendMail = async (to, subject, otp) => {
-  console.log("BREVO_USER:", process.env.BREVO_USER ? "SET" : "NOT SET");
-  console.log("BREVO_PASS:", process.env.BREVO_PASS ? "SET" : "NOT SET");
-
-  const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 25,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_USER,
-      pass: process.env.BREVO_PASS,
-    },
-  });
-
-  await transporter.sendMail({
-    from: `"Nahid Enterprise" <${process.env.BREVO_USER}>`,
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: "Nahid Enterprise <onboarding@resend.dev>",
     to,
     subject,
     html: `
@@ -31,7 +19,7 @@ const sendMail = async (to, subject, otp) => {
         </div>
         <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center;">
           <p style="color:#a5b4fc;font-size:14px;margin:0 0 8px;">Your verification code</p>
-          <div style="font-size:42px;font-weight:900;letter-spacing:12px;color:#fff;margin:16px 0;text-shadow:0 0 20px rgba(99,102,241,0.8);">${otp}</div>
+          <div style="font-size:42px;font-weight:900;letter-spacing:12px;color:#fff;margin:16px 0;">${otp}</div>
           <p style="color:#6b7280;font-size:12px;margin:0;">Expires in 2 minutes. Do not share.</p>
         </div>
       </div>
