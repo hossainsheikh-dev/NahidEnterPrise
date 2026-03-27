@@ -8,12 +8,12 @@ const cookieParser = require("cookie-parser");
 const http         = require("http");
 const { Server }   = require("socket.io");
 const jwt          = require("jsonwebtoken");
-const passport = require("./config/passport")
-
 
 dotenv.config();
 const app    = express();
 const server = http.createServer(app);
+
+const passport = require("./config/passport");
 
 
 //spcket.io
