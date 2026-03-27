@@ -287,11 +287,24 @@ exports.loginSubAdmin = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Invalid email or password." });
     const otp = crypto.randomInt(100000, 999999).toString();
     otpStore.set(email, { otp, expiresAt: Date.now() + 2 * 60 * 1000 });
-    await sendMail(
-      email,
-      "🔐 SubAdmin Login OTP — Nahid Enterprise",
-      otpEmailTemplate(otp, "SubAdmin Login Verification", "Use the code below to complete your login. Valid for 2 minutes.")
-    );
+
+    // ── DEBUG LOGS ──────────────────────────────────────────────
+    console.log(">>> [SubAdmin Login] OTP generated:", otp);
+    console.log(">>> [SubAdmin Login] Sending to:", email);
+    console.log(">>> [SubAdmin Login] RESEND_API_KEY present:", !!process.env.RESEND_API_KEY);
+    // ────────────────────────────────────────────────────────────
+
+    try {
+      await sendMail(
+        email,
+        "🔐 SubAdmin Login OTP — Nahid Enterprise",
+        otpEmailTemplate(otp, "SubAdmin Login Verification", "Use the code below to complete your login. Valid for 2 minutes.")
+      );
+      console.log(">>> [SubAdmin Login] Email sent successfully");
+    } catch (mailErr) {
+      console.log(">>> [SubAdmin Login] Email FAILED:", mailErr.message);
+    }
+
     const tempToken = generateToken(subAdmin._id, subAdmin.role);
     res.json({ message: "OTP sent to your email.", tempToken, _id: subAdmin._id, name: subAdmin.name, email: subAdmin.email, role: subAdmin.role });
   } catch (error) {
