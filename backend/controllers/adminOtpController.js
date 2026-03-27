@@ -6,22 +6,16 @@ const User = require("../models/User");
 const otpStore = new Map();
 
 const sendMail = async (to, subject, otp) => {
-  // ✅ create transporter inside function so env vars are loaded
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-    dnsTimeout: 10000,
-    socketTimeout: 10000,
-  });
 
+  const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_USER,
+      pass: process.env.BREVO_PASS,
+    },
+  });
 
   await transporter.sendMail({
     from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
