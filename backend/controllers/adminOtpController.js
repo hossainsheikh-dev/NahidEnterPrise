@@ -9,16 +9,20 @@ const sendMail = async (to, subject, otp) => {
   // ✅ create transporter inside function so env vars are loaded
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    family: 4,
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    dnsTimeout: 10000,
+    socketTimeout: 10000,
   });
 
-  
+
   await transporter.sendMail({
     from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
     to,
