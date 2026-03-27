@@ -3,20 +3,18 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
 const otpStore = new Map();
 
-
-
 const sendMail = async (to, subject, otp) => {
+  // ✅ create transporter inside function so env vars are loaded
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
 
-  // designing for sending email
   await transporter.sendMail({
     from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
     to,
@@ -29,7 +27,7 @@ const sendMail = async (to, subject, otp) => {
           </div>
         </div>
         <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center;">
-          <p style="color:#a5b4fc;font-size:14px;margin:0 0 8px;">Your verification code</p>
+          <p style="color:#a5b4fc;font-size:14px;margin:0 0 0 8px;">Your verification code</p>
           <div style="font-size:42px;font-weight:900;letter-spacing:12px;color:#fff;margin:16px 0;text-shadow:0 0 20px rgba(99,102,241,0.8);">${otp}</div>
           <p style="color:#6b7280;font-size:12px;margin:0;">Expires in 2 minutes. Do not share.</p>
         </div>
@@ -37,8 +35,6 @@ const sendMail = async (to, subject, otp) => {
     `,
   });
 };
-
-
 
 //login otp
 exports.sendOtp = async (req, res) => {
@@ -63,8 +59,6 @@ exports.verifyOtp = async (req, res) => {
   res.json({ message: "OTP verified" });
 };
 
-
-
 //forgot password otp
 exports.sendForgotOtp = async (req, res) => {
   try {
@@ -82,16 +76,12 @@ exports.sendForgotOtp = async (req, res) => {
   }
 };
 
-
-
 exports.verifyForgotOtp = async (req, res) => {
   const { email, otp } = req.body;
   const record = otpStore.get(`forgot_${email}`);
   if (!record || record.otp !== otp || Date.now() > record.expiresAt)
     return res.status(400).json({ message: "Invalid or expired OTP" });
   otpStore.delete(`forgot_${email}`);
-  
-  //passport chnange by reset token
   otpStore.set(`reset_${email}`, { verified: true, expiresAt: Date.now() + 10 * 60 * 1000 });
   res.json({ message: "OTP verified" });
 };
