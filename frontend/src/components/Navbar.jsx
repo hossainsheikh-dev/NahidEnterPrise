@@ -1260,7 +1260,6 @@ function SearchBox({ onClose }) {
   const [open,setOpen]=useState(false); const [recent,setRecent]=useState(getRecent);
   const inputRef=useRef(null); const wrapRef=useRef(null); const timer=useRef(null);
   useEffect(()=>{const h=(e)=>{if(!wrapRef.current?.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
-  useEffect(()=>{inputRef.current?.focus();},[]);
   const doSearch=async(q)=>{const term=q.trim();if(!term||term.length<2){setStatus("idle");setResults([]);return;}setStatus("loading");try{const res=await fetch(`${API}/api/search?q=${encodeURIComponent(term)}`);const json=await res.json();if(json.success&&json.data.length>0){setResults(json.data);setStatus("found");}else{setResults([]);setStatus("empty");}}catch{setResults([]);setStatus("empty");}};
   const handleChange=(e)=>{const val=e.target.value;setQuery(val);setOpen(true);clearTimeout(timer.current);if(!val.trim()){setStatus("idle");setResults([]);return;}setStatus("loading");timer.current=setTimeout(()=>doSearch(val),350);};
   const handleSelect=(product)=>{saveRecent(query||product.name);setRecent(getRecent());setOpen(false);setQuery("");setResults([]);setStatus("idle");onClose?.();navigate(`/product/${product.slug}`);};
