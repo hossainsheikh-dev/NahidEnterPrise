@@ -8,14 +8,17 @@ const otpStore = new Map();
 const sendMail = async (to, subject, otp) => {
   // ✅ create transporter inside function so env vars are loaded
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    family: 4,
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_PASS,
     },
-    family: 4,
   });
 
+  
   await transporter.sendMail({
     from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
     to,
