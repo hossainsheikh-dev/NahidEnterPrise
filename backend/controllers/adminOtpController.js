@@ -13,6 +13,7 @@ const sendMail = async (to, subject, otp) => {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_PASS,
     },
+    family: 4,
   });
 
   await transporter.sendMail({
