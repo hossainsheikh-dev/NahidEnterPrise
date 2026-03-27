@@ -1,6 +1,5 @@
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 const otpStore = new Map();
@@ -17,9 +16,6 @@ const sendMail = async (to, subject, otp) => {
       user: process.env.BREVO_USER,
       pass: process.env.BREVO_PASS,
     },
-    socketTimeout: 30000,
-    greetingTimeout: 30000,
-    connectionTimeout: 30000,
   });
 
   await transporter.sendMail({
@@ -43,7 +39,6 @@ const sendMail = async (to, subject, otp) => {
   });
 };
 
-//login otp
 exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -66,13 +61,11 @@ exports.verifyOtp = async (req, res) => {
   res.json({ message: "OTP verified" });
 };
 
-//forgot password otp
 exports.sendForgotOtp = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "No admin found with this email" });
-
     const otp = crypto.randomInt(100000, 999999).toString();
     otpStore.set(`forgot_${email}`, { otp, expiresAt: Date.now() + 2 * 60 * 1000 });
     await sendMail(email, "Password Reset OTP — Nahid Enterprise", otp);
@@ -98,13 +91,10 @@ exports.resetPassword = async (req, res) => {
   const record = otpStore.get(`reset_${email}`);
   if (!record || !record.verified || Date.now() > record.expiresAt)
     return res.status(400).json({ message: "Session expired. Please try again." });
-
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ message: "User not found" });
-
   if (newPassword.length < 6)
     return res.status(400).json({ message: "Password must be at least 6 characters" });
-
   user.password = newPassword;
   await user.save();
   otpStore.delete(`reset_${email}`);
