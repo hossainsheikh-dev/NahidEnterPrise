@@ -6,7 +6,9 @@ const User = require("../models/User");
 const otpStore = new Map();
 
 const sendMail = async (to, subject, otp) => {
-
+  console.log("BREVO_USER:", process.env.BREVO_USER ? "SET" : "NOT SET");
+  console.log("BREVO_PASS:", process.env.BREVO_PASS ? "SET" : "NOT SET");
+  
   const transporter = nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
@@ -15,29 +17,11 @@ const sendMail = async (to, subject, otp) => {
       user: process.env.BREVO_USER,
       pass: process.env.BREVO_PASS,
     },
+    socketTimeout: 30000,
+    greetingTimeout: 30000,
+    connectionTimeout: 30000,
   });
-
-  await transporter.sendMail({
-    from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
-    to,
-    subject,
-    html: `
-      <div style="font-family:'Segoe UI',sans-serif;max-width:420px;margin:auto;padding:32px;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);border-radius:16px;">
-        <div style="text-align:center;margin-bottom:24px;">
-          <div style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:12px 24px;border-radius:10px;">
-            <span style="color:#fff;font-size:18px;font-weight:800;letter-spacing:2px;">NAHID ENTERPRISE</span>
-          </div>
-        </div>
-        <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center;">
-          <p style="color:#a5b4fc;font-size:14px;margin:0 0 0 8px;">Your verification code</p>
-          <div style="font-size:42px;font-weight:900;letter-spacing:12px;color:#fff;margin:16px 0;text-shadow:0 0 20px rgba(99,102,241,0.8);">${otp}</div>
-          <p style="color:#6b7280;font-size:12px;margin:0;">Expires in 2 minutes. Do not share.</p>
-        </div>
-      </div>
-    `,
-  });
-};
-
+  
 //login otp
 exports.sendOtp = async (req, res) => {
   try {
