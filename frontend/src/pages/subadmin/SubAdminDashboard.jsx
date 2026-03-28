@@ -192,8 +192,8 @@ function DashboardInner() {
   const location = useLocation();
   const { t }    = useSubLang();
 
-  const [isDesktop,     setIsDesktop]     = useState(window.innerWidth >= 1024);
-  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
   const [search,        setSearch]        = useState("");
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
   const [searchOpen,    setSearchOpen]    = useState(false);
@@ -444,7 +444,7 @@ function DashboardInner() {
               width: sidebarW,
               x: (!isDesktop && !sidebarOpen) ? -FULL : 0,
             }}
-            transition={{ type:"spring", stiffness:300, damping:32 }}
+            transition={{ type:"spring", stiffness:400, damping:40 }}
           >
             <div className="sa-noise" />
 
