@@ -21,20 +21,22 @@ const safeArray = (v) =>
   Array.isArray(v?.links)    ? v.links    :
   Array.isArray(v?.data)     ? v.data     : [];
 
-/* ── light design tokens ── */
+/* ── design tokens ── */
 const L = {
-  bg:       "#f5f7ff",
-  card:     "#ffffff",
-  border:   "rgba(99,102,241,0.1)",
-  borderMd: "rgba(99,102,241,0.2)",
-  text1:    "#0f172a",
-  text2:    "#374151",
-  text3:    "#9ca3af",
+  bg:       "#0a0f1e",
+  card:     "#0f1629",
+  cardAlt:  "#111827",
+  border:   "rgba(99,102,241,0.12)",
+  borderMd: "rgba(99,102,241,0.25)",
+  text1:    "#f1f5f9",
+  text2:    "#94a3b8",
+  text3:    "#475569",
   accent:   "#6366f1",
-  accentBg: "rgba(99,102,241,0.07)",
-  accentBd: "rgba(99,102,241,0.18)",
-  shadow:   "0 1px 8px rgba(99,102,241,0.07)",
-  shadowMd: "0 4px 20px rgba(99,102,241,0.1)",
+  accentBg: "rgba(99,102,241,0.1)",
+  accentBd: "rgba(99,102,241,0.2)",
+  glow:     "rgba(99,102,241,0.15)",
+  shadow:   "0 2px 16px rgba(0,0,0,0.4)",
+  shadowMd: "0 8px 32px rgba(0,0,0,0.5)",
 };
 
 /* ── animated counter ── */
@@ -57,30 +59,88 @@ function Counter({ value, prefix = "", suffix = "" }) {
   return <>{prefix}{display.toLocaleString("en-IN")}{suffix}</>;
 }
 
+/* ── Glowing orb background ── */
+function GlowOrb({ color, style }) {
+  return (
+    <div className="absolute rounded-full pointer-events-none"
+      style={{
+        background: `radial-gradient(circle, ${color} 0%, transparent 70%)`,
+        filter: "blur(40px)",
+        opacity: 0.18,
+        ...style,
+      }}
+    />
+  );
+}
+
+/* ── Stat Card ── */
+function StatCard({ label, value, sub, color, icon: Icon, index, loading }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1 + index * 0.06, type: "spring", stiffness: 200, damping: 20 }}
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5"
+      style={{
+        background: `linear-gradient(135deg, ${L.card} 0%, ${L.cardAlt} 100%)`,
+        border: `1px solid ${L.border}`,
+        boxShadow: L.shadow,
+      }}>
+      <div className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ background: `radial-gradient(ellipse at top right, ${color}18 0%, transparent 60%)` }}/>
+      <div className="relative flex items-start justify-between mb-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+          <Icon size={15} style={{ color }}/>
+        </div>
+        <span className="text-[9px] font-black uppercase tracking-[0.15em] px-2 py-0.5 rounded-full"
+          style={{ background: `${color}10`, color, border: `1px solid ${color}20` }}>
+          LIVE
+        </span>
+      </div>
+      {loading ? (
+        <div className="h-8 w-20 rounded-lg animate-pulse" style={{ background: `${color}10` }}/>
+      ) : (
+        <p className="text-2xl sm:text-3xl font-black leading-none mb-1" style={{ color }}>
+          {typeof value === "number" ? <Counter value={value}/> : value}
+        </p>
+      )}
+      <p className="text-[11px] font-semibold" style={{ color: L.text2 }}>{label}</p>
+      <p className="text-[10px] mt-0.5" style={{ color: L.text3 }}>{sub}</p>
+    </motion.div>
+  );
+}
 
 /* ══════════════════════════════════
-   ORDER BREAKDOWN — light
+   ORDER BREAKDOWN
 ══════════════════════════════════ */
 function OrderBreakdown({ stats, loading, t }) {
-  if (loading || !stats.totalOrders) return null;
+  if (loading || !stats.totalOrders) return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+      className="rounded-2xl overflow-hidden p-6 flex items-center justify-center"
+      style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: L.shadow, minHeight: 200 }}>
+      <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: `${L.accent}30`, borderTopColor: L.accent }}/>
+    </motion.div>
+  );
+
   const pending = stats.totalOrders - stats.successOrders - stats.cancelledOrders;
   const rows = [
-    { label: t("ডেলিভার্ড", "Delivered"), val: stats.successOrders,  pct: Math.round((stats.successOrders / stats.totalOrders) * 100),   color: "#10b981", bg: "rgba(16,185,129,0.06)",  icon: CheckCircle },
-    { label: t("বাকি", "Pending"),         val: pending,               pct: Math.round((pending / stats.totalOrders) * 100),               color: "#f59e0b", bg: "rgba(245,158,11,0.06)",  icon: Clock       },
-    { label: t("বাতিল", "Cancelled"),      val: stats.cancelledOrders, pct: Math.round((stats.cancelledOrders / stats.totalOrders) * 100), color: "#ef4444", bg: "rgba(239,68,68,0.06)",   icon: XCircle     },
+    { label: t("ডেলিভার্ড", "Delivered"), val: stats.successOrders,  pct: Math.round((stats.successOrders / stats.totalOrders) * 100),   color: "#10b981", icon: CheckCircle },
+    { label: t("বাকি", "Pending"),         val: pending,               pct: Math.round((pending / stats.totalOrders) * 100),               color: "#f59e0b", icon: Clock       },
+    { label: t("বাতিল", "Cancelled"),      val: stats.cancelledOrders, pct: Math.round((stats.cancelledOrders / stats.totalOrders) * 100), color: "#ef4444", icon: XCircle     },
   ];
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden relative"
       style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: L.shadow }}>
+      <GlowOrb color="#6366f1" style={{ width: 200, height: 200, top: -60, right: -60 }}/>
 
-      <div className="px-5 sm:px-6 pt-5 pb-4 flex items-center justify-between"
+      <div className="relative px-5 sm:px-6 pt-5 pb-4 flex items-center justify-between"
         style={{ borderBottom: `1px solid ${L.border}` }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: L.accentBg, border: `1px solid ${L.accentBd}` }}>
-            <BarChart2 size={14} style={{ color: L.accent }}/>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.2)" }}>
+            <BarChart2 size={15} style={{ color: L.accent }}/>
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: L.text1 }}>{t("অর্ডার ব্রেকডাউন", "Order Breakdown")}</p>
@@ -88,7 +148,7 @@ function OrderBreakdown({ stats, loading, t }) {
           </div>
         </div>
         <Link to="/subadmin/orders"
-          className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all"
+          className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all no-underline"
           style={{ background: L.accentBg, color: L.accent, border: `1px solid ${L.accentBd}` }}>
           {t("সব দেখুন", "View All")} <ArrowRight size={10}/>
         </Link>
@@ -96,8 +156,8 @@ function OrderBreakdown({ stats, loading, t }) {
 
       <div className="p-5 sm:p-6">
         {/* stacked bar */}
-        <div className="flex h-2 rounded-full overflow-hidden gap-0.5 mb-5"
-          style={{ background: "rgba(99,102,241,0.07)" }}>
+        <div className="flex h-2.5 rounded-full overflow-hidden gap-0.5 mb-6"
+          style={{ background: "rgba(255,255,255,0.04)" }}>
           {[
             { val: stats.successOrders,   color: "#10b981" },
             { val: pending,               color: "#f59e0b" },
@@ -107,29 +167,31 @@ function OrderBreakdown({ stats, loading, t }) {
             return pct > 0 ? (
               <motion.div key={i} className="h-full rounded-full"
                 initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                transition={{ delay: 0.4 + i * 0.1, duration: 0.7, ease: "easeOut" }}
-                style={{ background: color }}/>
+                transition={{ delay: 0.4 + i * 0.1, duration: 0.8, ease: "easeOut" }}
+                style={{ background: color, boxShadow: `0 0 8px ${color}80` }}/>
             ) : null;
           })}
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {rows.map(({ label, val, pct, color, bg, icon: Icon }) => (
-            <div key={label} className="rounded-xl p-3 sm:p-4 text-center"
-              style={{ background: bg, border: `1px solid ${color}20` }}>
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center mx-auto mb-2"
-                style={{ background: `${color}15` }}>
-                <Icon size={13} style={{ color }}/>
-              </div>
-              <p className="text-xl sm:text-2xl font-black leading-none" style={{ color }}>{val}</p>
-              <p className="text-[9px] sm:text-[10px] font-bold mt-1" style={{ color: L.text3 }}>{label}</p>
-              <div className="mt-1.5 flex items-center justify-center gap-1">
-                <div className="h-1 rounded-full flex-1" style={{ background: `${color}18`, maxWidth: 40 }}>
-                  <motion.div className="h-full rounded-full" style={{ background: color }}
-                    initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-                    transition={{ delay: 0.6, duration: 0.6 }}/>
+          {rows.map(({ label, val, pct, color, icon: Icon }) => (
+            <div key={label} className="rounded-xl p-3 sm:p-4 text-center relative overflow-hidden"
+              style={{ background: `${color}08`, border: `1px solid ${color}18` }}>
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: `radial-gradient(ellipse at top, ${color}10, transparent 70%)` }}/>
+              <div className="relative">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2.5"
+                  style={{ background: `${color}15`, border: `1px solid ${color}25` }}>
+                  <Icon size={14} style={{ color }}/>
                 </div>
-                <span className="text-[9px] font-black" style={{ color }}>{pct}%</span>
+                <p className="text-xl sm:text-2xl font-black leading-none" style={{ color }}>{val}</p>
+                <p className="text-[9px] sm:text-[10px] font-semibold mt-1.5" style={{ color: L.text2 }}>{label}</p>
+                <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: `${color}15` }}>
+                  <motion.div className="h-full rounded-full" style={{ background: color, boxShadow: `0 0 6px ${color}` }}
+                    initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                    transition={{ delay: 0.6, duration: 0.7 }}/>
+                </div>
+                <span className="text-[9px] font-black mt-1 inline-block" style={{ color }}>{pct}%</span>
               </div>
             </div>
           ))}
@@ -140,30 +202,31 @@ function OrderBreakdown({ stats, loading, t }) {
 }
 
 /* ══════════════════════════════════
-   RECENT ORDERS — light
+   RECENT ORDERS
 ══════════════════════════════════ */
 function RecentOrders({ orders, loading, t }) {
   const STATUS = {
-    pending:    { label: t("অপেক্ষা", "Pending"),    color: "#f59e0b", bg: "rgba(245,158,11,0.08)"   },
-    processing: { label: t("প্যাকেজিং", "Packing"),  color: "#8b5cf6", bg: "rgba(139,92,246,0.08)"   },
-    shipped:    { label: t("পথে", "Shipped"),         color: "#3b82f6", bg: "rgba(59,130,246,0.08)"   },
-    confirmed:  { label: t("নিশ্চিত", "Confirmed"),  color: "#06b6d4", bg: "rgba(6,182,212,0.08)"    },
-    delivered:  { label: t("পৌঁছেছে", "Delivered"),  color: "#10b981", bg: "rgba(16,185,129,0.08)"   },
-    cancelled:  { label: t("বাতিল", "Cancelled"),    color: "#ef4444", bg: "rgba(239,68,68,0.08)"    },
+    pending:    { label: t("অপেক্ষা", "Pending"),    color: "#f59e0b", bg: "rgba(245,158,11,0.1)"   },
+    processing: { label: t("প্যাকেজিং", "Packing"),  color: "#8b5cf6", bg: "rgba(139,92,246,0.1)"   },
+    shipped:    { label: t("পথে", "Shipped"),         color: "#3b82f6", bg: "rgba(59,130,246,0.1)"   },
+    confirmed:  { label: t("নিশ্চিত", "Confirmed"),  color: "#06b6d4", bg: "rgba(6,182,212,0.1)"    },
+    delivered:  { label: t("পৌঁছেছে", "Delivered"),  color: "#10b981", bg: "rgba(16,185,129,0.1)"   },
+    cancelled:  { label: t("বাতিল", "Cancelled"),    color: "#ef4444", bg: "rgba(239,68,68,0.1)"    },
   };
   const recent = orders.slice(0, 3);
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden relative"
       style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: L.shadow }}>
+      <GlowOrb color="#f59e0b" style={{ width: 160, height: 160, top: -40, left: -40 }}/>
 
-      <div className="px-5 sm:px-6 pt-5 pb-4 flex items-center justify-between"
+      <div className="relative px-5 sm:px-6 pt-5 pb-4 flex items-center justify-between"
         style={{ borderBottom: `1px solid ${L.border}` }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
-            <Activity size={14} style={{ color: "#f59e0b" }}/>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>
+            <Activity size={15} style={{ color: "#f59e0b" }}/>
           </div>
           <div>
             <p className="text-sm font-bold" style={{ color: L.text1 }}>{t("সাম্প্রতিক অর্ডার", "Recent Orders")}</p>
@@ -171,52 +234,56 @@ function RecentOrders({ orders, loading, t }) {
           </div>
         </div>
         <Link to="/subadmin/delivery"
-          className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all"
-          style={{ background: "rgba(245,158,11,0.07)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.18)" }}>
+          className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all no-underline"
+          style={{ background: "rgba(245,158,11,0.08)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
           {t("সব দেখুন", "View All")} <ArrowRight size={10}/>
         </Link>
       </div>
 
-      <div>
+      <div className="relative">
         {loading ? (
           Array(3).fill(0).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 sm:px-6 py-3.5"
+            <div key={i} className="flex items-center gap-3 px-5 sm:px-6 py-4"
               style={{ borderBottom: `1px solid ${L.border}` }}>
-              <div className="w-8 h-8 rounded-xl animate-pulse" style={{ background: "rgba(99,102,241,0.07)" }}/>
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-28 rounded animate-pulse" style={{ background: "rgba(99,102,241,0.07)" }}/>
-                <div className="h-2.5 w-20 rounded animate-pulse" style={{ background: "rgba(99,102,241,0.05)" }}/>
+              <div className="w-9 h-9 rounded-xl animate-pulse" style={{ background: "rgba(99,102,241,0.08)" }}/>
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-28 rounded-full animate-pulse" style={{ background: "rgba(99,102,241,0.08)" }}/>
+                <div className="h-2 w-20 rounded-full animate-pulse" style={{ background: "rgba(99,102,241,0.05)" }}/>
               </div>
-              <div className="h-3 w-16 rounded animate-pulse" style={{ background: "rgba(99,102,241,0.07)" }}/>
+              <div className="h-3 w-16 rounded-full animate-pulse" style={{ background: "rgba(99,102,241,0.08)" }}/>
             </div>
           ))
         ) : recent.length === 0 ? (
-          <div className="px-6 py-10 text-center">
-            <ShoppingBag size={24} style={{ color: L.text3 }} className="mx-auto mb-2" strokeWidth={1.2}/>
-            <p className="text-xs" style={{ color: L.text3 }}>{t("কোনো অর্ডার নেই", "No orders yet")}</p>
+          <div className="px-6 py-12 text-center">
+            <ShoppingBag size={28} style={{ color: L.text3 }} className="mx-auto mb-3" strokeWidth={1}/>
+            <p className="text-xs font-medium" style={{ color: L.text3 }}>{t("কোনো অর্ডার নেই", "No orders yet")}</p>
           </div>
         ) : recent.map((order, i) => {
           const st = STATUS[order.status] || STATUS.pending;
+          const initial = (order.customer?.name || "?")[0].toUpperCase();
           return (
             <motion.div key={order._id || i}
-              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35 + i * 0.04 }}
-              className="flex items-center gap-3 px-5 sm:px-6 py-3.5 transition-colors"
-              style={{ borderBottom: i < 2 ? `1px solid ${L.border}` : "none" }}
-              onMouseEnter={e => e.currentTarget.style.background = L.accentBg}
+              initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.35 + i * 0.05 }}
+              className="flex items-center gap-3 px-5 sm:px-6 py-4 cursor-default group"
+              style={{ borderBottom: i < 2 ? `1px solid ${L.border}` : "none", transition: "background 0.2s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.04)"}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-black"
-                style={{ background: L.accentBg, color: L.accent, border: `1px solid ${L.accentBd}` }}>
-                {(order.customer?.name || "?")[0].toUpperCase()}
+              {/* avatar */}
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-black"
+                style={{ background: `linear-gradient(135deg, ${st.color}30, ${st.color}15)`, color: st.color, border: `1px solid ${st.color}25` }}>
+                {initial}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: L.text1 }}>{order.customer?.name || "—"}</p>
-                <p className="text-[10px]" style={{ color: L.text3 }}>{order.orderId}</p>
+                <p className="text-xs font-bold truncate" style={{ color: L.text1 }}>{order.customer?.name || "—"}</p>
+                <p className="text-[10px] font-mono mt-0.5" style={{ color: L.text3 }}>{order.orderId}</p>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className="text-right flex-shrink-0 space-y-1">
                 <p className="text-xs font-black" style={{ color: L.accent }}>৳{(order.total || 0).toLocaleString()}</p>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full inline-block"
+                  style={{ background: st.bg, color: st.color, border: `1px solid ${st.color}25` }}>
+                  {st.label}
+                </span>
               </div>
             </motion.div>
           );
@@ -227,7 +294,7 @@ function RecentOrders({ orders, loading, t }) {
 }
 
 /* ══════════════════════════════════
-   PERFORMANCE SUMMARY — light
+   PERFORMANCE SUMMARY
 ══════════════════════════════════ */
 function PerformanceSummary({ stats, loading, t }) {
   const deliveryRate = stats.totalOrders > 0
@@ -244,14 +311,15 @@ function PerformanceSummary({ stats, loading, t }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28 }}
-      className="rounded-2xl overflow-hidden"
+      className="rounded-2xl overflow-hidden relative"
       style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: L.shadow }}>
+      <GlowOrb color="#10b981" style={{ width: 180, height: 180, bottom: -50, right: -50 }}/>
 
-      <div className="px-5 sm:px-6 pt-5 pb-4 flex items-center gap-2.5"
+      <div className="relative px-5 sm:px-6 pt-5 pb-4 flex items-center gap-3"
         style={{ borderBottom: `1px solid ${L.border}` }}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)" }}>
-          <Star size={14} style={{ color: "#10b981" }}/>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+          style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }}>
+          <Star size={15} style={{ color: "#10b981" }}/>
         </div>
         <div>
           <p className="text-sm font-bold" style={{ color: L.text1 }}>{t("পারফরম্যান্স", "Performance")}</p>
@@ -259,30 +327,36 @@ function PerformanceSummary({ stats, loading, t }) {
         </div>
       </div>
 
-      <div className="p-5 sm:p-6 grid grid-cols-2 gap-3">
+      <div className="relative p-5 sm:p-6 grid grid-cols-2 gap-3">
         {metrics.map(({ label, val, color, icon: Icon, sub }, i) => (
           <motion.div key={label}
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.35 + i * 0.05 }}
-            className="rounded-xl p-3 sm:p-4"
+            initial={{ opacity: 0, scale: 0.93 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.35 + i * 0.06 }}
+            className="rounded-xl p-3 sm:p-4 relative overflow-hidden"
             style={{ background: `${color}07`, border: `1px solid ${color}18` }}>
-            <div className="flex items-center justify-between mb-2">
-              <Icon size={13} style={{ color }}/>
-              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color, opacity: 0.45 }}>
-                {t("লাইভ", "live")}
-              </span>
+            <div className="absolute inset-0 pointer-events-none"
+              style={{ background: `radial-gradient(ellipse at bottom left, ${color}12, transparent 65%)` }}/>
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                  style={{ background: `${color}15`, border: `1px solid ${color}20` }}>
+                  <Icon size={12} style={{ color }}/>
+                </div>
+                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                  style={{ background: `${color}10`, color, opacity: 0.7 }}>live</span>
+              </div>
+              {loading ? (
+                <div className="h-7 w-14 rounded-lg animate-pulse" style={{ background: `${color}10` }}/>
+              ) : (
+                <>
+                  <p className="text-xl sm:text-2xl font-black leading-none" style={{ color }}>
+                    {typeof val === "number" ? <Counter value={val}/> : val}
+                  </p>
+                  <p className="text-[10px] font-semibold mt-1.5" style={{ color: L.text2 }}>{label}</p>
+                  <p className="text-[9px] mt-0.5" style={{ color: L.text3 }}>{sub}</p>
+                </>
+              )}
             </div>
-            {loading ? (
-              <div className="h-7 w-14 rounded-lg animate-pulse" style={{ background: `${color}12` }}/>
-            ) : (
-              <>
-                <p className="text-xl sm:text-2xl font-black leading-none" style={{ color }}>
-                  {typeof val === "number" ? <Counter value={val}/> : val}
-                </p>
-                <p className="text-[9px] sm:text-[10px] font-semibold mt-1" style={{ color: L.text3 }}>{label}</p>
-                <p className="text-[8px] sm:text-[9px] mt-0.5" style={{ color: L.text3, opacity: 0.7 }}>{sub}</p>
-              </>
-            )}
           </motion.div>
         ))}
       </div>
@@ -291,7 +365,7 @@ function PerformanceSummary({ stats, loading, t }) {
 }
 
 /* ══════════════════════════════════
-   QUICK ACTIONS — light, subadmin routes
+   QUICK ACTIONS
 ══════════════════════════════════ */
 function QuickActions({ t }) {
   const actions = [
@@ -306,25 +380,42 @@ function QuickActions({ t }) {
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
       <div className="flex items-center gap-2 mb-3 sm:mb-4">
-        <Zap size={13} style={{ color: L.accent }}/>
-        <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-widest" style={{ color: L.text3 }}>
+        <Zap size={12} style={{ color: L.accent }}/>
+        <p className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: L.text3 }}>
           {t("দ্রুত অ্যাকশন", "Quick Actions")}
         </p>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
         {actions.map(({ to, icon: Icon, label, sub, color, grad }, i) => (
-          <motion.div key={to} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 + i * 0.04 }}>
+          <motion.div key={to}
+            initial={{ opacity: 0, scale: 0.88, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.4 + i * 0.05, type: "spring", stiffness: 220, damping: 18 }}>
             <Link to={to}
-              className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl text-center transition-all duration-200 hover:-translate-y-1 group block no-underline"
-              style={{ background: L.card, border: `1px solid ${L.border}`, boxShadow: L.shadow }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = `${color}30`; e.currentTarget.style.boxShadow = `0 8px 24px ${color}15`; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = L.border; e.currentTarget.style.boxShadow = L.shadow; }}>
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center transition-all group-hover:scale-110"
-                style={{ background: grad, boxShadow: `0 4px 12px ${color}25` }}>
-                <Icon size={16} color="#fff"/>
+              className="flex flex-col items-center gap-2.5 p-3 sm:p-4 rounded-2xl text-center group block no-underline relative overflow-hidden"
+              style={{
+                background: L.card,
+                border: `1px solid ${L.border}`,
+                boxShadow: L.shadow,
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = `${color}35`;
+                e.currentTarget.style.boxShadow = `0 8px 32px ${color}20, 0 0 0 1px ${color}20`;
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = L.border;
+                e.currentTarget.style.boxShadow = L.shadow;
+                e.currentTarget.style.transform = "translateY(0)";
+              }}>
+              <div className="absolute inset-0 pointer-events-none rounded-2xl"
+                style={{ background: `radial-gradient(ellipse at top, ${color}08, transparent 60%)` }}/>
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center"
+                style={{ background: grad, boxShadow: `0 4px 16px ${color}35` }}>
+                <Icon size={16} color="#fff" strokeWidth={2}/>
               </div>
-              <div>
+              <div className="relative">
                 <p className="text-[10px] sm:text-[11px] font-black leading-tight" style={{ color: L.text1 }}>{label}</p>
                 <p className="text-[9px] mt-0.5 hidden sm:block" style={{ color: L.text3 }}>{sub}</p>
               </div>
@@ -408,6 +499,13 @@ export default function SubAdminHome() {
     ? t("শুভ দুপুর ☀️", "Good Afternoon ☀️")
     : t("শুভ সন্ধ্যা 🌙", "Good Evening 🌙");
 
+  /* top stat cards */
+  const topStats = [
+    { label: t("মোট অর্ডার", "Total Orders"),   value: stats.totalOrders || 0,  sub: t("সব অর্ডার", "All orders"),          color: "#6366f1", icon: ShoppingBag },
+    { label: t("মোট রেভিনিউ", "Total Revenue"),  value: stats.totalRevenue || 0, sub: t("ডেলিভার্ড থেকে", "From delivered"),  color: "#10b981", icon: Star        },
+    { label: t("ডেলিভার্ড", "Delivered"),        value: stats.successOrders || 0,sub: t("সফল অর্ডার", "Successful orders"),   color: "#06b6d4", icon: CheckCircle  },
+    { label: t("বাতিল", "Cancelled"),            value: stats.cancelledOrders||0,sub: t("বাতিলকৃত", "Cancelled orders"),      color: "#ef4444", icon: XCircle      },
+  ];
 
   return (
     <>
@@ -420,22 +518,33 @@ export default function SubAdminHome() {
       <div className="sa-dash space-y-5 sm:space-y-6 pb-8">
 
         {/* ── Header ── */}
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}
           className="flex items-start justify-between gap-3 flex-wrap">
           <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#10b981", boxShadow: "0 0 6px #10b981" }}/>
+              <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>
+                {t("লাইভ ড্যাশবোর্ড", "Live Dashboard")}
+              </span>
+            </div>
             <h1 className="text-lg sm:text-2xl font-black leading-tight" style={{ color: L.text1 }}>
-              {greet}, {subAdminInfo?.name?.split(" ")[0] || "SubAdmin"} 👋
+              {greet}, <span style={{ color: L.accent }}>{subAdminInfo?.name?.split(" ")[0] || "SubAdmin"}</span> 👋
             </h1>
             <p className="text-xs sm:text-sm mt-1 flex items-center gap-1.5" style={{ color: L.text3 }}>
-              <Clock size={11}/>
+              <Clock size={10}/>
               {lastSync
                 ? `${t("সর্বশেষ সিঙ্ক", "Last synced")}: ${lastSync.toLocaleTimeString(t("bn-BD", "en-BD"), { hour: "2-digit", minute: "2-digit" })}`
                 : t("লোড হচ্ছে...", "Loading...")}
             </p>
           </div>
-          <motion.button onClick={fetchStats} whileTap={{ scale: 0.96 }}
+          <motion.button onClick={fetchStats} whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all"
-            style={{ background: L.accentBg, color: L.accent, border: `1px solid ${L.accentBd}`, boxShadow: "0 2px 8px rgba(99,102,241,0.12)" }}>
+            style={{
+              background: L.accentBg,
+              color: L.accent,
+              border: `1px solid ${L.accentBd}`,
+              boxShadow: "0 2px 12px rgba(99,102,241,0.15)",
+            }}>
             <RefreshCw size={12} className={loading ? "animate-spin" : ""}/>
             <span className="hidden sm:inline">{t("রিফ্রেশ", "Refresh")}</span>
           </motion.button>
@@ -446,13 +555,21 @@ export default function SubAdminHome() {
           {error && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-medium"
-              style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)", color: "#ef4444" }}>
+              style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}>
               <AlertCircle size={15}/>{error}
               <button onClick={fetchStats} className="ml-auto underline text-xs">{t("আবার", "Retry")}</button>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* ── Top stat cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {topStats.map((s, i) => (
+            <StatCard key={i} {...s} index={i} loading={loading}/>
+          ))}
+        </div>
+
+        {/* ── Breakdown + Performance ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           <OrderBreakdown stats={stats} loading={loading} t={t}/>
           <PerformanceSummary stats={stats} loading={loading} t={t}/>
@@ -460,6 +577,8 @@ export default function SubAdminHome() {
 
         {/* ── Recent Orders ── */}
         <RecentOrders orders={orders} loading={loading} t={t}/>
+
+        {/* ── Quick Actions ── */}
         <QuickActions t={t}/>
       </div>
     </>
