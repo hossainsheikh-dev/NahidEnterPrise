@@ -193,7 +193,7 @@ function DashboardInner() {
   const { t }    = useSubLang();
 
   const [isDesktop,     setIsDesktop]     = useState(window.innerWidth >= 1024);
-  const [sidebarOpen,   setSidebarOpen]   = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [search,        setSearch]        = useState("");
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
   const [searchOpen,    setSearchOpen]    = useState(false);
