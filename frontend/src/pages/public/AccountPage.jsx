@@ -2202,7 +2202,7 @@ export default function AccountPage() {
           </div>
           <h1 className="text-[28px] sm:text-[32px] font-black text-slate-900 leading-tight tracking-tight">
             {t("Nahid Enterprise","Nahid Enterprise")}<br/>
-            <span style={{ background:"linear-gradient(135deg,#15803d,#4ade80)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+            <span style={{ color: mode === "register" ? "#dc2626" : undefined, background: mode === "register" ? "none" : "linear-gradient(135deg,#15803d,#4ade80)", WebkitBackgroundClip: mode === "register" ? "unset" : "text", WebkitTextFillColor: mode === "register" ? "unset" : "transparent" }}>
               {mode === "register" ? t("রেজিস্ট্রেশন","Registration") : t("লগইন","Sign In")}
             </span>
           </h1>
