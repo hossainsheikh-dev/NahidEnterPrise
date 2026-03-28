@@ -2,25 +2,26 @@ const SubAdmin    = require("../models/SubAdmin");
 const SubAdminLog = require("../models/log_models/SubAdminLog");
 const bcrypt      = require("bcryptjs");
 const crypto      = require("crypto");
-const nodemailer  = require("nodemailer");
 const generateToken = require("../utils/generateToken");
 
 const sendMail = async (to, subject, html) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 465,
-    secure: true, 
-    auth: {
-      user: process.env.BREVO_USER,
-      pass: process.env.BREVO_PASS,
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": process.env.BREVO_API_KEY,
     },
+    body: JSON.stringify({
+      sender: { name: "Nahid Enterprise", email: "a647e5001@smtp-brevo.com" },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
-  await transporter.sendMail({
-    from: `"Nahid Enterprise" <${process.env.BREVO_USER}>`,
-    to,
-    subject,
-    html,
-  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(JSON.stringify(err));
+  }
 };
 
 const otpStore = new Map();
