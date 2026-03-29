@@ -440,6 +440,7 @@ function DashboardInner() {
           ═══════════════ */}
           <motion.aside
             className="sa-sidebar"
+            initial={false}
             animate={{
               width: sidebarW,
               x: (!isDesktop && !sidebarOpen) ? -FULL : 0,
