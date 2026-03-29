@@ -445,7 +445,7 @@ function DashboardInner() {
               width: sidebarW,
               x: (!isDesktop && !sidebarOpen) ? -FULL : 0,
             }}
-            transition={{ type:"spring", stiffness:400, damping:40 }}
+            transition={{ type:"tween", duration:0.2, ease:"easeInOut" }}
           >
             <div className="sa-noise" />
 
