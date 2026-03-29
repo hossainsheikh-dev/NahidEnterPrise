@@ -227,47 +227,43 @@ function SublinkShow({
 
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
 
-                {/* Parent filter — desktop only */}
-                {showParent && (
-                  <>
-                    <div style={{ position: "relative", width: 168 }} ref={parentFilterRef}>
-                      <button
-                        type="button"
-                        onClick={() => setParentFilterOpen(!parentFilterOpen)}
-                        style={dropdownBtnStyle}
+                {/* Parent filter — all devices */}
+                <div style={{ position: "relative", width: 168 }} ref={parentFilterRef}>
+                  <button
+                    type="button"
+                    onClick={() => setParentFilterOpen(!parentFilterOpen)}
+                    style={dropdownBtnStyle}
+                  >
+                    <span style={{ color: parentFilter ? "#374151" : "#a8b4c8", fontWeight: parentFilter ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
+                    </span>
+                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                  </button>
+                  <AnimatePresence>
+                    {parentFilterOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                        transition={{ duration: 0.18 }}
+                        style={{ ...dropdownPanel, maxHeight: 200, overflowY: "auto" }}
                       >
-                        <span style={{ color: parentFilter ? "#374151" : "#a8b4c8", fontWeight: parentFilter ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
-                        </span>
-                        <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
-                      </button>
-                      <AnimatePresence>
-                        {parentFilterOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                            transition={{ duration: 0.18 }}
-                            style={{ ...dropdownPanel, maxHeight: 200, overflowY: "auto" }}
-                          >
-                            <div onClick={() => { setParentFilter(""); setParentFilterOpen(false); }} style={dropdownItemStyle(!parentFilter)}>
-                              — {t("সব", "All")} —
-                            </div>
-                            {parentLinks.map(p => (
-                              <div key={p._id} onClick={() => { setParentFilter(p._id); setParentFilterOpen(false); }} style={dropdownItemStyle(parentFilter === p._id)}>
-                                {p.name}
-                              </div>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    {parentFilter && (
-                      <button onClick={() => setParentFilter("")} style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                        <X size={12} /> {t("ক্লিয়ার", "Clear")}
-                      </button>
+                        <div onClick={() => { setParentFilter(""); setParentFilterOpen(false); }} style={dropdownItemStyle(!parentFilter)}>
+                          — {t("সব", "All")} —
+                        </div>
+                        {parentLinks.map(p => (
+                          <div key={p._id} onClick={() => { setParentFilter(p._id); setParentFilterOpen(false); }} style={dropdownItemStyle(parentFilter === p._id)}>
+                            {p.name}
+                          </div>
+                        ))}
+                      </motion.div>
                     )}
-                  </>
+                  </AnimatePresence>
+                </div>
+                {parentFilter && (
+                  <button onClick={() => setParentFilter("")} style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                    <X size={12} /> {t("ক্লিয়ার", "Clear")}
+                  </button>
                 )}
 
                 {/* Sort — always visible */}
