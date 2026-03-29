@@ -2,23 +2,24 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, Plus, Pencil, Trash2,
-  Loader2, X, RefreshCw, Link2,
+  Loader2, X, Layers, RefreshCw,
 } from "lucide-react";
 import { showAddSuccessToast }    from "../../../utils/toast/successAddToast";
 import { showUpdateSuccessToast } from "../../../utils/toast/successUpdateToast";
 import { showDeleteSuccessToast } from "../../../utils/toast/successDeleteToast";
 import { useSubLang } from "../../../context/SubAdminLangContext";
 
-const API      = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
-const LINK_API = `${API}/api/links`;
+const API         = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
+const SUBLINK_API = `${API}/api/sublinks`;
+const LINK_API    = `${API}/api/links`;
 
 const getToken = () => localStorage.getItem("subAdminToken") || "";
 
 const SORT_OPTIONS = [
-  { labelBn: "নাম অনুযায়ী",   labelEn: "Sort by Name",   value: "name"   },
-  { labelBn: "তারিখ অনুযায়ী", labelEn: "Sort by Date",   value: "date"   },
-  { labelBn: "নতুন প্রথমে",    labelEn: "Newest First",   value: "newest" },
-  { labelBn: "স্ট্যাটাস",      labelEn: "Sort by Status", value: "status" },
+  { labelBn: "নাম অনুযায়ী",    labelEn: "Sort by Name",   value: "name"   },
+  { labelBn: "তারিখ অনুযায়ী",  labelEn: "Sort by Date",   value: "date"   },
+  { labelBn: "নতুন প্রথমে",     labelEn: "Newest First",   value: "newest" },
+  { labelBn: "স্ট্যাটাস",       labelEn: "Sort by Status", value: "status" },
 ];
 
 const STATUS_OPTIONS = [
@@ -54,10 +55,7 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
                 padding: "24px",
               }}
             >
-              <h3
-                className="text-[15px] font-black tracking-[-0.02em]"
-                style={{ color: "#0f172a", fontFamily: "'Syne',sans-serif" }}
-              >
+              <h3 className="text-[15px] font-black tracking-[-0.02em]" style={{ color: "#0f172a", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                 {title}
               </h3>
               <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "#64748b" }}>
@@ -102,16 +100,26 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
 }
 
 /* ════════════════════════════════════════
-   LINK SHOW
+   SUBLINK SHOW
 ════════════════════════════════════════ */
-function LinkShow({
-  links, loading, search, setSearch,
+function SublinkShow({
+  sublinks, loading, search, setSearch,
   sort, setSort, sortOpen, setSortOpen, sortRef,
-  setView, handleDelete, handleEdit, onRefresh,
+  parentFilter, setParentFilter, parentFilterOpen, setParentFilterOpen, parentFilterRef,
+  setView, handleDelete, handleEdit, parentLinks, onRefresh,
 }) {
   const { t } = useSubLang();
 
-  /* shared dropdown styles — exact same as SubAdminSublinks */
+  const selectedParentName = parentLinks.find(p => p._id === parentFilter)?.name;
+
+  const displayed = sublinks.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.parent?.name || "").toLowerCase().includes(search.toLowerCase());
+    const matchParent = !parentFilter || (s.parent?._id || s.parent) === parentFilter;
+    return matchSearch && matchParent;
+  });
+
+  /* shared dropdown style */
   const dropdownBtn = (extra = {}) => ({
     display: "flex", alignItems: "center", justifyContent: "space-between",
     width: "100%", background: "#fff",
@@ -176,13 +184,13 @@ function LinkShow({
               <Search size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder={t("লিংক খুঁজুন...", "Search link...")}
+                placeholder={t("সাবলিংক খুঁজুন...", "Search sublink...")}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
                   background: "transparent", outline: "none", border: "none",
                   fontSize: 13, color: "#374151", width: "100%",
-                  fontFamily: "'DM Sans', sans-serif",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               />
               {search && (
@@ -227,7 +235,7 @@ function LinkShow({
                 }}
               >
                 <Plus size={14} strokeWidth={2.5} />
-                {t("লিংক যোগ করুন", "Add Link")}
+                {t("সাবলিংক যোগ করুন", "Add Sublink")}
               </motion.button>
             </div>
           </div>
@@ -242,65 +250,128 @@ function LinkShow({
               overflow: "hidden",
             }}
           >
+
             {/* Table header */}
             <div
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-5 py-4"
+              className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 sm:px-5 py-4"
               style={{ borderBottom: "1px solid rgba(99,102,241,0.08)", background: "rgba(99,102,241,0.025)" }}
             >
               <h2
-                className="text-center sm:text-left text-[13.5px] sm:text-sm md:text-base font-black tracking-[-0.02em] shrink-0"
-                style={{ color: "#1e293b", fontFamily: "'Syne',sans-serif" }}
+                className="text-center md:text-left text-[13.5px] sm:text-sm md:text-base font-black tracking-[-0.02em] shrink-0"
+                style={{ color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               >
-                {t("প্যারেন্ট লিংক তালিকা", "Parent Links List")}
-                <span className="ml-2 text-[11px] font-medium" style={{ color: "#94a3b8" }}>
-                  ({links.length})
-                </span>
+                {t("সাবলিংক তালিকা", "Sublinks List")}
+                {displayed.length !== sublinks.length && (
+                  <span className="ml-2 text-[11px] font-medium" style={{ color: "#94a3b8" }}>
+                    ({displayed.length} {t("এর মধ্যে", "of")} {sublinks.length})
+                  </span>
+                )}
               </h2>
 
-              {/* Sort */}
-              <div className="relative w-full sm:w-52" ref={sortRef}>
-                <button
-                  onClick={() => setSortOpen(!sortOpen)}
-                  style={dropdownBtn()}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}
-                >
-                  <span style={{ fontSize: 13 }}>
-                    {SORT_OPTIONS.find(o => o.value === sort) &&
-                      t(SORT_OPTIONS.find(o => o.value === sort).labelBn,
-                        SORT_OPTIONS.find(o => o.value === sort).labelEn)}
-                  </span>
-                  <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
-                </button>
-                <AnimatePresence>
-                  {sortOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                      transition={{ duration: 0.18 }}
-                      style={dropdownPanel}
-                    >
-                      {SORT_OPTIONS.map(option => (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+
+                {/* Parent filter */}
+                <div className="relative w-full sm:w-48 md:w-44" ref={parentFilterRef}>
+                  <button
+                    type="button"
+                    onClick={() => setParentFilterOpen(!parentFilterOpen)}
+                    style={dropdownBtn()}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}
+                  >
+                    <span style={{ color: parentFilter ? "#374151" : "#a8b4c8", fontWeight: parentFilter ? 500 : 400, fontSize: 13 }}>
+                      {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
+                    </span>
+                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                  </button>
+                  <AnimatePresence>
+                    {parentFilterOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                        transition={{ duration: 0.18 }}
+                        style={{ ...dropdownPanel, maxHeight: 200, overflowY: "auto" }}
+                      >
                         <div
-                          key={option.value}
-                          onClick={() => { setSort(option.value); setSortOpen(false); }}
-                          style={dropdownItem(sort === option.value)}
-                          onMouseEnter={e => sort !== option.value && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
-                          onMouseLeave={e => sort !== option.value && (e.currentTarget.style.background = "transparent")}
+                          onClick={() => { setParentFilter(""); setParentFilterOpen(false); }}
+                          style={dropdownItem(!parentFilter)}
+                          onMouseEnter={e => !parentFilter ? null : e.currentTarget.style.background = "rgba(99,102,241,0.04)"}
+                          onMouseLeave={e => !parentFilter ? null : e.currentTarget.style.background = "transparent"}
                         >
-                          {t(option.labelBn, option.labelEn)}
+                          — {t("সব", "All")} —
                         </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        {parentLinks.map(p => (
+                          <div
+                            key={p._id}
+                            onClick={() => { setParentFilter(p._id); setParentFilterOpen(false); }}
+                            style={dropdownItem(parentFilter === p._id)}
+                            onMouseEnter={e => parentFilter !== p._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                            onMouseLeave={e => parentFilter !== p._id && (e.currentTarget.style.background = "transparent")}
+                          >
+                            {p.name}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {parentFilter && (
+                  <button
+                    onClick={() => setParentFilter("")}
+                    className="flex items-center justify-center gap-1 w-full sm:w-auto"
+                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none" }}
+                  >
+                    <X size={12} /> {t("ক্লিয়ার", "Clear")}
+                  </button>
+                )}
+
+                {/* Sort */}
+                <div className="relative w-full sm:w-48 md:w-44" ref={sortRef}>
+                  <button
+                    onClick={() => setSortOpen(!sortOpen)}
+                    style={dropdownBtn()}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}
+                  >
+                    <span style={{ fontSize: 13 }}>
+                      {SORT_OPTIONS.find(o => o.value === sort) &&
+                        t(SORT_OPTIONS.find(o => o.value === sort).labelBn,
+                          SORT_OPTIONS.find(o => o.value === sort).labelEn)}
+                    </span>
+                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                  </button>
+                  <AnimatePresence>
+                    {sortOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                        transition={{ duration: 0.18 }}
+                        style={dropdownPanel}
+                      >
+                        {SORT_OPTIONS.map(option => (
+                          <div
+                            key={option.value}
+                            onClick={() => { setSort(option.value); setSortOpen(false); }}
+                            style={dropdownItem(sort === option.value)}
+                            onMouseEnter={e => sort !== option.value && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                            onMouseLeave={e => sort !== option.value && (e.currentTarget.style.background = "transparent")}
+                          >
+                            {t(option.labelBn, option.labelEn)}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
 
             {/* Column headers */}
             <div
-              className="grid grid-cols-4 items-center px-3 sm:px-5 py-3"
+              className="sl-trow items-center px-3 sm:px-5 py-3"
               style={{
                 fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
                 letterSpacing: ".06em", textTransform: "uppercase",
@@ -309,8 +380,8 @@ function LinkShow({
               }}
             >
               <div>#</div>
-              <div>{t("নাম", "Name")}</div>
-              <div>{t("স্ট্যাটাস", "Status")}</div>
+              <div className="sl-col-name">{t("নাম", "Name")}</div>
+              <div>{t("প্যারেন্ট", "Parent")}</div>
               <div style={{ textAlign: "right" }}>{t("কার্যক্রম", "Actions")}</div>
             </div>
 
@@ -321,24 +392,24 @@ function LinkShow({
                   <Loader2 size={26} style={{ color: "#c4cdd8" }} className="animate-spin" />
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("লোড হচ্ছে…", "Loading…")}</p>
                 </div>
-              ) : links.length === 0 ? (
+              ) : displayed.length === 0 ? (
                 <div className="py-14 text-center">
                   <div
                     className="mx-auto mb-4 w-12 h-12 rounded-2xl flex items-center justify-center"
                     style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)" }}
                   >
-                    <Link2 size={22} style={{ color: "#c4cdd8" }} />
+                    <Layers size={22} style={{ color: "#c4cdd8" }} />
                   </div>
-                  <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো লিংক নেই।", "No links found.")}</p>
+                  <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো সাবলিংক নেই।", "No sublinks found.")}</p>
                 </div>
               ) : (
-                links.map((link, index) => (
+                displayed.map((sub, index) => (
                   <motion.div
-                    key={link._id}
+                    key={sub._id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.03 }}
-                    className="grid grid-cols-4 items-center px-3 sm:px-5 py-3.5"
+                    className="sl-trow items-center px-3 sm:px-5 py-3.5"
                     style={{
                       borderBottom: "1px solid rgba(99,102,241,0.06)",
                       transition: "background .12s ease",
@@ -348,33 +419,38 @@ function LinkShow({
                   >
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>{index + 1}</div>
 
-                    <div className="min-w-0 pr-2">
+                    <div className="sl-col-name min-w-0 pr-2">
                       <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
-                        {link.name}
+                        {sub.name}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 10, marginTop: 2, fontWeight: 700, letterSpacing: ".04em",
+                          color: sub.isActive ? "#10b981" : "#f43f5e",
+                        }}
+                      >
+                        {sub.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
                       </p>
                     </div>
 
-                    <div>
-                      <span
+                    <div className="min-w-0">
+                      <span className="sl-parent-badge inline-flex items-center truncate"
                         style={{
-                          display: "inline-flex", alignItems: "center", gap: 5,
-                          fontSize: 11, fontWeight: 700, letterSpacing: ".03em",
-                          color: link.isActive ? "#059669" : "#e11d48",
+                          padding: "3px 9px", borderRadius: 8,
+                          fontSize: 11, fontWeight: 600,
+                          background: "rgba(99,102,241,0.08)",
+                          border: "1px solid rgba(99,102,241,0.13)",
+                          color: "#6366f1",
                         }}
                       >
-                        <span style={{
-                          width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                          background: link.isActive ? "#10b981" : "#f43f5e",
-                          display: "inline-block",
-                        }} />
-                        {link.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
+                        {sub.parent?.name || "—"}
                       </span>
                     </div>
 
                     <div className="flex justify-end items-center gap-2 sm:gap-2.5">
                       <motion.button
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEdit(link)}
+                        onClick={() => handleEdit(sub)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
                         style={{
                           background: "rgba(99,102,241,0.07)",
@@ -388,7 +464,7 @@ function LinkShow({
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(link)}
+                        onClick={() => handleDelete(sub)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
                         style={{
                           background: "rgba(244,63,94,0.07)",
@@ -413,25 +489,29 @@ function LinkShow({
 }
 
 /* ════════════════════════════════════════
-   LINK ADD / EDIT
+   SUBLINK ADD / EDIT
 ════════════════════════════════════════ */
-function LinkAdd({
-  name, setName, isActive, setIsActive,
-  handleSubmit, setView, resetForm, nameError, editId, submitting,
+function SublinkAdd({
+  name, setName, parentId, setParentId, isActive, setIsActive,
+  parentLinks, handleSubmit, setView, resetForm, nameError, editId, submitting,
 }) {
   const { t } = useSubLang();
+  const [parentDropdown, setParentDropdown] = useState(false);
   const [statusDropdown, setStatusDropdown] = useState(false);
+  const parentRef = useRef(null);
   const statusRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
+      if (!parentRef.current?.contains(e.target)) setParentDropdown(false);
       if (!statusRef.current?.contains(e.target)) setStatusDropdown(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const currentStatus = STATUS_OPTIONS.find(o => o.value === isActive);
+  const selectedParentName = parentLinks.find(p => p._id === parentId)?.name;
+  const currentStatus      = STATUS_OPTIONS.find(o => o.value === isActive);
 
   return (
     <div className="flex justify-center mt-8 px-2 sm:px-4 md:px-6">
@@ -464,7 +544,7 @@ function LinkAdd({
               boxShadow: "0 6px 20px rgba(99,102,241,0.38), inset 0 1px 0 rgba(255,255,255,0.18)",
               zIndex: 10,
             }}>
-              <Link2 size={20} color="#fff" strokeWidth={1.8} />
+              <Layers size={20} color="#fff" strokeWidth={1.8} />
             </div>
 
             {/* ambient glow blobs */}
@@ -486,16 +566,16 @@ function LinkAdd({
               {/* Title */}
               <div className="text-center" style={{ marginBottom: 28 }}>
                 <h2 style={{
-                  fontFamily: "'Syne',sans-serif",
+                  fontFamily: "'Plus Jakarta Sans',sans-serif",
                   fontSize: 20, fontWeight: 800,
                   color: "#1e293b", letterSpacing: "-0.03em", lineHeight: 1.2,
                 }}>
-                  {editId ? t("লিংক আপডেট করুন", "Update Link") : t("নতুন লিংক", "New Link")}
+                  {editId ? t("সাবলিংক আপডেট", "Update Sublink") : t("নতুন সাবলিংক", "New Sublink")}
                 </h2>
                 <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>
                   {editId
                     ? t("নিচের তথ্য পরিবর্তন করুন", "Edit the details below and save")
-                    : t("লিংকের তথ্য পূরণ করুন", "Fill in the information to add a link")}
+                    : t("সাবলিংকের তথ্য পূরণ করুন", "Fill in the information to add a sublink")}
                 </p>
               </div>
 
@@ -509,35 +589,37 @@ function LinkAdd({
                     color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase",
                     marginBottom: 7,
                   }}>
-                    {t("লিংকের নাম", "Link Name")}
+                    {t("সাবলিংকের নাম", "Sublink Name")}
                     <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder={t("যেমন: Electronics, Fashion…", "e.g. Electronics, Fashion…")}
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    style={{
-                      width: "100%", outline: "none",
-                      background: nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff",
-                      border: `1.5px solid ${nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
-                      borderRadius: 13, padding: "12px 16px",
-                      fontSize: 13.5, color: "#1e293b",
-                      fontFamily: "'DM Sans',sans-serif",
-                      transition: "all .18s ease",
-                    }}
-                    onFocus={e => {
-                      e.target.style.background = "#fff";
-                      e.target.style.borderColor = "rgba(99,102,241,0.45)";
-                      e.target.style.boxShadow = "0 0 0 4px rgba(99,102,241,0.08)";
-                    }}
-                    onBlur={e => {
-                      e.target.style.background = nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff";
-                      e.target.style.borderColor = nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="text"
+                      placeholder={t("যেমন: Electronics, Fashion…", "e.g. Electronics, Fashion…")}
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      required
+                      style={{
+                        width: "100%", outline: "none",
+                        background: nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff",
+                        border: `1.5px solid ${nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
+                        borderRadius: 13, padding: "12px 16px",
+                        fontSize: 13.5, color: "#1e293b",
+                        fontFamily: "'Plus Jakarta Sans',sans-serif",
+                        transition: "all .18s ease",
+                      }}
+                      onFocus={e => {
+                        e.target.style.background = "#fff";
+                        e.target.style.borderColor = "rgba(99,102,241,0.45)";
+                        e.target.style.boxShadow = "0 0 0 4px rgba(99,102,241,0.08)";
+                      }}
+                      onBlur={e => {
+                        e.target.style.background = nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff";
+                        e.target.style.borderColor = nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
                   <AnimatePresence>
                     {nameError && (
                       <motion.p
@@ -549,6 +631,92 @@ function LinkAdd({
                       </motion.p>
                     )}
                   </AnimatePresence>
+                </div>
+
+                {/* Parent Link */}
+                <div>
+                  <label style={{
+                    display: "block", fontSize: 11.5, fontWeight: 700,
+                    color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase",
+                    marginBottom: 7,
+                  }}>
+                    {t("প্যারেন্ট লিংক", "Parent Link")}
+                    <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
+                  </label>
+                  <div style={{ position: "relative" }} ref={parentRef}>
+                    <button
+                      type="button"
+                      onClick={() => setParentDropdown(!parentDropdown)}
+                      style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        width: "100%", cursor: "pointer",
+                        background: parentId ? "#fff" : "#f8f9ff",
+                        border: `1.5px solid ${!parentId && nameError ? "rgba(244,63,94,0.35)" : parentId ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.14)"}`,
+                        borderRadius: 13, padding: "12px 16px",
+                        fontSize: 13.5, color: parentId ? "#1e293b" : "#a8b4c8",
+                        transition: "all .18s ease",
+                        boxShadow: parentId ? "0 0 0 4px rgba(99,102,241,0.06)" : "none",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; e.currentTarget.style.background = "#fff"; }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = !parentId && nameError ? "rgba(244,63,94,0.35)" : parentId ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.14)";
+                        e.currentTarget.style.background = parentId ? "#fff" : "#f8f9ff";
+                      }}
+                    >
+                      <span style={{ fontWeight: parentId ? 500 : 400 }}>
+                        {selectedParentName || t("লিংক নির্বাচন করুন", "Select a parent link")}
+                      </span>
+                      <motion.span animate={{ rotate: parentDropdown ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown size={15} style={{ color: "#a8b4c8" }} />
+                      </motion.span>
+                    </button>
+                    <AnimatePresence>
+                      {parentDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                          style={{
+                            position: "absolute", left: 0, top: "calc(100% + 8px)",
+                            width: "100%", borderRadius: 16,
+                            background: "#fff",
+                            border: "1px solid rgba(99,102,241,0.12)",
+                            boxShadow: "0 20px 56px rgba(99,102,241,0.14), 0 4px 12px rgba(0,0,0,0.06)",
+                            overflow: "hidden", zIndex: 50,
+                            maxHeight: 210, overflowY: "auto",
+                          }}
+                        >
+                          {parentLinks.length === 0 ? (
+                            <div style={{ padding: "14px 16px", fontSize: 13, color: "#94a3b8", textAlign: "center" }}>
+                              {t("কোনো লিংক নেই", "No links found.")}
+                            </div>
+                          ) : parentLinks.map((p, i) => (
+                            <div
+                              key={p._id}
+                              onClick={() => { setParentId(p._id); setParentDropdown(false); }}
+                              style={{
+                                padding: "11px 16px", fontSize: 13.5, cursor: "pointer",
+                                background: parentId === p._id ? "rgba(99,102,241,0.07)" : "transparent",
+                                color: parentId === p._id ? "#6366f1" : "#374151",
+                                fontWeight: parentId === p._id ? 600 : 400,
+                                borderBottom: i < parentLinks.length - 1 ? "1px solid rgba(99,102,241,0.05)" : "none",
+                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                transition: "background .12s",
+                              }}
+                              onMouseEnter={e => parentId !== p._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                              onMouseLeave={e => parentId !== p._id && (e.currentTarget.style.background = "transparent")}
+                            >
+                              {p.name}
+                              {parentId === p._id && (
+                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", display: "inline-block" }} />
+                              )}
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 {/* Status — toggle cards */}
@@ -625,7 +793,7 @@ function LinkAdd({
                   {submitting ? (
                     <><Loader2 size={14} className="animate-spin" /> {t("অপেক্ষা করুন…", "Please wait…")}</>
                   ) : (
-                    editId ? t("আপডেট করুন", "Save Changes") : t("তৈরি করুন", "Create Link")
+                    editId ? t("আপডেট করুন", "Save Changes") : t("তৈরি করুন", "Create Sublink")
                   )}
                 </motion.button>
 
@@ -664,22 +832,27 @@ function LinkAdd({
 /* ════════════════════════════════════════
    MAIN
 ════════════════════════════════════════ */
-export default function SubAdminLinks() {
+export default function SubAdminSublinks() {
   const { t } = useSubLang();
 
-  const [links,      setLinks]      = useState([]);
-  const [loading,    setLoading]    = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [view,       setView]       = useState("home");
-  const [sort,       setSort]       = useState("newest");
-  const [search,     setSearch]     = useState("");
+  const [sublinks,     setSublinks]     = useState([]);
+  const [parentLinks,  setParentLinks]  = useState([]);
+  const [loading,      setLoading]      = useState(false);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [view,         setView]         = useState("home");
+  const [sort,         setSort]         = useState("newest");
+  const [search,       setSearch]       = useState("");
 
-  /* sort dropdown */
-  const [sortOpen, setSortOpen] = useState(false);
-  const sortRef = useRef(null);
+  /* dropdowns */
+  const [sortOpen,         setSortOpen]         = useState(false);
+  const [parentFilterOpen, setParentFilterOpen] = useState(false);
+  const [parentFilter,     setParentFilter]     = useState("");
+  const sortRef         = useRef(null);
+  const parentFilterRef = useRef(null);
 
   /* form */
   const [name,      setName]      = useState("");
+  const [parentId,  setParentId]  = useState("");
   const [isActive,  setIsActive]  = useState(true);
   const [nameError, setNameError] = useState("");
   const [editId,    setEditId]    = useState(null);
@@ -689,56 +862,65 @@ export default function SubAdminLinks() {
   const [deleteId,   setDeleteId]   = useState(null);
   const [deleteName, setDeleteName] = useState("");
 
-  /* close sort dropdown on outside click */
+  /* close dropdowns on outside click */
   useEffect(() => {
     const handler = (e) => {
-      if (!sortRef.current?.contains(e.target)) setSortOpen(false);
+      if (!sortRef.current?.contains(e.target))         setSortOpen(false);
+      if (!parentFilterRef.current?.contains(e.target)) setParentFilterOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const fetchLinks = async () => {
+  const fetchParentLinks = async () => {
     try {
-      setLoading(true);
       const res  = await fetch(LINK_API);
       const data = await res.json();
-      setLinks(data.data || []);
+      setParentLinks(data.data || []);
+    } catch (err) { console.log(err); }
+  };
+
+  const fetchSublinks = async () => {
+    try {
+      setLoading(true);
+      const res  = await fetch(SUBLINK_API);
+      const data = await res.json();
+      setSublinks(data.data || []);
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchLinks(); }, []);
+  useEffect(() => { fetchParentLinks(); fetchSublinks(); }, []);
 
-  const processedLinks = [...links]
-    .filter(l => l.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => {
-      if (sort === "name")   return a.name.localeCompare(b.name);
-      if (sort === "date")   return new Date(a.createdAt) - new Date(b.createdAt);
-      if (sort === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
-      if (sort === "status") return b.isActive - a.isActive;
-      return 0;
-    });
+  const processedSublinks = [...sublinks].sort((a, b) => {
+    if (sort === "name")   return a.name.localeCompare(b.name);
+    if (sort === "date")   return new Date(a.createdAt) - new Date(b.createdAt);
+    if (sort === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
+    if (sort === "status") return b.isActive - a.isActive;
+    return 0;
+  });
 
   const resetForm = () => {
-    setName(""); setIsActive(true); setNameError(""); setEditId(null);
+    setName(""); setParentId(""); setIsActive(true);
+    setNameError(""); setEditId(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNameError("");
 
-    const exist = links.find(
-      l => l.name.toLowerCase() === name.toLowerCase() && l._id !== editId
-    );
-    if (exist) {
-      setNameError(t("লিংকের নাম ইতিমধ্যে বিদ্যমান", "Link name already exists"));
+    if (!name.trim()) {
+      setNameError(t("সাবলিংকের নাম আবশ্যক", "Sublink name is required"));
+      return;
+    }
+    if (!parentId) {
+      setNameError(t("প্যারেন্ট লিংক নির্বাচন করুন", "Please select a parent link"));
       return;
     }
 
     try {
       setSubmitting(true);
-      const url    = editId ? `${LINK_API}/${editId}` : LINK_API;
+      const url    = editId ? `${SUBLINK_API}/${editId}` : SUBLINK_API;
       const method = editId ? "PUT" : "POST";
       const res    = await fetch(url, {
         method,
@@ -746,7 +928,7 @@ export default function SubAdminLinks() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ name, isActive }),
+        body: JSON.stringify({ name, parent: parentId, isActive }),
       });
 
       if (!res.ok) {
@@ -758,58 +940,112 @@ export default function SubAdminLinks() {
       editId ? showUpdateSuccessToast(name) : showAddSuccessToast(name);
       resetForm();
       setView("home");
-      fetchLinks();
+      fetchSublinks();
     } catch (err) { console.log(err); }
     finally { setSubmitting(false); }
   };
 
-  const handleDelete = (link) => {
-    setDeleteId(link._id);
-    setDeleteName(link.name);
+  const handleDelete = (sub) => {
+    setDeleteId(sub._id);
+    setDeleteName(sub.name);
     setDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!deleteId) return;
-    const res = await fetch(`${LINK_API}/${deleteId}`, {
+    const res = await fetch(`${SUBLINK_API}/${deleteId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${getToken()}` },
     });
-    if (res.ok) { showDeleteSuccessToast(deleteName); fetchLinks(); }
+    if (res.ok) { showDeleteSuccessToast(deleteName); fetchSublinks(); }
     setDeleteOpen(false);
     setDeleteId(null);
     setDeleteName("");
   };
 
-  const handleEdit = (link) => {
-    setName(link.name);
-    setIsActive(link.isActive);
-    setEditId(link._id);
+  const handleEdit = (sub) => {
+    setName(sub.name);
+    setParentId(sub.parent?._id || sub.parent || "");
+    setIsActive(sub.isActive);
+    setEditId(sub._id);
     setView("add");
   };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .lk-wrap, .lk-wrap * { box-sizing: border-box; font-family: 'DM Sans', sans-serif; }
-        .lk-serif { font-family: 'Syne', sans-serif !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .sl-wrap, .sl-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* ── Responsive table row grid ── */
+        /* Desktop: serial | name(span 2 cols) | parent | actions */
+        .sl-trow {
+          display: grid;
+          grid-template-columns: 28px 1fr 1fr 96px 68px;
+          align-items: center;
+        }
+        /* name cell always spans 2 of the middle columns */
+        .sl-col-name {
+          grid-column: span 2;
+        }
+
+        /* Tablet  ≤ 640px */
+        @media (max-width: 640px) {
+          .sl-trow {
+            grid-template-columns: 22px 1fr 1fr 54px 60px;
+          }
+        }
+
+        /* Mobile  ≤ 480px */
+        @media (max-width: 480px) {
+          .sl-trow {
+            grid-template-columns: 18px 1fr 1fr 38px 56px;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+        }
+
+        /* ── Parent badge: shrinks on small screens ── */
+        .sl-parent-badge {
+          display: inline-flex;
+          align-items: center;
+          max-width: 88px;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+        @media (max-width: 640px) {
+          .sl-parent-badge {
+            max-width: 50px;
+            padding: 3px 6px !important;
+            font-size: 10px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .sl-parent-badge {
+            max-width: 34px;
+            padding: 2px 5px !important;
+            font-size: 9.5px !important;
+            border-radius: 6px !important;
+          }
+        }
       `}</style>
 
-      <div className="lk-wrap px-2 sm:px-4 md:px-6 lg:px-8">
+      <div className="sl-wrap px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="w-full">
 
           {/* ── Page title ── */}
           <div className="space-y-3 sm:space-y-4">
             <div className="text-center">
               <h1
-                className="lk-serif text-[20px] sm:text-[24px] md:text-[28px] font-black tracking-[-0.03em]"
-                style={{ color: "#1e293b" }}
+                className="text-[20px] sm:text-[24px] md:text-[28px] font-black tracking-[-0.03em]"
+                style={{ color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               >
-                {t("প্যারেন্ট নেভিগেশন লিংক", "Parent Navigation Links")}
+                {t("সাবলিংক", "Sublinks")}
               </h1>
               <p className="text-[12.5px] sm:text-sm mt-1" style={{ color: "#94a3b8" }}>
-                {t("শুধুমাত্র প্রধান মেনু নেভিগেশন পরিচালনা করুন।", "Manage only main menu navigation.")}
+                {t("নেভিগেশন সাবলিংক ম্যানেজ করুন।", "Manage navigation sublinks.")}
               </p>
             </div>
 
@@ -828,8 +1064,8 @@ export default function SubAdminLinks() {
                       color: "#6366f1", fontWeight: 600, fontSize: 12,
                     }}
                   >
-                    <Link2 size={12} />
-                    {t("লিংক", "Links")}
+                    <Layers size={12} />
+                    {t("সাবলিংক", "Sublinks")}
                   </span>
                 )}
                 {view === "add" && (
@@ -845,8 +1081,8 @@ export default function SubAdminLinks() {
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.color = "#6366f1"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#94a3b8"; }}
                     >
-                      <Link2 size={12} />
-                      {t("লিংক", "Links")}
+                      <Layers size={12} />
+                      {t("সাবলিংক", "Sublinks")}
                     </button>
                     <span style={{ color: "#e2e8f0" }}>/</span>
                     <span
@@ -867,21 +1103,26 @@ export default function SubAdminLinks() {
 
           {/* ── Views ── */}
           {view === "home" && (
-            <LinkShow
-              links={processedLinks} loading={loading}
+            <SublinkShow
+              sublinks={processedSublinks} loading={loading}
               search={search} setSearch={setSearch}
               sort={sort} setSort={setSort}
               sortOpen={sortOpen} setSortOpen={setSortOpen} sortRef={sortRef}
-              setView={setView}
-              handleDelete={handleDelete} handleEdit={handleEdit}
-              onRefresh={fetchLinks}
+              parentFilter={parentFilter} setParentFilter={setParentFilter}
+              parentFilterOpen={parentFilterOpen} setParentFilterOpen={setParentFilterOpen}
+              parentFilterRef={parentFilterRef}
+              setView={setView} handleDelete={handleDelete} handleEdit={handleEdit}
+              parentLinks={parentLinks}
+              onRefresh={fetchSublinks}
             />
           )}
 
           {view === "add" && (
-            <LinkAdd
+            <SublinkAdd
               name={name} setName={setName}
+              parentId={parentId} setParentId={setParentId}
               isActive={isActive} setIsActive={setIsActive}
+              parentLinks={parentLinks}
               handleSubmit={handleSubmit}
               setView={setView} resetForm={resetForm}
               nameError={nameError} editId={editId}
@@ -892,7 +1133,7 @@ export default function SubAdminLinks() {
           <ConfirmModal
             isOpen={deleteOpen} onClose={() => setDeleteOpen(false)}
             onConfirm={confirmDelete}
-            title={t("লিংক মুছবেন?", "Delete Link?")}
+            title={t("সাবলিংক মুছবেন?", "Delete Sublink?")}
             message={`"${deleteName}" ${t("মুছতে চান?", "Are you sure you want to delete this?")}`}
             confirmText={t("মুছুন", "Delete")}
             cancelText={t("বাতিল", "Cancel")}
