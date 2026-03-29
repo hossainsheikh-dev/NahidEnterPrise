@@ -639,6 +639,19 @@ function DashboardInner() {
                 </div>
               )}
 
+              {/* Nav */}
+              <nav className="sa-nav-sc" style={{ flex: 1, overflowY: "auto", padding: slim ? "8px 9px" : "4px 11px 12px", position: "relative", zIndex: 1 }}>
+                {filteredMenu.map(item => (
+                  <NavItem
+                    key={item.key}
+                  item={item}
+                    isActive={location.pathname === item.path}
+                    onClick={() => { navigate(item.path); if (!isDesktop) setSidebarOpen(false); }}
+                    t={t}
+                    slim={slim}
+                  />
+                ))}  
+              </nav>
 
               {/* User footer */}
               <div style={{ flexShrink: 0, position: "relative", zIndex: 1 }}>
