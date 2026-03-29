@@ -16,10 +16,10 @@ const LINK_API    = `${API}/api/links`;
 const getToken = () => localStorage.getItem("subAdminToken") || "";
 
 const SORT_OPTIONS = [
-  { labelBn: "নাম অনুযায়ী",    labelEn: "Sort by Name",   value: "name"   },
-  { labelBn: "তারিখ অনুযায়ী",  labelEn: "Sort by Date",   value: "date"   },
-  { labelBn: "নতুন প্রথমে",     labelEn: "Newest First",   value: "newest" },
-  { labelBn: "স্ট্যাটাস",       labelEn: "Sort by Status", value: "status" },
+  { labelBn: "নাম অনুযায়ী",   labelEn: "Sort by Name",   value: "name"   },
+  { labelBn: "তারিখ অনুযায়ী", labelEn: "Sort by Date",   value: "date"   },
+  { labelBn: "নতুন প্রথমে",    labelEn: "Newest First",   value: "newest" },
+  { labelBn: "স্ট্যাটাস",      labelEn: "Sort by Status", value: "status" },
 ];
 
 const STATUS_OPTIONS = [
@@ -58,18 +58,12 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
               <h3 className="text-[15px] font-black tracking-[-0.02em]" style={{ color: "#0f172a", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                 {title}
               </h3>
-              <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "#64748b" }}>
-                {message}
-              </p>
+              <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "#64748b" }}>{message}</p>
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={onClose}
                   className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
-                  style={{
-                    background: "rgba(99,102,241,0.06)",
-                    border: "1px solid rgba(99,102,241,0.13)",
-                    color: "#475569",
-                  }}
+                  style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.13)", color: "#475569" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.10)"}
                   onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}
                 >
@@ -79,12 +73,8 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
                   onClick={onConfirm}
                   className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all"
                   style={{
-                    background: danger
-                      ? "linear-gradient(135deg,#f43f5e,#e11d48)"
-                      : "linear-gradient(135deg,#6366f1,#4f46e5)",
-                    boxShadow: danger
-                      ? "0 4px 14px rgba(244,63,94,0.3)"
-                      : "0 4px 14px rgba(99,102,241,0.3)",
+                    background: danger ? "linear-gradient(135deg,#f43f5e,#e11d48)" : "linear-gradient(135deg,#6366f1,#4f46e5)",
+                    boxShadow: danger ? "0 4px 14px rgba(244,63,94,0.3)" : "0 4px 14px rgba(99,102,241,0.3)",
                     border: "none",
                   }}
                 >
@@ -119,7 +109,6 @@ function SublinkShow({
     return matchSearch && matchParent;
   });
 
-  /* shared dropdown style */
   const dropdownBtn = (extra = {}) => ({
     display: "flex", alignItems: "center", justifyContent: "space-between",
     width: "100%", background: "#fff",
@@ -164,8 +153,7 @@ function SublinkShow({
             style={{
               background: "linear-gradient(160deg,#ffffff,#fafbff)",
               border: "1px solid rgba(99,102,241,0.10)",
-              borderRadius: 18,
-              padding: "14px 16px",
+              borderRadius: 18, padding: "14px 16px",
               boxShadow: "0 4px 20px rgba(99,102,241,0.06), 0 1px 0 rgba(99,102,241,0.05)",
             }}
           >
@@ -175,8 +163,7 @@ function SublinkShow({
               style={{
                 background: "rgba(99,102,241,0.05)",
                 border: "1px solid rgba(99,102,241,0.12)",
-                borderRadius: 11, padding: "8px 13px",
-                transition: "all .15s",
+                borderRadius: 11, padding: "8px 13px", transition: "all .15s",
               }}
               onFocus={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.09)"; e.currentTarget.style.background = "#fff"; }}
               onBlur={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.12)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(99,102,241,0.05)"; }}
@@ -187,11 +174,7 @@ function SublinkShow({
                 placeholder={t("সাবলিংক খুঁজুন...", "Search sublink...")}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{
-                  background: "transparent", outline: "none", border: "none",
-                  fontSize: 13, color: "#374151", width: "100%",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
+                style={{ background: "transparent", outline: "none", border: "none", fontSize: 13, color: "#374151", width: "100%", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               />
               {search && (
                 <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1 }}>
@@ -204,16 +187,9 @@ function SublinkShow({
             <div className="flex items-center gap-2 w-full lg:w-auto">
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                onClick={onRefresh}
-                disabled={loading}
+                onClick={onRefresh} disabled={loading}
                 className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2"
-                style={{
-                  background: "rgba(99,102,241,0.06)",
-                  border: "1px solid rgba(99,102,241,0.14)",
-                  borderRadius: 11, padding: "9px 16px",
-                  fontSize: 13, fontWeight: 500, color: "#6366f1",
-                  cursor: "pointer", transition: "all .15s",
-                }}
+                style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 500, color: "#6366f1", cursor: "pointer", transition: "all .15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.11)"}
                 onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}
               >
@@ -225,14 +201,7 @@ function SublinkShow({
                 whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setView("add")}
                 className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2"
-                style={{
-                  background: "linear-gradient(135deg,#6366f1,#4f46e5)",
-                  border: "none", borderRadius: 11,
-                  padding: "9px 18px",
-                  fontSize: 13, fontWeight: 600, color: "#fff",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(99,102,241,0.32), inset 0 1px 0 rgba(255,255,255,0.15)",
-                }}
+                style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11, padding: "9px 18px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.32), inset 0 1px 0 rgba(255,255,255,0.15)" }}
               >
                 <Plus size={14} strokeWidth={2.5} />
                 {t("সাবলিংক যোগ করুন", "Add Sublink")}
@@ -250,8 +219,7 @@ function SublinkShow({
               overflow: "hidden",
             }}
           >
-
-            {/* Table header */}
+            {/* Table header row */}
             <div
               className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 sm:px-5 py-4"
               style={{ borderBottom: "1px solid rgba(99,102,241,0.08)", background: "rgba(99,102,241,0.025)" }}
@@ -270,8 +238,8 @@ function SublinkShow({
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
 
-                {/* Parent filter */}
-                <div className="relative w-full sm:w-48 md:w-44" ref={parentFilterRef}>
+                {/* Parent filter — desktop only */}
+                <div className="sl-parent-filter-col relative w-full sm:w-48 md:w-44" ref={parentFilterRef}>
                   <button
                     type="button"
                     onClick={() => setParentFilterOpen(!parentFilterOpen)}
@@ -320,7 +288,7 @@ function SublinkShow({
                 {parentFilter && (
                   <button
                     onClick={() => setParentFilter("")}
-                    className="flex items-center justify-center gap-1 w-full sm:w-auto"
+                    className="sl-parent-filter-col flex items-center justify-center gap-1 w-full sm:w-auto"
                     style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none" }}
                   >
                     <X size={12} /> {t("ক্লিয়ার", "Clear")}
@@ -337,8 +305,7 @@ function SublinkShow({
                   >
                     <span style={{ fontSize: 13 }}>
                       {SORT_OPTIONS.find(o => o.value === sort) &&
-                        t(SORT_OPTIONS.find(o => o.value === sort).labelBn,
-                          SORT_OPTIONS.find(o => o.value === sort).labelEn)}
+                        t(SORT_OPTIONS.find(o => o.value === sort).labelBn, SORT_OPTIONS.find(o => o.value === sort).labelEn)}
                     </span>
                     <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
                   </button>
@@ -369,9 +336,13 @@ function SublinkShow({
               </div>
             </div>
 
-            {/* Column headers */}
+            {/* ── Column headers ──
+                Desktop  (≥1024): # | Name | Parent | Actions
+                Tablet   (640-1023): # | Name | Actions   (Parent hidden)
+                Mobile   (<640):    # | Name | Actions   (Parent hidden)
+            */}
             <div
-              className="sl-trow items-center px-3 sm:px-5 py-3"
+              className="sl-thead items-center px-3 sm:px-5 py-3"
               style={{
                 fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
                 letterSpacing: ".06em", textTransform: "uppercase",
@@ -380,8 +351,9 @@ function SublinkShow({
               }}
             >
               <div>#</div>
-              <div className="sl-col-name">{t("নাম", "Name")}</div>
-              <div>{t("প্যারেন্ট", "Parent")}</div>
+              <div>{t("নাম", "Name")}</div>
+              {/* Parent header — desktop only via CSS */}
+              <div className="sl-col-parent">{t("প্যারেন্ট", "Parent")}</div>
               <div style={{ textAlign: "right" }}>{t("কার্যক্রম", "Actions")}</div>
             </div>
 
@@ -394,10 +366,7 @@ function SublinkShow({
                 </div>
               ) : displayed.length === 0 ? (
                 <div className="py-14 text-center">
-                  <div
-                    className="mx-auto mb-4 w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)" }}
-                  >
+                  <div className="mx-auto mb-4 w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)" }}>
                     <Layers size={22} style={{ color: "#c4cdd8" }} />
                   </div>
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো সাবলিংক নেই।", "No sublinks found.")}</p>
@@ -410,53 +379,48 @@ function SublinkShow({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.03 }}
                     className="sl-trow items-center px-3 sm:px-5 py-3.5"
-                    style={{
-                      borderBottom: "1px solid rgba(99,102,241,0.06)",
-                      transition: "background .12s ease",
-                    }}
+                    style={{ borderBottom: "1px solid rgba(99,102,241,0.06)", transition: "background .12s ease" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.025)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
+                    {/* # */}
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>{index + 1}</div>
 
-                    <div className="sl-col-name min-w-0 pr-2">
+                    {/* Name */}
+                    <div className="min-w-0 pr-2">
                       <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
                         {sub.name}
                       </p>
-                      <p
-                        style={{
-                          fontSize: 10, marginTop: 2, fontWeight: 700, letterSpacing: ".04em",
-                          color: sub.isActive ? "#10b981" : "#f43f5e",
-                        }}
-                      >
+                      <p style={{ fontSize: 10, marginTop: 2, fontWeight: 700, letterSpacing: ".04em", color: sub.isActive ? "#10b981" : "#f43f5e" }}>
                         {sub.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
                       </p>
                     </div>
 
-                    <div className="min-w-0">
-                      <span className="sl-parent-badge inline-flex items-center truncate"
+                    {/* Parent — desktop only via CSS */}
+                    <div className="sl-col-parent min-w-0">
+                      <span
                         style={{
+                          display: "inline-flex", alignItems: "center",
                           padding: "3px 9px", borderRadius: 8,
                           fontSize: 11, fontWeight: 600,
                           background: "rgba(99,102,241,0.08)",
                           border: "1px solid rgba(99,102,241,0.13)",
                           color: "#6366f1",
+                          maxWidth: 120, overflow: "hidden",
+                          whiteSpace: "nowrap", textOverflow: "ellipsis",
                         }}
                       >
                         {sub.parent?.name || "—"}
                       </span>
                     </div>
 
-                    <div className="flex justify-end items-center gap-2 sm:gap-2.5">
+                    {/* Actions */}
+                    <div className="flex justify-end items-center gap-2">
                       <motion.button
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                         onClick={() => handleEdit(sub)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                        style={{
-                          background: "rgba(99,102,241,0.07)",
-                          border: "1px solid rgba(99,102,241,0.13)",
-                          color: "#6366f1",
-                        }}
+                        style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.14)"}
                         onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.07)"}
                       >
@@ -466,11 +430,7 @@ function SublinkShow({
                         whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
                         onClick={() => handleDelete(sub)}
                         className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                        style={{
-                          background: "rgba(244,63,94,0.07)",
-                          border: "1px solid rgba(244,63,94,0.13)",
-                          color: "#f43f5e",
-                        }}
+                        style={{ background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.13)", color: "#f43f5e" }}
                         onMouseEnter={e => e.currentTarget.style.background = "rgba(244,63,94,0.14)"}
                         onMouseLeave={e => e.currentTarget.style.background = "rgba(244,63,94,0.07)"}
                       >
@@ -497,21 +457,18 @@ function SublinkAdd({
 }) {
   const { t } = useSubLang();
   const [parentDropdown, setParentDropdown] = useState(false);
-  const [statusDropdown, setStatusDropdown] = useState(false);
   const parentRef = useRef(null);
   const statusRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
       if (!parentRef.current?.contains(e.target)) setParentDropdown(false);
-      if (!statusRef.current?.contains(e.target)) setStatusDropdown(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const selectedParentName = parentLinks.find(p => p._id === parentId)?.name;
-  const currentStatus      = STATUS_OPTIONS.find(o => o.value === isActive);
 
   return (
     <div className="flex justify-center mt-8 px-2 sm:px-4 md:px-6">
@@ -525,21 +482,17 @@ function SublinkAdd({
             transition={{ type: "spring", stiffness: 280, damping: 26 }}
             onSubmit={handleSubmit}
             style={{
-              background: "#ffffff",
-              borderRadius: 24,
+              background: "#ffffff", borderRadius: 24,
               border: "1px solid rgba(99,102,241,0.10)",
               boxShadow: "0 20px 60px rgba(99,102,241,0.10), 0 4px 16px rgba(0,0,0,0.04)",
-              overflow: "visible",
-              position: "relative",
+              overflow: "visible", position: "relative",
             }}
           >
             {/* floating icon badge */}
             <div style={{
               position: "absolute", top: -22, left: "50%", transform: "translateX(-50%)",
               width: 44, height: 44, borderRadius: 14,
-              background: editId
-                ? "linear-gradient(135deg,#8b5cf6,#7c3aed)"
-                : "linear-gradient(135deg,#6366f1,#4f46e5)",
+              background: editId ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "linear-gradient(135deg,#6366f1,#4f46e5)",
               display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 6px 20px rgba(99,102,241,0.38), inset 0 1px 0 rgba(255,255,255,0.18)",
               zIndex: 10,
@@ -547,79 +500,49 @@ function SublinkAdd({
               <Layers size={20} color="#fff" strokeWidth={1.8} />
             </div>
 
-            {/* ambient glow blobs */}
-            <div style={{
-              position: "absolute", inset: 0, borderRadius: 24, overflow: "hidden", pointerEvents: "none",
-            }}>
-              <div style={{
-                position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%",
-                background: "radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)",
-              }} />
-              <div style={{
-                position: "absolute", bottom: -30, left: -30, width: 150, height: 150, borderRadius: "50%",
-                background: "radial-gradient(circle,rgba(139,92,246,0.05) 0%,transparent 70%)",
-              }} />
+            {/* ambient blobs */}
+            <div style={{ position: "absolute", inset: 0, borderRadius: 24, overflow: "hidden", pointerEvents: "none" }}>
+              <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)" }} />
+              <div style={{ position: "absolute", bottom: -30, left: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle,rgba(139,92,246,0.05) 0%,transparent 70%)" }} />
             </div>
 
             <div style={{ padding: "44px 28px 28px", position: "relative" }}>
 
               {/* Title */}
               <div className="text-center" style={{ marginBottom: 28 }}>
-                <h2 style={{
-                  fontFamily: "'Plus Jakarta Sans',sans-serif",
-                  fontSize: 20, fontWeight: 800,
-                  color: "#1e293b", letterSpacing: "-0.03em", lineHeight: 1.2,
-                }}>
+                <h2 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 20, fontWeight: 800, color: "#1e293b", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
                   {editId ? t("সাবলিংক আপডেট", "Update Sublink") : t("নতুন সাবলিংক", "New Sublink")}
                 </h2>
                 <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>
-                  {editId
-                    ? t("নিচের তথ্য পরিবর্তন করুন", "Edit the details below and save")
-                    : t("সাবলিংকের তথ্য পূরণ করুন", "Fill in the information to add a sublink")}
+                  {editId ? t("নিচের তথ্য পরিবর্তন করুন", "Edit the details below and save") : t("সাবলিংকের তথ্য পূরণ করুন", "Fill in the information to add a sublink")}
                 </p>
               </div>
 
-              {/* Fields */}
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
                 {/* Name */}
                 <div>
-                  <label style={{
-                    display: "block", fontSize: 11.5, fontWeight: 700,
-                    color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase",
-                    marginBottom: 7,
-                  }}>
-                    {t("সাবলিংকের নাম", "Sublink Name")}
-                    <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
+                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 7 }}>
+                    {t("সাবলিংকের নাম", "Sublink Name")} <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
                   </label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      placeholder={t("যেমন: Electronics, Fashion…", "e.g. Electronics, Fashion…")}
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      required
-                      style={{
-                        width: "100%", outline: "none",
-                        background: nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff",
-                        border: `1.5px solid ${nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
-                        borderRadius: 13, padding: "12px 16px",
-                        fontSize: 13.5, color: "#1e293b",
-                        fontFamily: "'Plus Jakarta Sans',sans-serif",
-                        transition: "all .18s ease",
-                      }}
-                      onFocus={e => {
-                        e.target.style.background = "#fff";
-                        e.target.style.borderColor = "rgba(99,102,241,0.45)";
-                        e.target.style.boxShadow = "0 0 0 4px rgba(99,102,241,0.08)";
-                      }}
-                      onBlur={e => {
-                        e.target.style.background = nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff";
-                        e.target.style.borderColor = nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    placeholder={t("যেমন: Electronics, Fashion…", "e.g. Electronics, Fashion…")}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    required
+                    style={{
+                      width: "100%", outline: "none",
+                      background: nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff",
+                      border: `1.5px solid ${nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
+                      borderRadius: 13, padding: "12px 16px",
+                      fontSize: 13.5, color: "#1e293b",
+                      fontFamily: "'Plus Jakarta Sans',sans-serif",
+                      transition: "all .18s ease",
+                    }}
+                    onFocus={e => { e.target.style.background = "#fff"; e.target.style.borderColor = "rgba(99,102,241,0.45)"; e.target.style.boxShadow = "0 0 0 4px rgba(99,102,241,0.08)"; }}
+                    onBlur={e => { e.target.style.background = nameError ? "rgba(244,63,94,0.03)" : "#f8f9ff"; e.target.style.borderColor = nameError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"; e.target.style.boxShadow = "none"; }}
+                  />
                   <AnimatePresence>
                     {nameError && (
                       <motion.p
@@ -635,13 +558,8 @@ function SublinkAdd({
 
                 {/* Parent Link */}
                 <div>
-                  <label style={{
-                    display: "block", fontSize: 11.5, fontWeight: 700,
-                    color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase",
-                    marginBottom: 7,
-                  }}>
-                    {t("প্যারেন্ট লিংক", "Parent Link")}
-                    <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
+                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 7 }}>
+                    {t("প্যারেন্ট লিংক", "Parent Link")} <span style={{ color: "#f43f5e", marginLeft: 3 }}>*</span>
                   </label>
                   <div style={{ position: "relative" }} ref={parentRef}>
                     <button
@@ -658,10 +576,7 @@ function SublinkAdd({
                         boxShadow: parentId ? "0 0 0 4px rgba(99,102,241,0.06)" : "none",
                       }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; e.currentTarget.style.background = "#fff"; }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.borderColor = !parentId && nameError ? "rgba(244,63,94,0.35)" : parentId ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.14)";
-                        e.currentTarget.style.background = parentId ? "#fff" : "#f8f9ff";
-                      }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = !parentId && nameError ? "rgba(244,63,94,0.35)" : parentId ? "rgba(99,102,241,0.3)" : "rgba(99,102,241,0.14)"; e.currentTarget.style.background = parentId ? "#fff" : "#f8f9ff"; }}
                     >
                       <span style={{ fontWeight: parentId ? 500 : 400 }}>
                         {selectedParentName || t("লিংক নির্বাচন করুন", "Select a parent link")}
@@ -679,12 +594,10 @@ function SublinkAdd({
                           transition={{ type: "spring", stiffness: 380, damping: 28 }}
                           style={{
                             position: "absolute", left: 0, top: "calc(100% + 8px)",
-                            width: "100%", borderRadius: 16,
-                            background: "#fff",
+                            width: "100%", borderRadius: 16, background: "#fff",
                             border: "1px solid rgba(99,102,241,0.12)",
                             boxShadow: "0 20px 56px rgba(99,102,241,0.14), 0 4px 12px rgba(0,0,0,0.06)",
-                            overflow: "hidden", zIndex: 50,
-                            maxHeight: 210, overflowY: "auto",
+                            overflow: "hidden", zIndex: 50, maxHeight: 210, overflowY: "auto",
                           }}
                         >
                           {parentLinks.length === 0 ? (
@@ -719,13 +632,9 @@ function SublinkAdd({
                   </div>
                 </div>
 
-                {/* Status — toggle cards */}
+                {/* Status toggle cards */}
                 <div>
-                  <label style={{
-                    display: "block", fontSize: 11.5, fontWeight: 700,
-                    color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase",
-                    marginBottom: 7,
-                  }}>
+                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#64748b", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 7 }}>
                     {t("স্ট্যাটাস", "Status")}
                   </label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -739,8 +648,7 @@ function SublinkAdd({
                         <motion.button
                           key={String(option.value)}
                           type="button"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
+                          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                           onClick={() => setIsActive(option.value)}
                           style={{
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -765,10 +673,8 @@ function SublinkAdd({
                     })}
                   </div>
                 </div>
-
               </div>
 
-              {/* Divider */}
               <div style={{ height: 1, background: "rgba(99,102,241,0.07)", margin: "24px 0 20px" }} />
 
               {/* Buttons */}
@@ -780,21 +686,16 @@ function SublinkAdd({
                   whileTap={!submitting ? { scale: 0.97 } : {}}
                   className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2"
                   style={{
-                    background: "linear-gradient(135deg,#6366f1,#4f46e5)",
-                    border: "none", borderRadius: 13,
-                    padding: "12px 20px",
-                    fontSize: 13.5, fontWeight: 700, color: "#fff",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    opacity: submitting ? 0.72 : 1,
+                    background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 13,
+                    padding: "12px 20px", fontSize: 13.5, fontWeight: 700, color: "#fff",
+                    cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.72 : 1,
                     boxShadow: "0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
                     letterSpacing: "-.01em",
                   }}
                 >
-                  {submitting ? (
-                    <><Loader2 size={14} className="animate-spin" /> {t("অপেক্ষা করুন…", "Please wait…")}</>
-                  ) : (
-                    editId ? t("আপডেট করুন", "Save Changes") : t("তৈরি করুন", "Create Sublink")
-                  )}
+                  {submitting
+                    ? <><Loader2 size={14} className="animate-spin" /> {t("অপেক্ষা করুন…", "Please wait…")}</>
+                    : editId ? t("আপডেট করুন", "Save Changes") : t("তৈরি করুন", "Create Sublink")}
                 </motion.button>
 
                 <motion.button
@@ -805,14 +706,10 @@ function SublinkAdd({
                   onClick={() => { setView("home"); resetForm(); }}
                   className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2"
                   style={{
-                    background: "rgba(99,102,241,0.05)",
-                    border: "1.5px solid rgba(99,102,241,0.13)",
-                    borderRadius: 13, padding: "12px 20px",
-                    fontSize: 13.5, fontWeight: 600, color: "#6366f1",
-                    cursor: submitting ? "not-allowed" : "pointer",
-                    opacity: submitting ? 0.5 : 1,
-                    transition: "all .15s",
-                    letterSpacing: "-.01em",
+                    background: "rgba(99,102,241,0.05)", border: "1.5px solid rgba(99,102,241,0.13)",
+                    borderRadius: 13, padding: "12px 20px", fontSize: 13.5, fontWeight: 600, color: "#6366f1",
+                    cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.5 : 1,
+                    transition: "all .15s", letterSpacing: "-.01em",
                   }}
                   onMouseEnter={e => !submitting && (e.currentTarget.style.background = "rgba(99,102,241,0.10)")}
                   onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.05)"}
@@ -820,7 +717,6 @@ function SublinkAdd({
                   {t("বাতিল করুন", "Cancel")}
                 </motion.button>
               </div>
-
             </div>
           </motion.form>
         </AnimatePresence>
@@ -843,26 +739,22 @@ export default function SubAdminSublinks() {
   const [sort,         setSort]         = useState("newest");
   const [search,       setSearch]       = useState("");
 
-  /* dropdowns */
   const [sortOpen,         setSortOpen]         = useState(false);
   const [parentFilterOpen, setParentFilterOpen] = useState(false);
   const [parentFilter,     setParentFilter]     = useState("");
   const sortRef         = useRef(null);
   const parentFilterRef = useRef(null);
 
-  /* form */
   const [name,      setName]      = useState("");
   const [parentId,  setParentId]  = useState("");
   const [isActive,  setIsActive]  = useState(true);
   const [nameError, setNameError] = useState("");
   const [editId,    setEditId]    = useState(null);
 
-  /* delete */
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId,   setDeleteId]   = useState(null);
   const [deleteName, setDeleteName] = useState("");
 
-  /* close dropdowns on outside click */
   useEffect(() => {
     const handler = (e) => {
       if (!sortRef.current?.contains(e.target))         setSortOpen(false);
@@ -873,19 +765,14 @@ export default function SubAdminSublinks() {
   }, []);
 
   const fetchParentLinks = async () => {
-    try {
-      const res  = await fetch(LINK_API);
-      const data = await res.json();
-      setParentLinks(data.data || []);
-    } catch (err) { console.log(err); }
+    try { const res = await fetch(LINK_API); const data = await res.json(); setParentLinks(data.data || []); }
+    catch (err) { console.log(err); }
   };
 
   const fetchSublinks = async () => {
     try {
       setLoading(true);
-      const res  = await fetch(SUBLINK_API);
-      const data = await res.json();
-      setSublinks(data.data || []);
+      const res = await fetch(SUBLINK_API); const data = await res.json(); setSublinks(data.data || []);
     } catch (err) { console.log(err); }
     finally { setLoading(false); }
   };
@@ -900,134 +787,76 @@ export default function SubAdminSublinks() {
     return 0;
   });
 
-  const resetForm = () => {
-    setName(""); setParentId(""); setIsActive(true);
-    setNameError(""); setEditId(null);
-  };
+  const resetForm = () => { setName(""); setParentId(""); setIsActive(true); setNameError(""); setEditId(null); };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setNameError("");
-
-    if (!name.trim()) {
-      setNameError(t("সাবলিংকের নাম আবশ্যক", "Sublink name is required"));
-      return;
-    }
-    if (!parentId) {
-      setNameError(t("প্যারেন্ট লিংক নির্বাচন করুন", "Please select a parent link"));
-      return;
-    }
-
+    e.preventDefault(); setNameError("");
+    if (!name.trim()) { setNameError(t("সাবলিংকের নাম আবশ্যক", "Sublink name is required")); return; }
+    if (!parentId)    { setNameError(t("প্যারেন্ট লিংক নির্বাচন করুন", "Please select a parent link")); return; }
     try {
       setSubmitting(true);
-      const url    = editId ? `${SUBLINK_API}/${editId}` : SUBLINK_API;
+      const url = editId ? `${SUBLINK_API}/${editId}` : SUBLINK_API;
       const method = editId ? "PUT" : "POST";
-      const res    = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({ name, parent: parentId, isActive }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        setNameError(err.message || t("ত্রুটি হয়েছে", "An error occurred"));
-        return;
-      }
-
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` }, body: JSON.stringify({ name, parent: parentId, isActive }) });
+      if (!res.ok) { const err = await res.json(); setNameError(err.message || t("ত্রুটি হয়েছে", "An error occurred")); return; }
       editId ? showUpdateSuccessToast(name) : showAddSuccessToast(name);
-      resetForm();
-      setView("home");
-      fetchSublinks();
+      resetForm(); setView("home"); fetchSublinks();
     } catch (err) { console.log(err); }
     finally { setSubmitting(false); }
   };
 
-  const handleDelete = (sub) => {
-    setDeleteId(sub._id);
-    setDeleteName(sub.name);
-    setDeleteOpen(true);
-  };
-
+  const handleDelete = (sub) => { setDeleteId(sub._id); setDeleteName(sub.name); setDeleteOpen(true); };
   const confirmDelete = async () => {
     if (!deleteId) return;
-    const res = await fetch(`${SUBLINK_API}/${deleteId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
+    const res = await fetch(`${SUBLINK_API}/${deleteId}`, { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } });
     if (res.ok) { showDeleteSuccessToast(deleteName); fetchSublinks(); }
-    setDeleteOpen(false);
-    setDeleteId(null);
-    setDeleteName("");
+    setDeleteOpen(false); setDeleteId(null); setDeleteName("");
   };
-
-  const handleEdit = (sub) => {
-    setName(sub.name);
-    setParentId(sub.parent?._id || sub.parent || "");
-    setIsActive(sub.isActive);
-    setEditId(sub._id);
-    setView("add");
-  };
+  const handleEdit = (sub) => { setName(sub.name); setParentId(sub.parent?._id || sub.parent || ""); setIsActive(sub.isActive); setEditId(sub._id); setView("add"); };
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
         .sl-wrap, .sl-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* ── Responsive table row grid ── */
-        /* Desktop: serial | name(span 2 cols) | parent | actions */
+        /*
+          Table grid columns:
+            Desktop  (≥1024px): serial(28px) | name(1fr) | parent(1fr) | actions(72px)
+            Tablet + Mobile (<1024px): serial(24px) | name(1fr) | actions(68px)
+              → Parent column is simply hidden via display:none
+        */
+
+        /* Default = desktop */
+        .sl-thead,
         .sl-trow {
           display: grid;
-          grid-template-columns: 28px 1fr 1fr 96px 68px;
+          grid-template-columns: 28px 1fr 1fr 72px;
           align-items: center;
         }
-        /* name cell always spans 2 of the middle columns */
-        .sl-col-name {
-          grid-column: span 2;
-        }
 
-        /* Tablet  ≤ 640px */
-        @media (max-width: 640px) {
+        /* Hide parent on tablet + mobile */
+        @media (max-width: 1023px) {
+          .sl-thead,
           .sl-trow {
-            grid-template-columns: 22px 1fr 1fr 54px 60px;
+            grid-template-columns: 24px 1fr 68px;
+          }
+          .sl-col-parent {
+            display: none !important;
+          }
+          /* Also hide the parent filter control in the toolbar */
+          .sl-parent-filter-col {
+            display: none !important;
           }
         }
 
-        /* Mobile  ≤ 480px */
+        /* Tighter padding on small phones */
         @media (max-width: 480px) {
+          .sl-thead,
           .sl-trow {
-            grid-template-columns: 18px 1fr 1fr 38px 56px;
+            grid-template-columns: 20px 1fr 60px;
             padding-left: 10px !important;
             padding-right: 10px !important;
-          }
-        }
-
-        /* ── Parent badge: shrinks on small screens ── */
-        .sl-parent-badge {
-          display: inline-flex;
-          align-items: center;
-          max-width: 88px;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-        @media (max-width: 640px) {
-          .sl-parent-badge {
-            max-width: 50px;
-            padding: 3px 6px !important;
-            font-size: 10px !important;
-          }
-        }
-        @media (max-width: 480px) {
-          .sl-parent-badge {
-            max-width: 34px;
-            padding: 2px 5px !important;
-            font-size: 9.5px !important;
-            border-radius: 6px !important;
           }
         }
       `}</style>
@@ -1035,13 +864,10 @@ export default function SubAdminSublinks() {
       <div className="sl-wrap px-2 sm:px-4 md:px-6 lg:px-8">
         <div className="w-full">
 
-          {/* ── Page title ── */}
+          {/* Page title */}
           <div className="space-y-3 sm:space-y-4">
             <div className="text-center">
-              <h1
-                className="text-[20px] sm:text-[24px] md:text-[28px] font-black tracking-[-0.03em]"
-                style={{ color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
-              >
+              <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-black tracking-[-0.03em]" style={{ color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
                 {t("সাবলিংক", "Sublinks")}
               </h1>
               <p className="text-[12.5px] sm:text-sm mt-1" style={{ color: "#94a3b8" }}>
@@ -1049,23 +875,12 @@ export default function SubAdminSublinks() {
               </p>
             </div>
 
-            {/* breadcrumb */}
+            {/* Breadcrumb */}
             <div className="flex justify-start">
-              <div
-                className="flex flex-wrap items-center gap-1.5 text-[12px] sm:text-[13px]"
-                style={{ color: "#94a3b8" }}
-              >
+              <div className="flex flex-wrap items-center gap-1.5 text-[12px] sm:text-[13px]" style={{ color: "#94a3b8" }}>
                 {view === "home" && (
-                  <span
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg"
-                    style={{
-                      background: "rgba(99,102,241,0.08)",
-                      border: "1px solid rgba(99,102,241,0.13)",
-                      color: "#6366f1", fontWeight: 600, fontSize: 12,
-                    }}
-                  >
-                    <Layers size={12} />
-                    {t("সাবলিংক", "Sublinks")}
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
+                    <Layers size={12} /> {t("সাবলিংক", "Sublinks")}
                   </span>
                 )}
                 {view === "add" && (
@@ -1073,26 +888,14 @@ export default function SubAdminSublinks() {
                     <button
                       onClick={() => { setView("home"); resetForm(); }}
                       className="flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all"
-                      style={{
-                        background: "transparent",
-                        border: "1px solid rgba(99,102,241,0.10)",
-                        color: "#94a3b8", fontWeight: 500, fontSize: 12, cursor: "pointer",
-                      }}
+                      style={{ background: "transparent", border: "1px solid rgba(99,102,241,0.10)", color: "#94a3b8", fontWeight: 500, fontSize: 12, cursor: "pointer" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.color = "#6366f1"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#94a3b8"; }}
                     >
-                      <Layers size={12} />
-                      {t("সাবলিংক", "Sublinks")}
+                      <Layers size={12} /> {t("সাবলিংক", "Sublinks")}
                     </button>
                     <span style={{ color: "#e2e8f0" }}>/</span>
-                    <span
-                      className="px-3 py-1 rounded-lg"
-                      style={{
-                        background: "rgba(99,102,241,0.08)",
-                        border: "1px solid rgba(99,102,241,0.13)",
-                        color: "#6366f1", fontWeight: 600, fontSize: 12,
-                      }}
-                    >
+                    <span className="px-3 py-1 rounded-lg" style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
                       {editId ? t("আপডেট", "Update") : t("যোগ করুন", "Add")}
                     </span>
                   </>
@@ -1101,7 +904,7 @@ export default function SubAdminSublinks() {
             </div>
           </div>
 
-          {/* ── Views ── */}
+          {/* Views */}
           {view === "home" && (
             <SublinkShow
               sublinks={processedSublinks} loading={loading}
@@ -1112,8 +915,7 @@ export default function SubAdminSublinks() {
               parentFilterOpen={parentFilterOpen} setParentFilterOpen={setParentFilterOpen}
               parentFilterRef={parentFilterRef}
               setView={setView} handleDelete={handleDelete} handleEdit={handleEdit}
-              parentLinks={parentLinks}
-              onRefresh={fetchSublinks}
+              parentLinks={parentLinks} onRefresh={fetchSublinks}
             />
           )}
 
