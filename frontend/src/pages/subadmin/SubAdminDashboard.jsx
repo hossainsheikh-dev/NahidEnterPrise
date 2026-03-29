@@ -437,7 +437,7 @@ function DashboardInner() {
           <header className="sa-topbar">
             <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
               <button className="tb-btn" onClick={toggleSidebar} aria-label="Toggle sidebar">
-                <Menu size={16} />}
+                {(!isDesktop && sidebarOpen) ? <X size={16} /> : <Menu size={16} />}
               </button>
 
               <div className="breadcrumb" style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
@@ -623,12 +623,6 @@ function DashboardInner() {
                     </div>
                   )}
                 </div>
-                {/* Close button on mobile */}
-                {!isDesktop && (
-                  <button className="tb-btn" onClick={() => setSidebarOpen(false)} style={{ flexShrink: 0 }}>
-                    <X size={15} />
-                  </button>
-                )}
               </div>
 
               {/* Search */}
