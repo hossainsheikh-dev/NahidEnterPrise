@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Languages, CheckCircle, Palette } from "lucide-react";
+import { Languages, CheckCircle } from "lucide-react";
 import { useSubLang } from "../../context/SubAdminLangContext";
 
 export default function SubAdminSettings() {
@@ -16,145 +16,160 @@ export default function SubAdminSettings() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .settings-wrap, .settings-wrap * { box-sizing: border-box; }
-        .settings-wrap { font-family: 'DM Sans', sans-serif; }
-        .settings-serif { font-family: 'Syne', sans-serif; }
-
-        .settings-lang-btn { transition: transform 0.16s cubic-bezier(.4,0,.2,1), box-shadow 0.16s ease, background 0.16s ease; }
-        .settings-lang-btn:hover { transform: translateY(-1px); }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        .settings-wrap, .settings-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
       `}</style>
 
-      <div className="settings-wrap px-0 sm:px-4 md:px-6 lg:px-8">
+      <div className="settings-wrap" style={{ padding: "0 8px 32px" }}>
+        <div>
 
-        {/* ── page title ── */}
-        <div className="text-center mb-8 px-3 sm:px-0">
-          <h1
-            className="settings-serif text-2xl sm:text-3xl font-black tracking-[-0.03em]"
-            style={{ color: "#1e293b" }}
-          >
-            {t("সেটিংস", "Settings")}
-          </h1>
-          <p className="text-[13px] sm:text-sm mt-1.5" style={{ color: "#94a3b8" }}>
-            {t("আপনার পছন্দ অনুযায়ী কাস্টমাইজ করুন।", "Customize your dashboard preferences.")}
-          </p>
-        </div>
+          {/* ── Page Title ── */}
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <h1 style={{
+              fontSize: "clamp(20px,4vw,28px)",
+              fontWeight: 900,
+              color: "#1e293b",
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              letterSpacing: "-0.03em",
+            }}>
+              {t("সেটিংস", "Settings")}
+            </h1>
+            <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>
+              {t("আপনার পছন্দ অনুযায়ী কাস্টমাইজ করুন।", "Customize your dashboard preferences.")}
+            </p>
+          </div>
 
-        <div className="max-w-xl mx-auto space-y-4 px-3 sm:px-0">
-
-          {/* ── language Card ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              background: "linear-gradient(160deg, #ffffff 0%, #fafbff 100%)",
-              borderRadius: 20,
-              border: "1px solid rgba(99,102,241,0.11)",
-              boxShadow: "0 4px 24px rgba(99,102,241,0.07), 0 1px 0 rgba(99,102,241,0.05)",
-              overflow: "hidden",
-              position: "relative",
-            }}
-          >
-            {/* subtle corner glow */}
-            <div
-              style={{
-                position: "absolute", top: -40, right: -40,
-                width: 160, height: 160, borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(99,102,241,0.07) 0%, transparent 70%)",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* card header */}
-            <div
-              className="flex items-center gap-3 px-5 py-4"
-              style={{ borderBottom: "1px solid rgba(99,102,241,0.08)" }}
-            >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          {/* ── Language Card ── */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
+            <div style={{ width: "100%", maxWidth: 520 }}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
                 style={{
-                  background: "rgba(99,102,241,0.08)",
-                  border: "1px solid rgba(99,102,241,0.12)",
+                  background: "linear-gradient(160deg, #ffffff, #fafbff)",
+                  borderRadius: 18,
+                  border: "1px solid rgba(99,102,241,0.10)",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.06)",
+                  overflow: "hidden",
+                  position: "relative",
                 }}
               >
-                <Languages size={17} style={{ color: "#6366f1" }} />
-              </div>
-              <div>
-                <p
-                  className="settings-serif text-[13.5px] font-bold"
-                  style={{ color: "#1e293b" }}
-                >
-                  {t("ভাষা", "Language")}
-                </p>
-                <p className="text-[11.5px] mt-0.5" style={{ color: "#94a3b8" }}>
-                  {t("ড্যাশবোর্ডের ভাষা পরিবর্তন করুন", "Change the dashboard language")}
-                </p>
-              </div>
-            </div>
+                {/* Ambient blob */}
+                <div style={{
+                  position: "absolute", top: -40, right: -40,
+                  width: 180, height: 180, borderRadius: "50%",
+                  background: "radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                }} />
 
-            {/* card body */}
-            <div className="p-5">
-              <div className="flex gap-3">
-                {[
-                  { key: "bn", label: "বাংলা", flag: "🇧🇩" },
-                  { key: "en", label: "English", flag: "🇬🇧" },
-                ].map(({ key, label, flag }) => {
-                  const isActive = lang === key;
-                  return (
-                    <motion.button
-                      key={key}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => handleSwitch(key)}
-                      className="settings-lang-btn flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-[13.5px] font-bold"
-                      style={{
-                        background: isActive
-                          ? "linear-gradient(135deg, #6366f1, #4f46e5)"
-                          : "rgba(99,102,241,0.04)",
-                        color: isActive ? "#fff" : "#64748b",
-                        border: `1.5px solid ${isActive ? "transparent" : "rgba(99,102,241,0.12)"}`,
-                        boxShadow: isActive
-                          ? "0 6px 20px rgba(99,102,241,0.32), 0 1px 0 rgba(255,255,255,0.15) inset"
-                          : "none",
-                      }}
-                    >
-                      <span style={{ fontSize: 20 }}>{flag}</span>
-                      {label}
-                      {isActive && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                          className="w-[18px] h-[18px] rounded-full flex items-center justify-center"
-                          style={{ background: "rgba(255,255,255,0.25)" }}
+                {/* Card header */}
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "14px 20px",
+                  borderBottom: "1px solid rgba(99,102,241,0.08)",
+                  background: "rgba(99,102,241,0.025)",
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: "rgba(99,102,241,0.08)",
+                    border: "1px solid rgba(99,102,241,0.13)",
+                    flexShrink: 0,
+                  }}>
+                    <Languages size={16} style={{ color: "#6366f1" }} />
+                  </div>
+                  <div>
+                    <p style={{
+                      fontSize: 14, fontWeight: 900, color: "#1e293b",
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      letterSpacing: "-0.02em",
+                    }}>
+                      {t("ভাষা", "Language")}
+                    </p>
+                    <p style={{ fontSize: 11.5, marginTop: 2, color: "#94a3b8" }}>
+                      {t("ড্যাশবোর্ডের ভাষা পরিবর্তন করুন", "Change the dashboard language")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Card body */}
+                <div style={{ padding: "20px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    {[
+                      { key: "bn", label: "বাংলা", flag: "🇧🇩" },
+                      { key: "en", label: "English", flag: "🇬🇧" },
+                    ].map(({ key, label, flag }) => {
+                      const isActive = lang === key;
+                      return (
+                        <motion.button
+                          key={key}
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => handleSwitch(key)}
+                          style={{
+                            display: "flex", alignItems: "center",
+                            justifyContent: "center", gap: 8,
+                            padding: "12px 14px", borderRadius: 13,
+                            cursor: "pointer",
+                            fontSize: 13.5, fontWeight: isActive ? 700 : 500,
+                            fontFamily: "'Plus Jakarta Sans', sans-serif",
+                            background: isActive
+                              ? "linear-gradient(135deg, #6366f1, #4f46e5)"
+                              : "#f8f9ff",
+                            color: isActive ? "#fff" : "#64748b",
+                            border: `1.5px solid ${isActive ? "transparent" : "rgba(99,102,241,0.10)"}`,
+                            boxShadow: isActive
+                              ? "0 6px 20px rgba(99,102,241,0.32)"
+                              : "none",
+                            transition: "all .18s ease",
+                          }}
                         >
-                          <CheckCircle size={11} color="#fff" strokeWidth={2.5} />
-                        </motion.div>
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
+                          <span style={{ fontSize: 18 }}>{flag}</span>
+                          {label}
+                          {isActive && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                              style={{
+                                width: 18, height: 18, borderRadius: "50%",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                background: "rgba(255,255,255,0.25)",
+                              }}
+                            >
+                              <CheckCircle size={11} color="#fff" strokeWidth={2.5} />
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
 
-              {/* save confirmation */}
-              <AnimatePresence>
-                {saved && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-3 flex items-center gap-2 text-[12px] font-semibold"
-                    style={{ color: "#10b981" }}
-                  >
-                    <CheckCircle size={13} strokeWidth={2.5} />
-                    {t("ভাষা সংরক্ষিত হয়েছে!", "Language saved!")}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  {/* Save confirmation */}
+                  <AnimatePresence>
+                    {saved && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        style={{
+                          marginTop: 14,
+                          display: "flex", alignItems: "center", gap: 6,
+                          fontSize: 12, fontWeight: 600, color: "#10b981",
+                        }}
+                      >
+                        <CheckCircle size={13} strokeWidth={2.5} />
+                        {t("ভাষা সংরক্ষিত হয়েছে!", "Language saved!")}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>
