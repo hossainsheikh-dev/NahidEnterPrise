@@ -12,21 +12,38 @@ passport.use(new GoogleStrategy({
   callbackURL:  `${process.env.BACKEND_URL}/api/customer/auth/google/callback`,
 }, async (accessToken, refreshToken, profile, done) => {
   try {
-    const email = profile.emails?.[0]?.value;
+    const email  = profile.emails?.[0]?.value;
+    const avatar = profile.photos?.[0]?.value || "";
+    const name   = profile.displayName || "Google User";
 
+    // ১. googleId দিয়ে খোঁজো
     let customer = await Customer.findOne({ googleId: profile.id });
 
-    if (!customer) {
+    if (!customer && email) {
+      // ২. email দিয়ে খোঁজো
       customer = await Customer.findOne({ email });
 
       if (customer) {
+        // existing account — googleId যোগ করো
         customer.googleId = profile.id;
         customer.provider = "google";
-        if (!customer.avatar) customer.avatar = profile.photos?.[0]?.value || "";
+        if (!customer.avatar) customer.avatar = avatar;
         await customer.save();
       } else {
-        return done(null, false, { message: "no_account" });
+        // ৩. নতুন user — create করো (আগে block ছিল, এখন allow)
+        customer = await Customer.create({
+          name,
+          email,
+          googleId:   profile.id,
+          avatar,
+          provider:   "google",
+          isVerified: true,
+        });
       }
+    }
+
+    if (!customer) {
+      return done(null, false, { message: "no_account" });
     }
 
     if (customer.isBlocked) {
@@ -34,12 +51,14 @@ passport.use(new GoogleStrategy({
     }
 
     return done(null, customer);
-  } catch (err) { return done(err, null); }
+  } catch (err) {
+    return done(err, null);
+  }
 }));
 
 // facebook
 passport.use(new FacebookStrategy({
-  clientID:      process.env.FACEBOOK_APP_ID || "placeholder",
+  clientID:      process.env.FACEBOOK_APP_ID     || "placeholder",
   clientSecret:  process.env.FACEBOOK_APP_SECRET || "placeholder",
   callbackURL:   `${process.env.BACKEND_URL}/api/customer/auth/facebook/callback`,
   profileFields: ["id", "displayName", "emails", "photos"],
@@ -66,7 +85,9 @@ passport.use(new FacebookStrategy({
       }
     }
     return done(null, customer);
-  } catch (err) { return done(err, null); }
+  } catch (err) {
+    return done(err, null);
+  }
 }));
 
 module.exports = passport;

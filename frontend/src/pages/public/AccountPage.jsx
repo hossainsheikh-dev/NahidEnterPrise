@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import {
   Mail, Lock, Eye, EyeOff, User, Phone,
   AlertCircle, CheckCircle, Loader2,
@@ -195,10 +195,6 @@ function SocialButtons({ t }) {
   );
 }
 
-function GoogleBtn({ t }) {
-  return <SocialButtons t={t} />;
-}
-
 /* ══════════════════════════════════════════
    AUTH FORMS
 ══════════════════════════════════════════ */
@@ -221,8 +217,9 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   const [regConfirm, setRegConfirm] = useState("");
   const [showRegPass, setShowRegPass] = useState(false);
   const [regErrors,   setRegErrors  ] = useState({});
-  const [emailChecking, setEmailChecking] = useState(false);
-  const [emailValid,    setEmailValid   ] = useState(null);
+
+  // FIX: email validation state — শুধু format check, SMTP নয়
+  const [emailValid,    setEmailValid   ] = useState(null); // null | true | false
 
   // Forgot
   const [forgotEmail,    setForgotEmail   ] = useState("");
@@ -234,9 +231,8 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   const [otp,         setOtp        ] = useState(["","","","","",""]);
   const [otpTimer,    setOtpTimer   ] = useState(0);
   const [resendCount, setResendCount] = useState(0);
-  const otpRefs         = useRef([]);
-  const timerRef        = useRef(null);
-  const emailCheckTimer = useRef(null);
+  const otpRefs  = useRef([]);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (otpTimer > 0) timerRef.current = setTimeout(() => setOtpTimer(p => p - 1), 1000);
@@ -251,24 +247,14 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   };
   const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2,"0")}:${String(s % 60).padStart(2,"0")}`;
 
-  // Email existence check — শুধু format check করবে, existence check করবে না
-  // কারণ নতুন email এ emailValid=false হয়ে registration block হচ্ছিল
+  // FIX: শুধু format check করো — SMTP call সরিয়ে দেওয়া হয়েছে।
+  // SMTP check reliable না এবং অনেক সময় নতুন email কে block করে।
   const handleRegEmailChange = (val) => {
     setRegEmail(val);
-    setEmailValid(null);
     setRegErrors(p => ({ ...p, email: "" }));
-    clearTimeout(emailCheckTimer.current);
-    if (!validateEmail(val)) return;
-    setEmailChecking(true);
-    emailCheckTimer.current = setTimeout(async () => {
-      try {
-        const res  = await fetch(`${API}/api/customer/verify-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: val }) });
-        const data = await res.json();
-        // FIX: emailValid শুধু true সেট করো, false করলে নতুন email block হয়
-        setEmailValid(data.exists !== false ? true : null);
-      } catch { setEmailValid(null); }
-      finally { setEmailChecking(false); }
-    }, 800);
+    clear();
+    if (!val) { setEmailValid(null); return; }
+    setEmailValid(validateEmail(val) ? true : false);
   };
 
   const handleOtpChange = (i, v) => {
@@ -289,17 +275,27 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
     otpRefs.current[Math.min(p.length, 5)]?.focus();
   };
 
+  // FIX: validation আগে করো, error set করো, তারপর early return
   const handleLogin = async (e) => {
     e.preventDefault();
+    clear();
     const er = {};
-    if (!validateEmail(loginEmail)) er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
+    if (!loginEmail.trim())         er.email    = t("ইমেইল দিন","Email required");
+    else if (!validateEmail(loginEmail)) er.email = t("সঠিক ইমেইল দিন","Enter a valid email");
     if (!loginPass)                 er.password = t("পাসওয়ার্ড দিন","Password required");
     if (Object.keys(er).length) { setLoginErrors(er); return; }
     try {
-      setLoading(true); clear();
-      const res  = await fetch(`${API}/api/customer/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:loginEmail, password:loginPass}) });
+      setLoading(true);
+      const res  = await fetch(`${API}/api/customer/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPass }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
+      if (!res.ok) {
+        setServerError(data.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
+        return;
+      }
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
       toast.success(t(`স্বাগতম, ${data.name.split(" ")[0]}! 🎉`, `Welcome back, ${data.name.split(" ")[0]}! 🎉`), {
@@ -307,53 +303,71 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
         style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
         iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
       });
-      notify(); onSuccess(data);
+      notify();
+      onSuccess(data);
     } catch (err) {
-      // FIX: সব error message দেখাও
-      setServerError(err.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
+      setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again."));
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
+  // FIX: সব validation ঠিক করা হয়েছে
   const handleRegister = async (e) => {
     e.preventDefault();
+    clear();
     const er = {};
-    if (!regName.trim())          er.name     = t("নাম দিন","Name required");
-    if (!validateEmail(regEmail)) er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
-    // FIX: emailValid === false check সরিয়ে দেওয়া হয়েছে — নতুন email block হচ্ছিল
-    if (regPass.length < 6)       er.password = t("কমপক্ষে ৬ অক্ষর","Min. 6 characters");
-    if (regPass !== regConfirm)   er.confirm  = t("পাসওয়ার্ড মেলেনি","Passwords don't match");
+    if (!regName.trim())                er.name     = t("নাম দিন","Name required");
+    if (!regEmail.trim())               er.email    = t("ইমেইল দিন","Email required");
+    else if (!validateEmail(regEmail))  er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
+    if (regPass.length < 6)             er.password = t("কমপক্ষে ৬ অক্ষর","Min. 6 characters");
+    if (regPass !== regConfirm)         er.confirm  = t("পাসওয়ার্ড মেলেনি","Passwords don't match");
     if (Object.keys(er).length) { setRegErrors(er); return; }
     try {
-      setLoading(true); clear();
-      const res  = await fetch(`${API}/api/customer/register`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name:regName, email:regEmail, phone:regPhone, password:regPass}) });
+      setLoading(true);
+      const res  = await fetch(`${API}/api/customer/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: regName, email: regEmail, phone: regPhone, password: regPass }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
+      if (!res.ok) {
+        setServerError(data.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
+        return;
+      }
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
-      // FIX: toast আগে দেখাও, তারপর state আপডেট করো
-      toast.success(t(`অ্যাকাউন্ট তৈরি হয়েছে! স্বাগতম 🎉`, `Account created! Welcome 🎉`), {
+      // FIX: toast আগে, তারপর state update
+      toast.success(t("অ্যাকাউন্ট তৈরি হয়েছে! স্বাগতম 🎉", "Account created! Welcome 🎉"), {
         duration: 3000,
         style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
         iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
       });
-      setTimeout(() => { notify(); onSuccess(data); }, 300);
+      notify();
+      setTimeout(() => onSuccess(data), 300);
     } catch (err) {
-      setServerError(err.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
+      setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again."));
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   const handleSendForgotOtp = async (e) => {
     e.preventDefault();
-    if (!validateEmail(forgotEmail)) { setServerError(t("সঠিক ইমেইল দিন","Enter a valid email")); return; }
+    clear();
+    if (!forgotEmail.trim())            { setServerError(t("ইমেইল দিন","Email required")); return; }
+    if (!validateEmail(forgotEmail))    { setServerError(t("সঠিক ইমেইল দিন","Enter a valid email")); return; }
     try {
-      setLoading(true); clear();
-      const res  = await fetch(`${API}/api/customer/forgot-otp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:forgotEmail}) });
+      setLoading(true);
+      const res  = await fetch(`${API}/api/customer/forgot-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-      setOtpTimer(120); go("otp-forgot");
-    } catch (err) { setServerError(err.message); }
+      if (!res.ok) { setServerError(data.message || t("OTP পাঠানো যায়নি","Failed to send OTP")); return; }
+      setOtpTimer(120);
+      go("otp-forgot");
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error")); }
     finally { setLoading(false); }
   };
 
@@ -363,11 +377,14 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
     if (code.length < 6) { setServerError(t("৬ সংখ্যার কোড দিন","Enter 6-digit code")); return; }
     try {
       setLoading(true); clear();
-      const res  = await fetch(`${API}/api/customer/verify-forgot-otp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:forgotEmail, otp:code}) });
+      const res  = await fetch(`${API}/api/customer/verify-forgot-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, otp: code }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) { setServerError(data.message || t("OTP ভুল","Invalid OTP")); return; }
       go("forgot-newpass");
-    } catch (err) { setServerError(err.message); }
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error")); }
     finally { setLoading(false); }
   };
 
@@ -375,27 +392,34 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
     if (otpTimer > 0 || resendCount >= 3) return;
     try {
       setLoading(true);
-      const res  = await fetch(`${API}/api/customer/forgot-otp`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:forgotEmail}) });
+      const res  = await fetch(`${API}/api/customer/forgot-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) { setServerError(data.message); return; }
       setOtpTimer(120); setResendCount(c => c + 1); setOtp(["","","","","",""]);
       setTimeout(() => otpRefs.current[0]?.focus(), 140);
-    } catch (err) { setServerError(err.message); }
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error")); }
     finally { setLoading(false); }
   };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    clear();
     if (newPassword.length < 6)        { setServerError(t("কমপক্ষে ৬ অক্ষর","Min. 6 characters")); return; }
     if (newPassword !== confirmNewPass) { setServerError(t("পাসওয়ার্ড মেলেনি","Passwords don't match")); return; }
     try {
-      setLoading(true); clear();
-      const res  = await fetch(`${API}/api/customer/reset-password`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:forgotEmail, newPassword}) });
+      setLoading(true);
+      const res  = await fetch(`${API}/api/customer/reset-password`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail, newPassword }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) { setServerError(data.message || t("পাসওয়ার্ড রিসেট ব্যর্থ","Reset failed")); return; }
       setSuccessMsg(t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password changed successfully!"));
       setTimeout(() => { go("login"); setForgotEmail(""); setNewPassword(""); setConfirmNewPass(""); }, 2000);
-    } catch (err) { setServerError(err.message); }
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error")); }
     finally { setLoading(false); }
   };
 
@@ -407,6 +431,9 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
   return (
     <div className="w-full">
+      {/* FIX: Toaster এখানে রাখা হয়েছে — App.js এ না থাকলেও কাজ করবে */}
+      <Toaster position="top-center" />
+
       <div className="relative rounded-3xl overflow-hidden bg-white"
         style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 32px 64px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)" }}>
 
@@ -431,17 +458,16 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
         )}
 
         <div className="px-7 py-6">
-          <AnimatePresence>
-            {serverError && <InlineAlert type="error"   msg={serverError} />}
-            {successMsg  && <InlineAlert type="success" msg={successMsg}  />}
-          </AnimatePresence>
+          {/* FIX: AnimatePresence ছাড়া সরাসরি render — unmount race condition এড়ানো */}
+          {serverError && <InlineAlert type="error"   msg={serverError} />}
+          {successMsg  && <InlineAlert type="success" msg={successMsg}  />}
 
           <AnimatePresence mode="wait">
 
             {/* ══ LOGIN ══ */}
             {mode === "login" && (
               <motion.form key="login" variants={slide} initial="hidden" animate="show" exit="exit"
-                onSubmit={handleLogin} className="space-y-4">
+                onSubmit={handleLogin} className="space-y-4" noValidate>
 
                 <FieldWrap label={t("ইমেইল","Email")} error={loginErrors.email}>
                   <InputField icon={Mail} type="email" value={loginEmail}
@@ -487,49 +513,52 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
             {/* ══ REGISTER ══ */}
             {mode === "register" && (
               <motion.form key="register" variants={slide} initial="hidden" animate="show" exit="exit"
-                onSubmit={handleRegister} className="space-y-4">
+                onSubmit={handleRegister} className="space-y-4" noValidate autoComplete="off">
 
                 <FieldWrap label={t("পুরো নাম","Full Name")} error={regErrors.name}>
                   <InputField icon={User} value={regName}
                     onChange={e => { setRegName(e.target.value); setRegErrors(p => ({...p, name:""})); }}
-                    placeholder={t("আপনার নাম","Your name")} hasError={!!regErrors.name} />
+                    placeholder={t("আপনার নাম","Your name")} hasError={!!regErrors.name}
+                    autoComplete="name" />
                 </FieldWrap>
 
                 <FieldWrap label={t("ইমেইল","Email")} error={regErrors.email}
                   hint={
                     !regErrors.email && emailValid === true && validateEmail(regEmail)
                       ? { color: "#16a34a", icon: <CheckCircle size={11} />, text: t("ইমেইল ঠিক আছে","Email looks good") }
+                      : emailValid === false && regEmail
+                      ? { color: "#ef4444", icon: <AlertCircle size={11} />, text: t("সঠিক ইমেইল ফরম্যাট দিন","Enter valid email format") }
                       : null
                   }>
-                  <div className="relative">
-                    <InputField icon={Mail} type="email" value={regEmail}
-                      onChange={e => handleRegEmailChange(e.target.value)}
-                      placeholder="you@example.com" hasError={!!regErrors.email} autoComplete="email" />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      {emailChecking && <Loader2 size={14} className="animate-spin" style={{ color: "#94a3b8" }} />}
-                      {!emailChecking && emailValid === true && validateEmail(regEmail) && <CheckCircle size={14} style={{ color: "#16a34a" }} />}
-                    </div>
-                  </div>
+                  <InputField icon={Mail} type="email" value={regEmail}
+                    onChange={e => handleRegEmailChange(e.target.value)}
+                    placeholder="you@example.com" hasError={!!regErrors.email}
+                    autoComplete="new-password" /* FIX: browser autofill বন্ধ */ />
                 </FieldWrap>
 
+                {/* FIX: Phone field এ autoComplete="off" এবং name দেওয়া হয়নি — browser autofill বন্ধ */}
                 <FieldWrap label={
                   <span>{t("ফোন","Phone")} <span className="text-slate-300 font-normal text-[10.5px] normal-case tracking-normal">({t("ঐচ্ছিক","optional")})</span></span>
                 }>
                   <InputField icon={Phone} type="tel" value={regPhone}
-                    onChange={e => setRegPhone(e.target.value)} placeholder="01XXXXXXXXX" autoComplete="tel" />
+                    onChange={e => setRegPhone(e.target.value)}
+                    placeholder="01XXXXXXXXX"
+                    autoComplete="off" />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড","Password")} error={regErrors.password}>
                   <InputField icon={Lock} type={showRegPass ? "text" : "password"} value={regPass}
                     onChange={e => { setRegPass(e.target.value); setRegErrors(p => ({...p, password:""})); }}
                     placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")} hasError={!!regErrors.password}
+                    autoComplete="new-password"
                     rightEl={<EyeToggle show={showRegPass} onToggle={() => setShowRegPass(s => !s)} />} />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")} error={regErrors.confirm}>
                   <InputField icon={Lock} type="password" value={regConfirm}
                     onChange={e => { setRegConfirm(e.target.value); setRegErrors(p => ({...p, confirm:""})); }}
-                    placeholder="••••••••" hasError={!!regErrors.confirm} />
+                    placeholder="••••••••" hasError={!!regErrors.confirm}
+                    autoComplete="new-password" />
                 </FieldWrap>
 
                 <SubmitBtn loading={loading}>
@@ -546,7 +575,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
             {/* ══ FORGOT EMAIL ══ */}
             {mode === "forgot-email" && (
               <motion.form key="fe" variants={slide} initial="hidden" animate="show" exit="exit"
-                onSubmit={handleSendForgotOtp} className="space-y-5">
+                onSubmit={handleSendForgotOtp} className="space-y-5" noValidate>
                 <button type="button" onClick={() => go("login")}
                   className="flex items-center gap-1.5 text-[12.5px] font-semibold cursor-pointer bg-transparent border-none mb-2 transition-colors"
                   style={{ color: "#94a3b8" }}>
@@ -626,7 +655,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
             {/* ══ NEW PASSWORD ══ */}
             {mode === "forgot-newpass" && (
               <motion.form key="np" variants={slide} initial="hidden" animate="show" exit="exit"
-                onSubmit={handleResetPassword} className="space-y-5">
+                onSubmit={handleResetPassword} className="space-y-5" noValidate>
                 <div>
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
                     style={{ background: "linear-gradient(135deg, rgba(26,46,26,0.08), rgba(46,125,50,0.12))" }}>
@@ -640,13 +669,15 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                   <InputField icon={Lock} type={showNewPass ? "text" : "password"} value={newPassword}
                     onChange={e => { setNewPassword(e.target.value); clear(); }}
                     placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
+                    autoComplete="new-password"
                     rightEl={<EyeToggle show={showNewPass} onToggle={() => setShowNewPass(s => !s)} />} />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
                   <InputField icon={Lock} type="password" value={confirmNewPass}
                     onChange={e => { setConfirmNewPass(e.target.value); clear(); }}
-                    placeholder="••••••••" />
+                    placeholder="••••••••"
+                    autoComplete="new-password" />
                 </FieldWrap>
 
                 <SubmitBtn loading={loading}>
@@ -689,7 +720,6 @@ function ProfileSidebar({ customer, onClose, t }) {
     { id: "faq",      icon: HelpCircle, label: t("FAQs","FAQs")                },
   ];
 
-  // FIX: logout এর পর login page এ যাবে
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
@@ -711,10 +741,10 @@ function ProfileSidebar({ customer, onClose, t }) {
         body: JSON.stringify({ currentPassword: curPass, newPassword: newPass }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) { setMsg({ type:"error", text: data.message || t("পরিবর্তন ব্যর্থ","Failed") }); return; }
       setMsg({ type:"success", text: t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password updated!") });
       setCurPass(""); setNewPass(""); setConfPass("");
-    } catch (err) { setMsg({ type:"error", text: err.message }); }
+    } catch { setMsg({ type:"error", text: t("সার্ভার সংযোগ সমস্যা","Connection error") }); }
     finally { setLoading(false); }
   };
 
@@ -767,23 +797,24 @@ function ProfileSidebar({ customer, onClose, t }) {
         return (
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("পাসওয়ার্ড পরিবর্তন","Change Password")}</h3>
-            <AnimatePresence>
-              {msg.text && <InlineAlert type={msg.type} msg={msg.text} />}
-            </AnimatePresence>
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            {msg.text && <InlineAlert type={msg.type} msg={msg.text} />}
+            <form onSubmit={handleChangePassword} className="space-y-4" noValidate>
               <FieldWrap label={t("বর্তমান পাসওয়ার্ড","Current Password")}>
                 <InputField icon={Lock} type={showCur ? "text" : "password"} value={curPass}
                   onChange={e => setCurPass(e.target.value)} placeholder="••••••••"
+                  autoComplete="current-password"
                   rightEl={<EyeToggle show={showCur} onToggle={() => setShowCur(s => !s)} />} />
               </FieldWrap>
               <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
                 <InputField icon={Lock} type={showNew ? "text" : "password"} value={newPass}
                   onChange={e => setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
+                  autoComplete="new-password"
                   rightEl={<EyeToggle show={showNew} onToggle={() => setShowNew(s => !s)} />} />
               </FieldWrap>
               <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
                 <InputField icon={Lock} type="password" value={confPass}
-                  onChange={e => setConfPass(e.target.value)} placeholder="••••••••" />
+                  onChange={e => setConfPass(e.target.value)} placeholder="••••••••"
+                  autoComplete="new-password" />
               </FieldWrap>
               <SubmitBtn loading={loading}>
                 {loading
@@ -1072,17 +1103,6 @@ function OrdersPanel({ customer, t }) {
                             <span>৳{(order.total || 0).toLocaleString()}</span>
                           </div>
                         </div>
-                        {order.customer && (
-                          <div className="rounded-xl p-3 space-y-1"
-                            style={{ background: isCancelled ? "rgba(255,255,255,0.04)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
-                            <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: isCancelled ? "rgba(255,255,255,0.25)" : "#cbd5e1" }}>{t("ডেলিভারি","Delivery")}</p>
-                            <p className="text-[12px] font-semibold" style={{ color: isCancelled ? "rgba(255,255,255,0.7)" : "#334155" }}>{order.customer.name}</p>
-                            <p className="text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>{order.customer.phone}</p>
-                            <p className="text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
-                              {[order.customer.address, order.customer.thana, order.customer.district].filter(Boolean).join(", ")}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </motion.div>
                   )}
@@ -1161,11 +1181,6 @@ function WishlistPanel({ t }) {
                       </span>
                     )}
                   </div>
-                  {item.stock === 0 && (
-                    <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full mt-1 inline-block">
-                      {t("স্টক নেই","Out of Stock")}
-                    </span>
-                  )}
                 </div>
                 <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
                   style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
@@ -1191,44 +1206,44 @@ const FAQ_SECTIONS = [
     tag: "০১", titleBn: "অর্ডার সংক্রান্ত প্রশ্ন", titleEn: "Order Related Questions",
     faqs: [
       { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?",
-        aBn:"পছন্দের পণ্য কার্টে যোগ করুন, তারপর চেকআউট পেজে গিয়ে আপনার নাম, ফোন নম্বর ও ঠিকানা দিন। পেমেন্ট পদ্ধতি বেছে নিন এবং অর্ডার কনফার্ম করুন। অর্ডার সফল হলে একটি অর্ডার আইডি পাবেন।",
-        aEn:"Add your preferred product to the cart, then go to checkout and enter your name, phone number and address. Choose a payment method and confirm the order. Upon successful order, you will receive an order ID." },
+        aBn:"পছন্দের পণ্য কার্টে যোগ করুন, তারপর চেকআউট পেজে গিয়ে আপনার নাম, ফোন নম্বর ও ঠিকানা দিন।",
+        aEn:"Add your preferred product to the cart, then go to checkout and enter your name, phone number and address." },
       { qBn:"অর্ডার কীভাবে ট্র্যাক করবো?", qEn:"How do I track my order?",
-        aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং অর্ডার করার সময় যে ফোন নম্বর দিয়েছিলেন সেটি দিন।",
-        aEn:"Go to the Order Track page (/order) and enter the phone number you used when placing the order." },
+        aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং ফোন নম্বর দিন।",
+        aEn:"Go to the Order Track page (/order) and enter your phone number." },
       { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?",
-        aBn:"হ্যাঁ, অর্ডার Pending বা Processing অবস্থায় থাকলে বাতিল করা সম্ভব। এর জন্য হেল্পলাইনে যোগাযোগ করুন।",
-        aEn:"Yes, it is possible to cancel if the order is in Pending or Processing status. Contact our helpline for this." },
+        aBn:"হ্যাঁ, Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করলে বাতিল করা সম্ভব।",
+        aEn:"Yes, contact our helpline while the order is Pending or Processing." },
       { qBn:"একসাথে কতটি পণ্য অর্ডার করা যাবে?", qEn:"How many products can I order at once?",
-        aBn:"একটি অর্ডারে যত খুশি পণ্য যোগ করতে পারবেন। বড় অর্ডারে ডেলিভারি বিনামূল্যে (২৫০০ টাকার উপরে)।",
-        aEn:"You can add as many products as you like to a single order. For large orders you get free delivery (above ৳2500)." },
+        aBn:"যত খুশি পণ্য যোগ করতে পারবেন। ২৫০০ টাকার উপরে ডেলিভারি বিনামূল্যে।",
+        aEn:"As many as you like. Free delivery above ৳2500." },
     ],
   },
   {
     tag: "০২", titleBn: "পেমেন্ট সংক্রান্ত প্রশ্ন", titleEn: "Payment Related Questions",
     faqs: [
       { qBn:"কোন পেমেন্ট পদ্ধতি ব্যবহার করা যাবে?", qEn:"Which payment methods are available?",
-        aBn:"আমরা তিনটি পেমেন্ট পদ্ধতি গ্রহণ করি: bKash, Nagad এবং ক্যাশ অন ডেলিভারি (COD)। মার্চেন্ট নম্বর: 01938360666।",
-        aEn:"We accept three payment methods: bKash, Nagad and Cash on Delivery (COD). Merchant number: 01938360666." },
-      { qBn:"ট্র্যান্সাকশন আইডি (TrxID) কোথায় পাবো?", qEn:"Where do I find the Transaction ID?",
-        aBn:"bKash বা Nagad পেমেন্টের পরে আপনার ফোনে কনফার্মেশন SMS আসবে যেখানে TrxID থাকবে।",
-        aEn:"After bKash or Nagad payment, you will receive a confirmation SMS containing the TrxID." },
-      { qBn:"COD অর্ডারে কি অতিরিক্ত চার্জ আছে?", qEn:"Are there extra charges for COD orders?",
-        aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই। শুধু সাধারণ ডেলিভারি চার্জ প্রযোজ্য।",
-        aEn:"No extra charges for COD. Only regular delivery charge applies." },
+        aBn:"bKash, Nagad এবং ক্যাশ অন ডেলিভারি (COD)। মার্চেন্ট নম্বর: 01938360666।",
+        aEn:"bKash, Nagad and Cash on Delivery (COD). Merchant number: 01938360666." },
+      { qBn:"ট্র্যান্সাকশন আইডি কোথায় পাবো?", qEn:"Where do I find the Transaction ID?",
+        aBn:"bKash বা Nagad পেমেন্টের পরে কনফার্মেশন SMS এ TrxID থাকবে।",
+        aEn:"Check your confirmation SMS after bKash or Nagad payment." },
+      { qBn:"COD অর্ডারে কি অতিরিক্ত চার্জ আছে?", qEn:"Are there extra charges for COD?",
+        aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই।",
+        aEn:"No extra charges for COD." },
     ],
   },
   {
     tag: "০৩", titleBn: "ডেলিভারি সংক্রান্ত প্রশ্ন", titleEn: "Delivery Related Questions",
     faqs: [
       { qBn:"ডেলিভারি কতদিন লাগে?", qEn:"How long does delivery take?",
-        aBn:"ঢাকার মধ্যে ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।",
+        aBn:"ঢাকায় ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।",
         aEn:"Within Dhaka 1-2 business days, outside Dhaka 2-4 business days." },
       { qBn:"ডেলিভারি চার্জ কত?", qEn:"What is the delivery charge?",
-        aBn:"২৫০০ টাকা বা তার বেশি অর্ডারে বিনামূল্যে। ২৫০০ টাকার কম অর্ডারে মাত্র ৬০ টাকা।",
-        aEn:"Free for orders ৳2500 or above. Only ৳60 for orders below ৳2500." },
-      { qBn:"কি পুরো বাংলাদেশে ডেলিভারি দেওয়া হয়?", qEn:"Do you deliver all over Bangladesh?",
-        aBn:"হ্যাঁ, বাংলাদেশের সকল ৬৪টি জেলায় ডেলিভারি প্রদান করি।",
+        aBn:"২৫০০ টাকার উপরে বিনামূল্যে। ২৫০০ টাকার কম হলে মাত্র ৬০ টাকা।",
+        aEn:"Free for orders ৳2500 or above. Only ৳60 below ৳2500." },
+      { qBn:"পুরো বাংলাদেশে ডেলিভারি হয়?", qEn:"Do you deliver all over Bangladesh?",
+        aBn:"হ্যাঁ, সকল ৬৪টি জেলায় ডেলিভারি দেওয়া হয়।",
         aEn:"Yes, we deliver to all 64 districts of Bangladesh." },
     ],
   },
@@ -1237,10 +1252,10 @@ const FAQ_SECTIONS = [
     faqs: [
       { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return a product?",
         aBn:"হ্যাঁ, পণ্য পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।",
-        aEn:"Yes, products can be returned within 7 days of receipt with original packaging." },
+        aEn:"Yes, within 7 days of receipt with original packaging." },
       { qBn:"রিফান্ড পেতে কতদিন লাগে?", qEn:"How long does a refund take?",
-        aBn:"পণ্য পরিদর্শনের পরে ৩-৫ কার্যদিবসের মধ্যে bKash বা Nagad এ রিফান্ড করা হয়।",
-        aEn:"After product inspection, refund is processed within 3-5 business days via bKash or Nagad." },
+        aBn:"পরিদর্শনের পরে ৩-৫ কার্যদিবসের মধ্যে bKash বা Nagad এ রিফান্ড।",
+        aEn:"3-5 business days via bKash or Nagad after inspection." },
     ],
   },
 ];
@@ -1292,32 +1307,6 @@ function FaqPanel({ t }) {
   );
 }
 
-function FaqItem({ question, answer }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(148,163,184,0.12)" }}>
-      <button onClick={() => setOpen(s => !s)}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer border-none transition-all"
-        style={{ background: open ? "rgba(46,125,50,0.04)" : "rgba(248,250,252,0.8)" }}>
-        <span className="text-[13.5px] font-bold text-slate-700">{question}</span>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
-          <ChevronRight size={14} className="text-slate-400 rotate-90" />
-        </motion.div>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
-            <div className="px-4 pb-4 pt-1">
-              <p className="text-[13px] text-slate-500 leading-relaxed">{answer}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 /* ══════════════════════════════════════════
    MOBILE SECTION CONTENT
 ══════════════════════════════════════════ */
@@ -1326,8 +1315,6 @@ function MobileSectionContent({ section, customer, t, onNavigate }) {
     const joinDate = customer?.createdAt
       ? new Date(customer.createdAt).toLocaleDateString("en-GB",{year:"numeric",month:"long",day:"numeric"})
       : null;
-    const addr = customer?.address || {};
-    const hasAddr = addr.street || addr.thana || addr.district;
     return (
       <div className="space-y-3">
         {[
@@ -1347,14 +1334,6 @@ function MobileSectionContent({ section, customer, t, onNavigate }) {
             </div>
           </div>
         ))}
-        {hasAddr && (
-          <div className="p-3.5 rounded-2xl" style={{background:"#f0f7f0",border:"1px solid #a5d6a7"}}>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{color:"#2e7d32"}}>{t("সেভ করা ঠিকানা","Saved Address")}</p>
-            {addr.street && <p className="text-[13px] font-semibold text-slate-700">{addr.street}</p>}
-            <p className="text-[12px] text-slate-500 mt-0.5">{[addr.thana,addr.district].filter(Boolean).join(", ")}</p>
-            {addr.phone && <p className="text-[12px] text-slate-500 mt-0.5">📞 {addr.phone}</p>}
-          </div>
-        )}
       </div>
     );
   }
@@ -1579,23 +1558,15 @@ function MobileAddressPanel({ customer, t }) {
         method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
         body: JSON.stringify(body),
       });
-
-      // FIX: JSON response check
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         throw new Error(t("সার্ভার সংযোগ সমস্যা","Server connection error"));
       }
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
-      // localStorage আপডেট করো
       const info = JSON.parse(localStorage.getItem("customerInfo")||"{}");
       localStorage.setItem("customerInfo",JSON.stringify({...info,address:data.address}));
-
-      // customer state আপডেট করো
       window.dispatchEvent(new Event("customerAuthChanged"));
-
       setMsg({type:"success",text:t("ঠিকানা সেভ হয়েছে!","Address saved!")});
     } catch(err) {
       setMsg({type:"error",text:err.message});
@@ -1613,10 +1584,10 @@ function MobileAddressPanel({ customer, t }) {
           {saved.phone && <p className="text-[11.5px] text-slate-500 mt-1">📞 {saved.phone}</p>}
         </div>
       )}
-      <AnimatePresence>{msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}</AnimatePresence>
-      <form onSubmit={submit} className="space-y-3">
+      {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
+      <form onSubmit={submit} className="space-y-3" noValidate>
         <FieldWrap label={t("পুরো ঠিকানা","Full Address")}>
-          <InputField icon={MapPin} value={street} onChange={e=>setStreet(e.target.value)} placeholder={t("বাড়ি/রাস্তা নম্বর, এলাকা","House/Road, Area")}/>
+          <InputField icon={MapPin} value={street} onChange={e=>setStreet(e.target.value)} placeholder={t("বাড়ি/রাস্তা নম্বর, এলাকা","House/Road, Area")} autoComplete="off"/>
         </FieldWrap>
         <div>
           <label className="block text-[11.5px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-1.5">{t("জেলা","District")}</label>
@@ -1644,7 +1615,7 @@ function MobileAddressPanel({ customer, t }) {
         </div>
         {!hasPhone && (
           <FieldWrap label={t("ডেলিভারি ফোন","Delivery Phone")}>
-            <InputField icon={Phone} type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX"/>
+            <InputField icon={Phone} type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX" autoComplete="off"/>
           </FieldWrap>
         )}
         <SubmitBtn loading={loading}>
@@ -1686,18 +1657,18 @@ function MobilePasswordPanel({ t }) {
 
   return (
     <div className="space-y-4">
-      <AnimatePresence>{msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}</AnimatePresence>
-      <form onSubmit={submit} className="space-y-4">
+      {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
+      <form onSubmit={submit} className="space-y-4" noValidate>
         <FieldWrap label={t("বর্তমান পাসওয়ার্ড","Current Password")}>
           <InputField icon={Lock} type={showCur?"text":"password"} value={curPass} onChange={e=>setCurPass(e.target.value)} placeholder="••••••••"
-            rightEl={<EyeToggle show={showCur} onToggle={()=>setShowCur(s=>!s)}/>}/>
+            autoComplete="current-password" rightEl={<EyeToggle show={showCur} onToggle={()=>setShowCur(s=>!s)}/>}/>
         </FieldWrap>
         <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
           <InputField icon={Lock} type={showNew?"text":"password"} value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
-            rightEl={<EyeToggle show={showNew} onToggle={()=>setShowNew(s=>!s)}/>}/>
+            autoComplete="new-password" rightEl={<EyeToggle show={showNew} onToggle={()=>setShowNew(s=>!s)}/>}/>
         </FieldWrap>
         <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
-          <InputField icon={Lock} type="password" value={confPass} onChange={e=>setConfPass(e.target.value)} placeholder="••••••••"/>
+          <InputField icon={Lock} type="password" value={confPass} onChange={e=>setConfPass(e.target.value)} placeholder="••••••••" autoComplete="new-password"/>
         </FieldWrap>
         <SubmitBtn loading={loading}>
           {loading?<><Loader2 size={14} className="animate-spin"/>{t("আপডেট হচ্ছে…","Updating…")}</>:t("পাসওয়ার্ড আপডেট করুন","Update Password")}
@@ -1710,14 +1681,14 @@ function MobilePasswordPanel({ t }) {
 const MOBILE_FAQ_SECTIONS = [
   { tag:"০১", titleBn:"অর্ডার সংক্রান্ত", titleEn:"Order Questions",
     faqs:[
-      { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?", aBn:"পণ্য কার্টে যোগ করুন, চেকআউটে নাম-ফোন-ঠিকানা দিন, পেমেন্ট পদ্ধতি বেছে নিন।", aEn:"Add product to cart, enter details at checkout, choose payment." },
-      { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?", aBn:"Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করলে বাতিল করা সম্ভব।", aEn:"Contact helpline while Pending or Processing to cancel." },
+      { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?", aBn:"পণ্য কার্টে যোগ করুন, চেকআউটে নাম-ফোন-ঠিকানা দিন।", aEn:"Add product to cart, enter details at checkout." },
+      { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?", aBn:"Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করুন।", aEn:"Contact helpline while Pending or Processing." },
     ],
   },
   { tag:"০২", titleBn:"পেমেন্ট সংক্রান্ত", titleEn:"Payment Questions",
     faqs:[
       { qBn:"কোন পেমেন্ট পদ্ধতি আছে?", qEn:"Payment methods?", aBn:"bKash, Nagad এবং ক্যাশ অন ডেলিভারি। মার্চেন্ট: 01938360666।", aEn:"bKash, Nagad and COD. Merchant: 01938360666." },
-      { qBn:"COD তে কি অতিরিক্ত চার্জ?", qEn:"Extra charges for COD?", aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই।", aEn:"No extra charges for COD." },
+      { qBn:"COD তে কি অতিরিক্ত চার্জ?", qEn:"Extra charges for COD?", aBn:"না, কোনো অতিরিক্ত চার্জ নেই।", aEn:"No extra charges for COD." },
     ],
   },
   { tag:"০৩", titleBn:"ডেলিভারি সংক্রান্ত", titleEn:"Delivery Questions",
@@ -1728,7 +1699,7 @@ const MOBILE_FAQ_SECTIONS = [
   },
   { tag:"০৪", titleBn:"রিটার্ন ও রিফান্ড", titleEn:"Return & Refund",
     faqs:[
-      { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return?", aBn:"পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।", aEn:"Within 7 days with original packaging." },
+      { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return?", aBn:"৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।", aEn:"Within 7 days with original packaging." },
       { qBn:"রিফান্ড পেতে কতদিন?", qEn:"Refund time?", aBn:"৩-৫ কার্যদিবসের মধ্যে bKash/Nagad এ রিফান্ড।", aEn:"3-5 business days via bKash/Nagad." },
     ],
   },
@@ -1785,7 +1756,6 @@ function MobileDashboard({ customer, t }) {
   const [activeSection, setActiveSection] = useState(null);
   const contentRef = useRef(null);
 
-  // FIX: logout এর পর /account এ redirect → login page দেখাবে
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
@@ -1919,7 +1889,6 @@ export default function AccountPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // initial auth check
   useEffect(() => {
     const token = localStorage.getItem("customerToken");
     const info  = localStorage.getItem("customerInfo");
@@ -1929,7 +1898,6 @@ export default function AccountPage() {
     setAuthChecked(true);
   }, []);
 
-  // Google OAuth callback — token & info URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token  = params.get("token");
@@ -1942,11 +1910,15 @@ export default function AccountPage() {
         setCustomer(parsed);
         notify();
         window.history.replaceState({}, "", "/account");
+        toast.success(t(`স্বাগতম, ${parsed.name?.split(" ")[0]}! 🎉`, `Welcome, ${parsed.name?.split(" ")[0]}! 🎉`), {
+          duration: 3000,
+          style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
+          iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
+        });
       } catch (_) {}
     }
   }, []);
 
-  // Google OAuth error — no_account হলে register এ নিয়ে যাও
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const error  = params.get("error");
@@ -1956,27 +1928,23 @@ export default function AccountPage() {
     }
   }, []);
 
-  // /account/password এ গেলে profile sidebar খোলো
   useEffect(() => {
     const path = window.location.pathname;
     if (path === "/account/password") setShowProfile(true);
   }, []);
 
-  // openCustomerProfile event
   useEffect(() => {
     const handler = () => setShowProfile(true);
     window.addEventListener("openCustomerProfile", handler);
     return () => window.removeEventListener("openCustomerProfile", handler);
   }, []);
 
-  // FIX: customerAuthChanged event এ customer state re-read করো
   useEffect(() => {
     const handler = () => {
       const info = localStorage.getItem("customerInfo");
       if (info) {
         try { setCustomer(JSON.parse(info)); } catch (_) {}
       } else {
-        // logout হলে customer null করো
         setCustomer(null);
       }
     };
@@ -2003,6 +1971,9 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-white">
+      {/* FIX: Global Toaster — সবার উপরে */}
+      <Toaster position="top-center" />
+
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 opacity-[0.018]"
           style={{ backgroundImage:"radial-gradient(#2e7d32 1px, transparent 1px)", backgroundSize:"28px 28px" }}/>
