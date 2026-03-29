@@ -41,11 +41,10 @@ function InlineAlert({ type, msg }) {
 }
 
 /* ══════════════════════════════════════════
-   INPUT FIELD — Premium floating label style
+   INPUT FIELD
 ══════════════════════════════════════════ */
 function InputField({ icon: Icon, type = "text", value, onChange, placeholder, hasError, rightEl, autoComplete, disabled, onFocusCb, onBlurCb }) {
   const [focused, setFocused] = useState(false);
-  const active = focused || (value && value.length > 0);
   return (
     <div className="relative group">
       {Icon && (
@@ -62,21 +61,9 @@ function InputField({ icon: Icon, type = "text", value, onChange, placeholder, h
           color: "#0f172a",
           padding: Icon ? "14px 14px 14px 44px" : "14px 14px",
           paddingRight: rightEl ? "48px" : "14px",
-          border: hasError
-            ? "2px solid #fca5a5"
-            : focused
-            ? "2px solid #16a34a"
-            : "2px solid #e2e8f0",
-          background: hasError
-            ? "#fff5f5"
-            : focused
-            ? "#f0fdf4"
-            : "#f8fafc",
-          boxShadow: focused && !hasError
-            ? "0 0 0 4px rgba(22,163,74,0.08)"
-            : hasError
-            ? "0 0 0 4px rgba(239,68,68,0.06)"
-            : "none",
+          border: hasError ? "2px solid #fca5a5" : focused ? "2px solid #16a34a" : "2px solid #e2e8f0",
+          background: hasError ? "#fff5f5" : focused ? "#f0fdf4" : "#f8fafc",
+          boxShadow: focused && !hasError ? "0 0 0 4px rgba(22,163,74,0.08)" : hasError ? "0 0 0 4px rgba(239,68,68,0.06)" : "none",
           letterSpacing: type === "password" && value ? "0.15em" : "normal",
         }}
       />
@@ -91,9 +78,7 @@ function InputField({ icon: Icon, type = "text", value, onChange, placeholder, h
 function FieldWrap({ label, error, children, hint }) {
   return (
     <div className="space-y-1.5">
-      {label && (
-        <label className="block text-[12px] font-bold text-slate-500 tracking-wide">{label}</label>
-      )}
+      {label && <label className="block text-[12px] font-bold text-slate-500 tracking-wide">{label}</label>}
       {children}
       <AnimatePresence>
         {error && (
@@ -115,7 +100,7 @@ function FieldWrap({ label, error, children, hint }) {
 }
 
 /* ══════════════════════════════════════════
-   SUBMIT BUTTON — Premium gradient
+   SUBMIT BUTTON
 ══════════════════════════════════════════ */
 function SubmitBtn({ loading, children, disabled, onClick, type = "submit" }) {
   return (
@@ -124,25 +109,13 @@ function SubmitBtn({ loading, children, disabled, onClick, type = "submit" }) {
       whileTap={!loading && !disabled ? { scale: 0.985 } : {}}
       className="w-full flex items-center justify-center gap-2.5 py-[14px] px-5 rounded-2xl text-[14.5px] font-black tracking-wide transition-all duration-200 relative overflow-hidden"
       style={{
-        background: loading || disabled
-          ? "#f1f5f9"
-          : "linear-gradient(135deg, #14532d 0%, #16a34a 50%, #22c55e 100%)",
+        background: loading || disabled ? "#f1f5f9" : "linear-gradient(135deg, #14532d 0%, #16a34a 50%, #22c55e 100%)",
         color: loading || disabled ? "#94a3b8" : "#fff",
         cursor: loading || disabled ? "not-allowed" : "pointer",
-        boxShadow: loading || disabled
-          ? "none"
-          : "0 4px 24px rgba(22,163,74,0.4), 0 1px 0 rgba(255,255,255,0.15) inset",
+        boxShadow: loading || disabled ? "none" : "0 4px 24px rgba(22,163,74,0.4), 0 1px 0 rgba(255,255,255,0.15) inset",
         border: "none",
         letterSpacing: "0.02em",
       }}>
-      {!loading && !disabled && (
-        <>
-          <motion.div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-400"
-            style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%)" }}/>
-          <motion.div className="absolute -inset-1 opacity-0 group-hover:opacity-100"
-            style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.15), transparent)" }}/>
-        </>
-      )}
       {children}
     </motion.button>
   );
@@ -162,7 +135,7 @@ function EyeToggle({ show, onToggle }) {
 }
 
 /* ══════════════════════════════════════════
-   OTP INPUTS — Premium
+   OTP INPUTS
 ══════════════════════════════════════════ */
 function OtpInputs({ otp, onChange, onKey, onPaste, refs }) {
   return (
@@ -200,7 +173,7 @@ function Divider({ label }) {
 }
 
 /* ══════════════════════════════════════════
-   SOCIAL BUTTONS — Google only (Facebook hidden)
+   SOCIAL BUTTONS
 ══════════════════════════════════════════ */
 function SocialButtons({ t }) {
   return (
@@ -208,12 +181,7 @@ function SocialButtons({ t }) {
       whileHover={{ scale: 1.01, y: -1 }} whileTap={{ scale: 0.98 }}
       onClick={() => { window.location.href = `${API}/api/customer/auth/google`; }}
       className="w-full flex items-center justify-center gap-3 py-[13px] px-5 rounded-2xl text-[14px] font-semibold transition-all duration-200 relative overflow-hidden"
-      style={{
-        background: "#fff",
-        border: "2px solid #e2e8f0",
-        color: "#374151",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-      }}>
+      style={{ background: "#fff", border: "2px solid #e2e8f0", color: "#374151", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
       <motion.div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity"
         style={{ background: "linear-gradient(135deg,rgba(66,133,244,0.04),rgba(52,168,83,0.04))" }}/>
       <svg width="20" height="20" viewBox="0 0 24 24" className="shrink-0">
@@ -227,7 +195,6 @@ function SocialButtons({ t }) {
   );
 }
 
-/* backward compat */
 function GoogleBtn({ t }) {
   return <SocialButtons t={t} />;
 }
@@ -284,7 +251,8 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   };
   const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2,"0")}:${String(s % 60).padStart(2,"0")}`;
 
-  // Email existence check
+  // Email existence check — শুধু format check করবে, existence check করবে না
+  // কারণ নতুন email এ emailValid=false হয়ে registration block হচ্ছিল
   const handleRegEmailChange = (val) => {
     setRegEmail(val);
     setEmailValid(null);
@@ -296,8 +264,9 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       try {
         const res  = await fetch(`${API}/api/customer/verify-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: val }) });
         const data = await res.json();
-        setEmailValid(data.exists !== false);
-      } catch { setEmailValid(true); }
+        // FIX: emailValid শুধু true সেট করো, false করলে নতুন email block হয়
+        setEmailValid(data.exists !== false ? true : null);
+      } catch { setEmailValid(null); }
       finally { setEmailChecking(false); }
     }, 800);
   };
@@ -330,7 +299,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       setLoading(true); clear();
       const res  = await fetch(`${API}/api/customer/login`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({email:loginEmail, password:loginPass}) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
       toast.success(t(`স্বাগতম, ${data.name.split(" ")[0]}! 🎉`, `Welcome back, ${data.name.split(" ")[0]}! 🎉`), {
@@ -339,7 +308,10 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
         iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
       });
       notify(); onSuccess(data);
-    } catch (err) { setServerError(err.message); }
+    } catch (err) {
+      // FIX: সব error message দেখাও
+      setServerError(err.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
+    }
     finally { setLoading(false); }
   };
 
@@ -348,7 +320,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
     const er = {};
     if (!regName.trim())          er.name     = t("নাম দিন","Name required");
     if (!validateEmail(regEmail)) er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
-    if (emailValid === false)     er.email    = t("ইমেইল বিদ্যমান নেই","Email does not exist");
+    // FIX: emailValid === false check সরিয়ে দেওয়া হয়েছে — নতুন email block হচ্ছিল
     if (regPass.length < 6)       er.password = t("কমপক্ষে ৬ অক্ষর","Min. 6 characters");
     if (regPass !== regConfirm)   er.confirm  = t("পাসওয়ার্ড মেলেনি","Passwords don't match");
     if (Object.keys(er).length) { setRegErrors(er); return; }
@@ -356,16 +328,19 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       setLoading(true); clear();
       const res  = await fetch(`${API}/api/customer/register`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({name:regName, email:regEmail, phone:regPhone, password:regPass}) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
+      if (!res.ok) throw new Error(data.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
+      // FIX: toast আগে দেখাও, তারপর state আপডেট করো
       toast.success(t(`অ্যাকাউন্ট তৈরি হয়েছে! স্বাগতম 🎉`, `Account created! Welcome 🎉`), {
         duration: 3000,
         style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
         iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
       });
-      notify(); onSuccess(data);
-    } catch (err) { setServerError(err.message); }
+      setTimeout(() => { notify(); onSuccess(data); }, 300);
+    } catch (err) {
+      setServerError(err.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
+    }
     finally { setLoading(false); }
   };
 
@@ -432,16 +407,11 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
   return (
     <div className="w-full">
-      {/* Card */}
       <div className="relative rounded-3xl overflow-hidden bg-white"
-        style={{
-          boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 32px 64px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
-        }}>
+        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 32px 64px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)" }}>
 
-        {/* Top accent */}
         <div className="h-[3px] w-full" style={{ background: "linear-gradient(90deg,#14532d,#16a34a,#4ade80,#16a34a,#14532d)" }}/>
 
-        {/* Tabs */}
         {(mode === "login" || mode === "register") && (
           <div className="px-6 pt-5">
             <div className="flex gap-1 p-1 rounded-2xl" style={{ background:"#f8fafc", border:"1px solid #e2e8f0" }}>
@@ -475,13 +445,13 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
                 <FieldWrap label={t("ইমেইল","Email")} error={loginErrors.email}>
                   <InputField icon={Mail} type="email" value={loginEmail}
-                    onChange={e => { setLoginEmail(e.target.value); setLoginErrors(p => ({...p, email:""})); }}
+                    onChange={e => { setLoginEmail(e.target.value); setLoginErrors(p => ({...p, email:""})); clear(); }}
                     placeholder="you@example.com" hasError={!!loginErrors.email} autoComplete="email" />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড","Password")} error={loginErrors.password}>
                   <InputField icon={Lock} type={showLoginPass ? "text" : "password"} value={loginPass}
-                    onChange={e => { setLoginPass(e.target.value); setLoginErrors(p => ({...p, password:""})); }}
+                    onChange={e => { setLoginPass(e.target.value); setLoginErrors(p => ({...p, password:""})); clear(); }}
                     placeholder="••••••••" hasError={!!loginErrors.password} autoComplete="current-password"
                     rightEl={<EyeToggle show={showLoginPass} onToggle={() => setShowLoginPass(s => !s)} />} />
                 </FieldWrap>
@@ -528,17 +498,16 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                 <FieldWrap label={t("ইমেইল","Email")} error={regErrors.email}
                   hint={
                     !regErrors.email && emailValid === true && validateEmail(regEmail)
-                      ? { color: "#16a34a", icon: <CheckCircle size={11} />, text: t("ইমেইল যাচাই হয়েছে","Email verified") }
+                      ? { color: "#16a34a", icon: <CheckCircle size={11} />, text: t("ইমেইল ঠিক আছে","Email looks good") }
                       : null
                   }>
                   <div className="relative">
                     <InputField icon={Mail} type="email" value={regEmail}
                       onChange={e => handleRegEmailChange(e.target.value)}
-                      placeholder="you@example.com" hasError={!!regErrors.email || emailValid === false} autoComplete="email" />
+                      placeholder="you@example.com" hasError={!!regErrors.email} autoComplete="email" />
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       {emailChecking && <Loader2 size={14} className="animate-spin" style={{ color: "#94a3b8" }} />}
-                      {!emailChecking && emailValid === true  && validateEmail(regEmail) && <CheckCircle size={14} style={{ color: "#16a34a" }} />}
-                      {!emailChecking && emailValid === false && validateEmail(regEmail) && <AlertCircle size={14} style={{ color: "#dc2626" }} />}
+                      {!emailChecking && emailValid === true && validateEmail(regEmail) && <CheckCircle size={14} style={{ color: "#16a34a" }} />}
                     </div>
                   </div>
                 </FieldWrap>
@@ -697,16 +666,12 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
 /* ══════════════════════════════════════════
    PROFILE SIDEBAR (Desktop)
-   শুধু renderContent() আপডেট করা হয়েছে —
-   প্রতিটা tab click এ sidebar এর সাদা অংশে
-   সেই related content দেখাবে।
 ══════════════════════════════════════════ */
 function ProfileSidebar({ customer, onClose, t }) {
   const [activeTab, setActiveTab] = useState("info");
   const [loading,   setLoading  ] = useState(false);
   const [msg,       setMsg      ] = useState({ type: "", text: "" });
 
-  // Change password state
   const [curPass,  setCurPass ] = useState("");
   const [newPass,  setNewPass ] = useState("");
   const [confPass, setConfPass] = useState("");
@@ -724,12 +689,13 @@ function ProfileSidebar({ customer, onClose, t }) {
     { id: "faq",      icon: HelpCircle, label: t("FAQs","FAQs")                },
   ];
 
+  // FIX: logout এর পর login page এ যাবে
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
     notify();
     onClose();
-    navigate("/");
+    navigate("/account");
   };
 
   const handleChangePassword = async (e) => {
@@ -756,13 +722,6 @@ function ProfileSidebar({ customer, onClose, t }) {
     ? new Date(customer.createdAt).toLocaleDateString("en-GB", { year:"numeric", month:"long", day:"numeric" })
     : null;
 
-  const ordersLink = customer?.phone
-    ? `/order?phone=${encodeURIComponent(customer.phone)}`
-    : `/order?email=${encodeURIComponent(customer?.email || "")}`;
-
-  /* ── UPDATED renderContent ──
-     প্রতিটা tab এর content এখন sidebar এর
-     সাদা অংশেই দেখায়, navigate করে না।     */
   const renderContent = () => {
     switch (activeTab) {
       case "info":
@@ -789,22 +748,14 @@ function ProfileSidebar({ customer, onClose, t }) {
             ))}
           </div>
         );
-
-      case "orders":
-        return <OrdersPanel customer={customer} t={t} />;
-
-
-      case "wishlist":
-        return <WishlistPanel t={t} />;
-
-
+      case "orders":   return <OrdersPanel customer={customer} t={t} />;
+      case "wishlist": return <WishlistPanel t={t} />;
       case "address":
         return (
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("ঠিকানা ম্যানেজ","Manage Address")}</h3>
             <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{ background: "rgba(230,81,0,0.06)" }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(230,81,0,0.06)" }}>
                 <MapPin size={26} style={{ color: "#e65100" }} />
               </div>
               <p className="text-[14px] font-bold text-slate-600">{t("ডেলিভারি ঠিকানা","Delivery Address")}</p>
@@ -812,7 +763,6 @@ function ProfileSidebar({ customer, onClose, t }) {
             </div>
           </div>
         );
-
       case "password":
         return (
           <div className="space-y-4">
@@ -843,24 +793,17 @@ function ProfileSidebar({ customer, onClose, t }) {
             </form>
           </div>
         );
-
-      case "faq":
-        return <FaqPanel t={t} />;
-
-
-      default:
-        return null;
+      case "faq": return <FaqPanel t={t} />;
+      default:    return null;
     }
   };
 
   return (
     <AnimatePresence>
-      {/* Backdrop */}
       <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}
         onClick={onClose} />
 
-      {/* Sidebar panel */}
       <motion.div key="panel"
         initial={{ x: "100%", opacity: 0 }}
         animate={{ x: 0, opacity: 1, transition: { duration: 0.32, ease: [0.22,1,0.36,1] } }}
@@ -868,15 +811,12 @@ function ProfileSidebar({ customer, onClose, t }) {
         className="fixed right-0 top-0 h-full z-50 flex"
         style={{ width: "520px" }}>
 
-        {/* Sidebar nav */}
         <div className="w-[180px] flex flex-col shrink-0 h-full"
           style={{ background: "linear-gradient(180deg, #1a2e1a 0%, #1e3620 100%)" }}>
 
-          {/* Logo area */}
           <div className="px-4 py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.12)" }}>
+              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "rgba(255,255,255,0.12)" }}>
                 <ShoppingBag size={14} color="#a5d6a7" />
               </div>
               <div>
@@ -886,7 +826,6 @@ function ProfileSidebar({ customer, onClose, t }) {
             </div>
           </div>
 
-          {/* Avatar */}
           <div className="px-4 py-5 border-b border-white/10">
             <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center text-white text-[18px] font-black mb-2.5"
               style={{ background: "rgba(255,255,255,0.12)", border: "2px solid rgba(255,255,255,0.15)" }}>
@@ -898,7 +837,6 @@ function ProfileSidebar({ customer, onClose, t }) {
             <p className="text-white/40 text-[10.5px] truncate mt-0.5">{customer?.email}</p>
           </div>
 
-          {/* Nav links */}
           <div className="flex-1 py-3 overflow-y-auto">
             {tabs.map(({ id, icon: Icon, label }) => (
               <button key={id} onClick={() => setActiveTab(id)}
@@ -918,7 +856,6 @@ function ProfileSidebar({ customer, onClose, t }) {
             ))}
           </div>
 
-          {/* Logout */}
           <div className="px-3 py-4 border-t border-white/10">
             <button onClick={handleLogout}
               className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl text-[12px] font-bold cursor-pointer border-none transition-all"
@@ -929,9 +866,7 @@ function ProfileSidebar({ customer, onClose, t }) {
           </div>
         </div>
 
-        {/* Content area */}
         <div className="flex-1 h-full overflow-y-auto bg-white relative">
-          {/* Close button */}
           <button onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all z-10"
             style={{ background: "rgba(148,163,184,0.1)", color: "#94a3b8" }}>
@@ -939,7 +874,6 @@ function ProfileSidebar({ customer, onClose, t }) {
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-
           <div className="p-7 pt-8">
             <AnimatePresence mode="wait">
               <motion.div key={activeTab}
@@ -956,7 +890,7 @@ function ProfileSidebar({ customer, onClose, t }) {
 }
 
 /* ══════════════════════════════════════════
-   STATUS CONFIG — OrderPage এর মতো
+   STATUS CONFIG
 ══════════════════════════════════════════ */
 const STATUS_CFG = {
   pending:    { label:"অপেক্ষমাণ",  color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
@@ -969,7 +903,6 @@ const STATUS_CFG = {
 const getStatusCfg = (s) => STATUS_CFG[s?.toLowerCase()] || { label: s || "—", color:"#64748b", bg:"#f8fafc", border:"#e2e8f0" };
 const STEPS_LIST   = ["pending","processing","shipped","confirmed","delivered"];
 
-/* ── Mini Timeline for sidebar ── */
 function MiniTimeline({ status }) {
   if (status === "cancelled") return null;
   const cfg     = getStatusCfg(status);
@@ -1008,7 +941,7 @@ function MiniTimeline({ status }) {
 }
 
 /* ══════════════════════════════════════════
-   ORDERS PANEL — OrderPage style
+   ORDERS PANEL
 ══════════════════════════════════════════ */
 function OrdersPanel({ customer, t }) {
   const [orders,   setOrders  ] = useState([]);
@@ -1020,20 +953,13 @@ function OrdersPanel({ customer, t }) {
       try {
         const phone = customer?.phone;
         const email = customer?.email;
-        const query = phone
-          ? `phone=${encodeURIComponent(phone)}`
-          : `email=${encodeURIComponent(email || "")}`;
+        const query = phone ? `phone=${encodeURIComponent(phone)}` : `email=${encodeURIComponent(email || "")}`;
         const res  = await fetch(`${API}/api/orders/track?${query}`);
         const json = await res.json();
-        const list = json.success
-          ? json.data
-          : (Array.isArray(json) ? json : (json.orders || json.data || []));
+        const list = json.success ? json.data : (Array.isArray(json) ? json : (json.orders || json.data || []));
         setOrders(list);
-      } catch {
-        setOrders([]);
-      } finally {
-        setLoading(false);
-      }
+      } catch { setOrders([]); }
+      finally { setLoading(false); }
     };
     fetchOrders();
   }, [customer]);
@@ -1041,13 +967,11 @@ function OrdersPanel({ customer, t }) {
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("আমার অর্ডারস","My Orders")}</h3>
-
       {loading && (
         <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-2 border-slate-100 border-t-emerald-500 rounded-full animate-spin"/>
         </div>
       )}
-
       {!loading && orders.length === 0 && (
         <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
           <div className="text-4xl mb-2">📦</div>
@@ -1055,27 +979,19 @@ function OrdersPanel({ customer, t }) {
           <p className="text-[12px] text-slate-400">{t("এখনো কোনো অর্ডার করা হয়নি","You haven't placed any orders yet")}</p>
         </div>
       )}
-
       {!loading && orders.length > 0 && (
         <div className="space-y-3">
           {orders.map((order, i) => {
-            const cfg      = getStatusCfg(order.status);
-            const isOpen   = expanded === i;
-            const date     = order.createdAt
-              ? new Date(order.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })
-              : "—";
-            const qty      = order.items?.reduce((s, x) => s + (x.quantity || 1), 0) || 0;
+            const cfg = getStatusCfg(order.status);
+            const isOpen = expanded === i;
+            const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+            const qty = order.items?.reduce((s, x) => s + (x.quantity || 1), 0) || 0;
             const isCancelled = order.status === "cancelled";
-
             return (
               <div key={order._id || i} className="rounded-2xl overflow-hidden"
                 style={{ border: `1px solid ${cfg.border}`, background: isCancelled ? "linear-gradient(135deg,#1a0a0a,#2d0f0f)" : "#fff" }}>
-                {/* top color bar */}
                 <div className="h-[3px]" style={{ background: `linear-gradient(90deg,${cfg.color},${cfg.color}88)` }}/>
-
-                {/* header row */}
-                <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer"
-                  onClick={() => setExpanded(isOpen ? null : i)}>
+                <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer" onClick={() => setExpanded(isOpen ? null : i)}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
                       <span className="text-[13px] font-bold truncate" style={{ color: isCancelled ? "#fff" : "#1e293b" }}>
@@ -1101,11 +1017,7 @@ function OrdersPanel({ customer, t }) {
                     </motion.div>
                   </div>
                 </div>
-
-                {/* timeline — only for non-cancelled */}
                 {!isCancelled && <div className="px-4 pb-2"><MiniTimeline status={order.status}/></div>}
-
-                {/* delivered banner */}
                 {order.status === "delivered" && (
                   <div className="mx-4 mb-3 px-3 py-2 rounded-xl flex items-center gap-2"
                     style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
@@ -1113,16 +1025,12 @@ function OrdersPanel({ customer, t }) {
                     <p className="text-[11px] font-semibold text-emerald-700">{t("🎉 অর্ডার সফলভাবে পৌঁছে গেছে!","🎉 Order delivered successfully!")}</p>
                   </div>
                 )}
-
-                {/* expanded detail */}
                 <AnimatePresence initial={false}>
                   {isOpen && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
                       <div className="px-4 pb-4 pt-1 space-y-3"
                         style={{ borderTop: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
-
-                        {/* items */}
                         {order.items?.length > 0 && (
                           <div className="space-y-2 pt-2">
                             {order.items.map((item, j) => (
@@ -1130,8 +1038,7 @@ function OrdersPanel({ customer, t }) {
                                 style={{ background: isCancelled ? "rgba(255,255,255,0.05)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.08)" : "#f1f5f9"}` }}>
                                 <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
                                   style={{ background: isCancelled ? "rgba(255,255,255,0.1)" : "#fff", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.1)" : "#e2e8f0"}` }}>
-                                  {item.image
-                                    ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>
+                                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>
                                     : <div className="w-full h-full flex items-center justify-center"><Package size={12} style={{ color: isCancelled ? "rgba(255,255,255,0.2)" : "#e2e8f0" }}/></div>}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -1147,8 +1054,6 @@ function OrdersPanel({ customer, t }) {
                             ))}
                           </div>
                         )}
-
-                        {/* price summary */}
                         <div className="rounded-xl p-3 space-y-1.5"
                           style={{ background: isCancelled ? "rgba(255,255,255,0.04)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
                           <div className="flex justify-between text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
@@ -1167,8 +1072,6 @@ function OrdersPanel({ customer, t }) {
                             <span>৳{(order.total || 0).toLocaleString()}</span>
                           </div>
                         </div>
-
-                        {/* delivery info */}
                         {order.customer && (
                           <div className="rounded-xl p-3 space-y-1"
                             style={{ background: isCancelled ? "rgba(255,255,255,0.04)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
@@ -1194,7 +1097,7 @@ function OrdersPanel({ customer, t }) {
 }
 
 /* ══════════════════════════════════════════
-   WISHLIST PANEL — পণ্য card style
+   WISHLIST PANEL
 ══════════════════════════════════════════ */
 function WishlistPanel({ t }) {
   const [items,   setItems  ] = useState([]);
@@ -1204,16 +1107,11 @@ function WishlistPanel({ t }) {
     const fetchWishlist = async () => {
       try {
         const token = localStorage.getItem("customerToken");
-        const res   = await fetch(`${API}/api/customer/wishlist`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
+        const res   = await fetch(`${API}/api/customer/wishlist`, { headers: { Authorization: `Bearer ${token}` } });
+        const data  = await res.json();
         setItems(data.wishlist || []);
-      } catch {
-        setItems([]);
-      } finally {
-        setLoading(false);
-      }
+      } catch { setItems([]); }
+      finally { setLoading(false); }
     };
     fetchWishlist();
   }, []);
@@ -1221,13 +1119,11 @@ function WishlistPanel({ t }) {
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("উইশলিস্ট","Wishlist")}</h3>
-
       {loading && (
         <div className="flex items-center justify-center py-12">
           <div className="w-8 h-8 border-2 border-slate-100 border-t-red-400 rounded-full animate-spin"/>
         </div>
       )}
-
       {!loading && items.length === 0 && (
         <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
           <div className="text-4xl mb-2">🤍</div>
@@ -1235,30 +1131,19 @@ function WishlistPanel({ t }) {
           <p className="text-[12px] text-slate-400">{t("পছন্দের পণ্য সেভ করুন","Save your favourite products")}</p>
         </div>
       )}
-
       {!loading && items.length > 0 && (
         <div className="space-y-2.5">
           {items.map((item, i) => (
-            <Link key={item._id || i} to={`/product/${item.slug || item._id}`}
-              className="no-underline block group">
+            <Link key={item._id || i} to={`/product/${item.slug || item._id}`} className="no-underline block group">
               <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                 className="flex items-center gap-3 p-3 rounded-2xl transition-all"
                 style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#a7f3d0"; e.currentTarget.style.background = "#f0fdf4"; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#f8fafc"; }}>
-
-                {/* Image */}
-                <div className="w-[52px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-white"
-                  style={{ border: "1.5px solid #e2e8f0" }}>
-                  {item.image
-                    ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>
-                    : <div className="w-full h-full flex items-center justify-center">
-                        <Package size={18} className="text-slate-200"/>
-                      </div>
-                  }
+                <div className="w-[52px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-white" style={{ border: "1.5px solid #e2e8f0" }}>
+                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>
+                    : <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-slate-200"/></div>}
                 </div>
-
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-bold text-slate-800 truncate leading-snug group-hover:text-emerald-700 transition-colors">
                     {item.name || t("পণ্য","Product")}
@@ -1282,8 +1167,6 @@ function WishlistPanel({ t }) {
                     </span>
                   )}
                 </div>
-
-                {/* Arrow */}
                 <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
                   style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
                   <ChevronRight size={13} style={{ color: "#059669" }}/>
@@ -1301,64 +1184,60 @@ function WishlistPanel({ t }) {
 }
 
 /* ══════════════════════════════════════════
-   FAQ PANEL — PolicyPage এর exact design ও data
+   FAQ PANEL
 ══════════════════════════════════════════ */
 const FAQ_SECTIONS = [
   {
-    tag: "০১",
-    titleBn: "অর্ডার সংক্রান্ত প্রশ্ন", titleEn: "Order Related Questions",
+    tag: "০১", titleBn: "অর্ডার সংক্রান্ত প্রশ্ন", titleEn: "Order Related Questions",
     faqs: [
       { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?",
         aBn:"পছন্দের পণ্য কার্টে যোগ করুন, তারপর চেকআউট পেজে গিয়ে আপনার নাম, ফোন নম্বর ও ঠিকানা দিন। পেমেন্ট পদ্ধতি বেছে নিন এবং অর্ডার কনফার্ম করুন। অর্ডার সফল হলে একটি অর্ডার আইডি পাবেন।",
         aEn:"Add your preferred product to the cart, then go to checkout and enter your name, phone number and address. Choose a payment method and confirm the order. Upon successful order, you will receive an order ID." },
       { qBn:"অর্ডার কীভাবে ট্র্যাক করবো?", qEn:"How do I track my order?",
-        aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং অর্ডার করার সময় যে ফোন নম্বর দিয়েছিলেন সেটি দিন। আপনার সব অর্ডারের সর্বশেষ অবস্থা দেখতে পাবেন।",
-        aEn:"Go to the Order Track page (/order) and enter the phone number you used when placing the order. You will see the latest status of all your orders." },
+        aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং অর্ডার করার সময় যে ফোন নম্বর দিয়েছিলেন সেটি দিন।",
+        aEn:"Go to the Order Track page (/order) and enter the phone number you used when placing the order." },
       { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?",
-        aBn:"হ্যাঁ, অর্ডার Pending বা Processing অবস্থায় থাকলে বাতিল করা সম্ভব। এর জন্য হেল্পলাইনে যোগাযোগ করুন। Shipped অবস্থায় পৌঁছালে বাতিল করা সম্ভব নাও হতে পারে।",
-        aEn:"Yes, it is possible to cancel if the order is in Pending or Processing status. Contact our helpline for this. It may not be possible to cancel once the order has reached Shipped status." },
+        aBn:"হ্যাঁ, অর্ডার Pending বা Processing অবস্থায় থাকলে বাতিল করা সম্ভব। এর জন্য হেল্পলাইনে যোগাযোগ করুন।",
+        aEn:"Yes, it is possible to cancel if the order is in Pending or Processing status. Contact our helpline for this." },
       { qBn:"একসাথে কতটি পণ্য অর্ডার করা যাবে?", qEn:"How many products can I order at once?",
         aBn:"একটি অর্ডারে যত খুশি পণ্য যোগ করতে পারবেন। বড় অর্ডারে ডেলিভারি বিনামূল্যে (২৫০০ টাকার উপরে)।",
         aEn:"You can add as many products as you like to a single order. For large orders you get free delivery (above ৳2500)." },
     ],
   },
   {
-    tag: "০২",
-    titleBn: "পেমেন্ট সংক্রান্ত প্রশ্ন", titleEn: "Payment Related Questions",
+    tag: "০২", titleBn: "পেমেন্ট সংক্রান্ত প্রশ্ন", titleEn: "Payment Related Questions",
     faqs: [
       { qBn:"কোন পেমেন্ট পদ্ধতি ব্যবহার করা যাবে?", qEn:"Which payment methods are available?",
         aBn:"আমরা তিনটি পেমেন্ট পদ্ধতি গ্রহণ করি: bKash, Nagad এবং ক্যাশ অন ডেলিভারি (COD)। মার্চেন্ট নম্বর: 01938360666।",
         aEn:"We accept three payment methods: bKash, Nagad and Cash on Delivery (COD). Merchant number: 01938360666." },
       { qBn:"ট্র্যান্সাকশন আইডি (TrxID) কোথায় পাবো?", qEn:"Where do I find the Transaction ID?",
-        aBn:"bKash বা Nagad পেমেন্টের পরে আপনার ফোনে কনফার্মেশন SMS আসবে যেখানে TrxID থাকবে। সাধারণত ৮-১০ অক্ষরের কোড।",
-        aEn:"After bKash or Nagad payment, you will receive a confirmation SMS containing the TrxID. It is usually an 8-10 character code." },
+        aBn:"bKash বা Nagad পেমেন্টের পরে আপনার ফোনে কনফার্মেশন SMS আসবে যেখানে TrxID থাকবে।",
+        aEn:"After bKash or Nagad payment, you will receive a confirmation SMS containing the TrxID." },
       { qBn:"COD অর্ডারে কি অতিরিক্ত চার্জ আছে?", qEn:"Are there extra charges for COD orders?",
-        aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই। শুধু সাধারণ ডেলিভারি চার্জ প্রযোজ্য (২৫০০ টাকার উপরে বিনামূল্যে, অন্যথায় ৬০ টাকা)।",
-        aEn:"No extra charges for COD. Only regular delivery charge applies (free above ৳2500, otherwise ৳60)." },
+        aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই। শুধু সাধারণ ডেলিভারি চার্জ প্রযোজ্য।",
+        aEn:"No extra charges for COD. Only regular delivery charge applies." },
     ],
   },
   {
-    tag: "০৩",
-    titleBn: "ডেলিভারি সংক্রান্ত প্রশ্ন", titleEn: "Delivery Related Questions",
+    tag: "০৩", titleBn: "ডেলিভারি সংক্রান্ত প্রশ্ন", titleEn: "Delivery Related Questions",
     faqs: [
       { qBn:"ডেলিভারি কতদিন লাগে?", qEn:"How long does delivery take?",
-        aBn:"ঢাকার মধ্যে ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস। ছুটি বা হরতালে বিলম্ব হতে পারে।",
-        aEn:"Within Dhaka 1-2 business days, outside Dhaka 2-4 business days. Delays may occur during holidays or strikes." },
+        aBn:"ঢাকার মধ্যে ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।",
+        aEn:"Within Dhaka 1-2 business days, outside Dhaka 2-4 business days." },
       { qBn:"ডেলিভারি চার্জ কত?", qEn:"What is the delivery charge?",
         aBn:"২৫০০ টাকা বা তার বেশি অর্ডারে বিনামূল্যে। ২৫০০ টাকার কম অর্ডারে মাত্র ৬০ টাকা।",
         aEn:"Free for orders ৳2500 or above. Only ৳60 for orders below ৳2500." },
       { qBn:"কি পুরো বাংলাদেশে ডেলিভারি দেওয়া হয়?", qEn:"Do you deliver all over Bangladesh?",
-        aBn:"হ্যাঁ, বাংলাদেশের সকল ৬৪টি জেলায় ডেলিভারি প্রদান করি। দুর্গম এলাকায় কিছুটা বেশি সময় লাগতে পারে।",
-        aEn:"Yes, we deliver to all 64 districts of Bangladesh. Remote areas may take slightly longer." },
+        aBn:"হ্যাঁ, বাংলাদেশের সকল ৬৪টি জেলায় ডেলিভারি প্রদান করি।",
+        aEn:"Yes, we deliver to all 64 districts of Bangladesh." },
     ],
   },
   {
-    tag: "০৪",
-    titleBn: "রিটার্ন ও রিফান্ড", titleEn: "Return & Refund",
+    tag: "০৪", titleBn: "রিটার্ন ও রিফান্ড", titleEn: "Return & Refund",
     faqs: [
       { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return a product?",
-        aBn:"হ্যাঁ, পণ্য পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে। তবে গ্রাহকের কারণে ক্ষতিগ্রস্ত পণ্য ফেরতযোগ্য নয়।",
-        aEn:"Yes, products can be returned within 7 days of receipt with original packaging. However, products damaged by the customer are not returnable." },
+        aBn:"হ্যাঁ, পণ্য পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।",
+        aEn:"Yes, products can be returned within 7 days of receipt with original packaging." },
       { qBn:"রিফান্ড পেতে কতদিন লাগে?", qEn:"How long does a refund take?",
         aBn:"পণ্য পরিদর্শনের পরে ৩-৫ কার্যদিবসের মধ্যে bKash বা Nagad এ রিফান্ড করা হয়।",
         aEn:"After product inspection, refund is processed within 3-5 business days via bKash or Nagad." },
@@ -1366,31 +1245,23 @@ const FAQ_SECTIONS = [
   },
 ];
 
-/* ── PolicyPage FaqItem — exact same design ── */
 function SidebarFaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
-  const accent   = "#d97706"; // FAQ page accent
-  const accentBg = "#d9770614";
   return (
     <div className="rounded-2xl overflow-hidden border transition-all duration-200"
-      style={{
-        borderColor: open ? "#d9770644" : "#f1f5f9",
-        background:  open ? accentBg : "#fafafa",
-      }}>
+      style={{ borderColor: open ? "#d9770644" : "#f1f5f9", background: open ? "#d9770614" : "#fafafa" }}>
       <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left gap-3"
-        type="button">
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left gap-3" type="button">
         <p className="text-sm font-semibold leading-snug" style={{ color: "#1e293b" }}>{q}</p>
         <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="flex-shrink-0">
-          <ChevronDown size={15} style={{ color: accent }}/>
+          <ChevronDown size={15} style={{ color: "#d97706" }}/>
         </motion.div>
       </button>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }}
             exit={{ height:0, opacity:0 }} transition={{ duration:0.25, ease:[0.4,0,0.2,1] }}>
-            <p className="px-4 pb-4 text-sm leading-relaxed"
-              style={{ color:"#475569", borderTop:"1px solid #f1f5f9" }}>
+            <p className="px-4 pb-4 text-sm leading-relaxed" style={{ color:"#475569", borderTop:"1px solid #f1f5f9" }}>
               <span className="block pt-3">{a}</span>
             </p>
           </motion.div>
@@ -1404,18 +1275,12 @@ function FaqPanel({ t }) {
   return (
     <div className="space-y-5">
       <h3 className="text-[16px] font-black text-slate-800">{t("সাধারণ জিজ্ঞাসা","FAQs")}</h3>
-
       {FAQ_SECTIONS.map((sec, si) => (
-        <div key={si} className="rounded-2xl overflow-hidden shadow-sm"
-          style={{ background: "#ffffff", border: "1px solid #f1f5f9" }}>
-          {/* Section header — PolicyPage style */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-50"
-            style={{ background: "#d9770614" }}>
-            <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0"
-              style={{ color: "#d9770688" }}>{sec.tag}</span>
+        <div key={si} className="rounded-2xl overflow-hidden shadow-sm" style={{ background: "#ffffff", border: "1px solid #f1f5f9" }}>
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-50" style={{ background: "#d9770614" }}>
+            <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: "#d9770688" }}>{sec.tag}</span>
             <h4 className="text-sm font-bold text-slate-800">{t(sec.titleBn, sec.titleEn)}</h4>
           </div>
-          {/* FAQ items */}
           <div className="px-4 py-4 space-y-2.5">
             {sec.faqs.map((faq, fi) => (
               <SidebarFaqItem key={fi} q={t(faq.qBn, faq.qEn)} a={t(faq.aBn, faq.aEn)} />
@@ -1427,14 +1292,10 @@ function FaqPanel({ t }) {
   );
 }
 
-/* ══════════════════════════════════════════
-   FAQ ACCORDION ITEM (old — kept for compatibility)
-══════════════════════════════════════════ */
 function FaqItem({ question, answer }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-xl overflow-hidden"
-      style={{ border: "1px solid rgba(148,163,184,0.12)" }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(148,163,184,0.12)" }}>
       <button onClick={() => setOpen(s => !s)}
         className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left cursor-pointer border-none transition-all"
         style={{ background: open ? "rgba(46,125,50,0.04)" : "rgba(248,250,252,0.8)" }}>
@@ -1459,17 +1320,14 @@ function FaqItem({ question, answer }) {
 
 /* ══════════════════════════════════════════
    MOBILE SECTION CONTENT
-   প্রতিটা card click এ এই component দেখায়
 ══════════════════════════════════════════ */
 function MobileSectionContent({ section, customer, t, onNavigate }) {
-  /* ── Info ── */
   if (section === "info") {
     const joinDate = customer?.createdAt
       ? new Date(customer.createdAt).toLocaleDateString("en-GB",{year:"numeric",month:"long",day:"numeric"})
       : null;
     const addr = customer?.address || {};
     const hasAddr = addr.street || addr.thana || addr.district;
-
     return (
       <div className="space-y-3">
         {[
@@ -1500,44 +1358,18 @@ function MobileSectionContent({ section, customer, t, onNavigate }) {
       </div>
     );
   }
-
-  /* ── Orders ── */
-  if (section === "orders") {
-    return <MobileOrdersPanel customer={customer} t={t} />;
-  }
-
-  /* ── Wishlist ── */
-  if (section === "wishlist") {
-    return <MobileWishlistPanel t={t} onNavigate={onNavigate} />;
-  }
-
-  /* ── Cart ── */
-  if (section === "cart") {
-    return <MobileCartPanel t={t} onNavigate={onNavigate} />;
-  }
-
-  /* ── Address ── */
-  if (section === "address") {
-    return <MobileAddressPanel customer={customer} t={t} />;
-  }
-
-  /* ── Password ── */
-  if (section === "password") {
-    return <MobilePasswordPanel t={t} />;
-  }
-
-  /* ── FAQ ── */
-  if (section === "faq") {
-    return <MobileFaqPanel t={t} />;
-  }
-
+  if (section === "orders")   return <MobileOrdersPanel customer={customer} t={t} />;
+  if (section === "wishlist") return <MobileWishlistPanel t={t} onNavigate={onNavigate} />;
+  if (section === "cart")     return <MobileCartPanel t={t} onNavigate={onNavigate} />;
+  if (section === "address")  return <MobileAddressPanel customer={customer} t={t} />;
+  if (section === "password") return <MobilePasswordPanel t={t} />;
+  if (section === "faq")      return <MobileFaqPanel t={t} />;
   return null;
 }
 
-/* ── Mobile Orders Panel ── */
 function MobileOrdersPanel({ customer, t }) {
-  const [orders,  setOrders ] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [orders,   setOrders  ] = useState([]);
+  const [loading,  setLoading ] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
@@ -1552,7 +1384,7 @@ function MobileOrdersPanel({ customer, t }) {
       .finally(()=>setLoading(false));
   }, [customer]);
 
-  const STATUS_CFG = {
+  const S = {
     pending:    { label:"অপেক্ষমাণ", color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
     processing: { label:"প্যাকেজিং", color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
     shipped:    { label:"পথে আছে",   color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
@@ -1567,7 +1399,7 @@ function MobileOrdersPanel({ customer, t }) {
   return (
     <div className="space-y-3">
       {orders.map((order,i) => {
-        const cfg = STATUS_CFG[order.status] || { label:order.status, color:"#64748b", bg:"#f8fafc", border:"#e2e8f0" };
+        const cfg = S[order.status] || { label:order.status, color:"#64748b", bg:"#f8fafc", border:"#e2e8f0" };
         const isOpen = expanded === i;
         const isCancelled = order.status === "cancelled";
         const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
@@ -1576,8 +1408,7 @@ function MobileOrdersPanel({ customer, t }) {
           <div key={order._id||i} className="rounded-2xl overflow-hidden"
             style={{border:`1px solid ${cfg.border}`,background:isCancelled?"linear-gradient(135deg,#1a0a0a,#2d0f0f)":"#fff"}}>
             <div className="h-[3px]" style={{background:`linear-gradient(90deg,${cfg.color},${cfg.color}88)`}}/>
-            <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer"
-              onClick={()=>setExpanded(isOpen?null:i)}>
+            <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer" onClick={()=>setExpanded(isOpen?null:i)}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
                   <span className="text-[13px] font-bold" style={{color:isCancelled?"#fff":"#1e293b"}}>
@@ -1628,7 +1459,6 @@ function MobileOrdersPanel({ customer, t }) {
   );
 }
 
-/* ── Mobile Wishlist Panel ── */
 function MobileWishlistPanel({ t, onNavigate }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1669,7 +1499,6 @@ function MobileWishlistPanel({ t, onNavigate }) {
   );
 }
 
-/* ── Mobile Cart Panel ── */
 function MobileCartPanel({ t, onNavigate }) {
   const { cartItems, cartCount, cartSubtotal, cartTotal, deliveryCharge, removeFromCart, updateQuantity } = useCart();
 
@@ -1678,8 +1507,7 @@ function MobileCartPanel({ t, onNavigate }) {
   return (
     <div className="space-y-3">
       {cartItems.map((item,i) => (
-        <div key={item._id||i} className="flex items-center gap-3 p-3 rounded-2xl"
-          style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
+        <div key={item._id||i} className="flex items-center gap-3 p-3 rounded-2xl" style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
           <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-white" style={{border:"1.5px solid #e2e8f0"}}>
             {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/> : <Package size={18} className="m-auto mt-4 text-slate-200"/>}
           </div>
@@ -1723,7 +1551,6 @@ function MobileCartPanel({ t, onNavigate }) {
   );
 }
 
-/* ── Mobile Address Panel ── */
 function MobileAddressPanel({ customer, t }) {
   const saved = customer?.address || {};
   const [street,   setStreet  ] = useState(saved.street   || "");
@@ -1732,7 +1559,7 @@ function MobileAddressPanel({ customer, t }) {
   const [phone,    setPhone   ] = useState(saved.phone    || "");
   const [loading,  setLoading ] = useState(false);
   const [msg,      setMsg     ] = useState({ type:"", text:"" });
-  const hasPhone = !!customer?.phone;
+  const hasPhone   = !!customer?.phone;
   const hasAddress = saved.street || saved.thana || saved.district;
 
   const districts = Object.keys(BD_LOCATIONS).filter(d=>!d.includes("(alt)"));
@@ -1752,13 +1579,29 @@ function MobileAddressPanel({ customer, t }) {
         method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
         body: JSON.stringify(body),
       });
+
+      // FIX: JSON response check
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(t("সার্ভার সংযোগ সমস্যা","Server connection error"));
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
+
+      // localStorage আপডেট করো
       const info = JSON.parse(localStorage.getItem("customerInfo")||"{}");
       localStorage.setItem("customerInfo",JSON.stringify({...info,address:data.address}));
+
+      // customer state আপডেট করো
+      window.dispatchEvent(new Event("customerAuthChanged"));
+
       setMsg({type:"success",text:t("ঠিকানা সেভ হয়েছে!","Address saved!")});
-    } catch(err) { setMsg({type:"error",text:err.message}); }
-    finally { setLoading(false); }
+    } catch(err) {
+      setMsg({type:"error",text:err.message});
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1812,7 +1655,6 @@ function MobileAddressPanel({ customer, t }) {
   );
 }
 
-/* ── Mobile Password Panel ── */
 function MobilePasswordPanel({ t }) {
   const [curPass,  setCurPass ] = useState("");
   const [newPass,  setNewPass ] = useState("");
@@ -1865,7 +1707,6 @@ function MobilePasswordPanel({ t }) {
   );
 }
 
-/* ── Mobile FAQ Panel ── */
 const MOBILE_FAQ_SECTIONS = [
   { tag:"০১", titleBn:"অর্ডার সংক্রান্ত", titleEn:"Order Questions",
     faqs:[
@@ -1937,31 +1778,29 @@ function MobileFaqPanel({ t }) {
 }
 
 /* ══════════════════════════════════════════
-   BD_LOCATIONS (for mobile address panel)
-   — তোমার ../../data/Bdlocations থেকে import করা হচ্ছে
+   MOBILE DASHBOARD
 ══════════════════════════════════════════ */
 function MobileDashboard({ customer, t }) {
   const navigate  = useNavigate();
-  const [activeSection, setActiveSection] = useState(null); // null = dashboard home
+  const [activeSection, setActiveSection] = useState(null);
   const contentRef = useRef(null);
 
-  const notify2 = () => window.dispatchEvent(new Event("customerAuthChanged"));
-
+  // FIX: logout এর পর /account এ redirect → login page দেখাবে
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
-    notify2();
-    navigate("/");
+    notify();
+    navigate("/account");
   };
 
   const menuItems = [
-    { id:"info",     icon: Info,       label: t("অ্যাকাউন্ট ইনফো","Account Info"),  sub: t("প্রোফাইল ও তথ্য","Profile & details"),  iconColor:"#2e7d32", iconBg:"rgba(46,125,50,0.1)"    },
-    { id:"orders",   icon: Package,    label: t("মাই অর্ডারস","My Orders"),          sub: t("অর্ডার ট্র্যাক","Track orders"),         iconColor:"#1565c0", iconBg:"rgba(21,101,192,0.1)"   },
-    { id:"wishlist", icon: Heart,      label: t("উইশলিস্ট","Wishlist"),             sub: t("সেভ করা পণ্য","Saved items"),             iconColor:"#c62828", iconBg:"rgba(198,40,40,0.08)"   },
-    { id:"cart",     icon: ShoppingBag,label: t("আমার কার্ট","My Cart"),            sub: t("কার্টের পণ্য","Cart items"),              iconColor:"#0277bd", iconBg:"rgba(2,119,189,0.1)"    },
-    { id:"address",  icon: MapPin,     label: t("ঠিকানা","Address"),               sub: t("ডেলিভারি ঠিকানা","Delivery address"),     iconColor:"#e65100", iconBg:"rgba(230,81,0,0.08)"    },
-    { id:"password", icon: Shield,     label: t("পাসওয়ার্ড","Password"),           sub: t("নিরাপত্তা আপডেট","Security update"),      iconColor:"#6a1b9a", iconBg:"rgba(106,27,154,0.08)"  },
-    { id:"faq",      icon: HelpCircle, label: t("FAQs","FAQs"),                    sub: t("সাহায্য ও প্রশ্ন","Help & support"),       iconColor:"#00695c", iconBg:"rgba(0,105,92,0.08)"    },
+    { id:"info",     icon: Info,        label: t("অ্যাকাউন্ট ইনফো","Account Info"),  sub: t("প্রোফাইল ও তথ্য","Profile & details"),  iconColor:"#2e7d32", iconBg:"rgba(46,125,50,0.1)"    },
+    { id:"orders",   icon: Package,     label: t("মাই অর্ডারস","My Orders"),          sub: t("অর্ডার ট্র্যাক","Track orders"),         iconColor:"#1565c0", iconBg:"rgba(21,101,192,0.1)"   },
+    { id:"wishlist", icon: Heart,       label: t("উইশলিস্ট","Wishlist"),             sub: t("সেভ করা পণ্য","Saved items"),             iconColor:"#c62828", iconBg:"rgba(198,40,40,0.08)"   },
+    { id:"cart",     icon: ShoppingBag, label: t("আমার কার্ট","My Cart"),            sub: t("কার্টের পণ্য","Cart items"),              iconColor:"#0277bd", iconBg:"rgba(2,119,189,0.1)"    },
+    { id:"address",  icon: MapPin,      label: t("ঠিকানা","Address"),               sub: t("ডেলিভারি ঠিকানা","Delivery address"),     iconColor:"#e65100", iconBg:"rgba(230,81,0,0.08)"    },
+    { id:"password", icon: Shield,      label: t("পাসওয়ার্ড","Password"),           sub: t("নিরাপত্তা আপডেট","Security update"),      iconColor:"#6a1b9a", iconBg:"rgba(106,27,154,0.08)"  },
+    { id:"faq",      icon: HelpCircle,  label: t("FAQs","FAQs"),                    sub: t("সাহায্য ও প্রশ্ন","Help & support"),       iconColor:"#00695c", iconBg:"rgba(0,105,92,0.08)"    },
   ];
 
   const handleCardClick = (id) => {
@@ -1973,14 +1812,11 @@ function MobileDashboard({ customer, t }) {
 
   return (
     <div className="min-h-screen" style={{ background:"#f0f4f0" }}>
-
-      {/* ── Hero ── */}
       <div className="relative" style={{ background:"linear-gradient(160deg,#1a2e1a 0%,#2e7d32 60%,#388e3c 100%)" }}>
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10"
           style={{ background:"radial-gradient(circle,#a5d6a7,transparent)", transform:"translate(30%,-30%)" }}/>
         <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-10"
           style={{ background:"radial-gradient(circle,#81c784,transparent)", transform:"translate(-20%,20%)" }}/>
-
         <div className="relative px-5 pt-8 pb-8">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-black shrink-0 shadow-lg"
@@ -1998,7 +1834,6 @@ function MobileDashboard({ customer, t }) {
         </div>
       </div>
 
-      {/* ── Cards grid ── */}
       <div className="px-4 pt-4 pb-6" style={{ background:"#f0f4f0" }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {menuItems.map(({ id, icon:Icon, label, sub, iconColor, iconBg }) => (
@@ -2007,12 +1842,9 @@ function MobileDashboard({ customer, t }) {
               onClick={() => handleCardClick(id)}
               className="bg-white rounded-2xl p-4 flex flex-col text-left border-none cursor-pointer w-full relative overflow-hidden"
               style={{
-                boxShadow: activeSection===id
-                  ? `0 0 0 2.5px ${iconColor}, 0 4px 16px rgba(0,0,0,0.1)`
-                  : "0 2px 12px rgba(0,0,0,0.06)",
+                boxShadow: activeSection===id ? `0 0 0 2.5px ${iconColor}, 0 4px 16px rgba(0,0,0,0.1)` : "0 2px 12px rgba(0,0,0,0.06)",
                 minHeight:"100px",
               }}>
-              {/* active indicator */}
               {activeSection===id && (
                 <motion.div layoutId="mobile-active"
                   className="absolute top-0 left-0 right-0 h-[3px]"
@@ -2034,7 +1866,6 @@ function MobileDashboard({ customer, t }) {
         </motion.button>
       </div>
 
-      {/* ── Inline Content Panel ── */}
       <AnimatePresence mode="wait">
         {activeSection && (
           <motion.div ref={contentRef}
@@ -2043,12 +1874,9 @@ function MobileDashboard({ customer, t }) {
             exit={{ opacity:0, y:-8 }} transition={{ duration:0.25 }}
             className="mx-4 mb-8 bg-white rounded-3xl overflow-hidden"
             style={{ boxShadow:"0 4px 24px rgba(0,0,0,0.08)", border:"1px solid rgba(0,0,0,0.04)" }}>
-
-            {/* Panel header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
               {activeItem && (
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background:activeItem.iconBg }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background:activeItem.iconBg }}>
                   <activeItem.icon size={16} style={{ color:activeItem.iconColor }}/>
                 </div>
               )}
@@ -2061,15 +1889,8 @@ function MobileDashboard({ customer, t }) {
                 </svg>
               </button>
             </div>
-
-            {/* Panel content */}
             <div className="p-5">
-              <MobileSectionContent
-                section={activeSection}
-                customer={customer}
-                t={t}
-                onNavigate={navigate}
-              />
+              <MobileSectionContent section={activeSection} customer={customer} t={t} onNavigate={navigate} />
             </div>
           </motion.div>
         )}
@@ -2081,10 +1902,8 @@ function MobileDashboard({ customer, t }) {
 /* ══════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════ */
-/* ── Desktop এ login হলে home এ redirect ── */
 function DesktopRedirect({ navigate }) {
   useEffect(() => {
-    // শুধু desktop (lg = 1024px+) এ redirect করো
     if (window.innerWidth < 1024) return;
     const timer = setTimeout(() => navigate("/"), 100);
     return () => clearTimeout(timer);
@@ -2095,20 +1914,22 @@ function DesktopRedirect({ navigate }) {
 export default function AccountPage() {
   const t = useT();
   const navigate = useNavigate();
-  const [customer,     setCustomer    ] = useState(null);
-  const [mode,         setMode        ] = useState("login");
-  const [showProfile,  setShowProfile ] = useState(false);
-  const [authChecked,  setAuthChecked ] = useState(false); // ← loading guard
+  const [customer,    setCustomer   ] = useState(null);
+  const [mode,        setMode       ] = useState("login");
+  const [showProfile, setShowProfile] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
+  // initial auth check
   useEffect(() => {
     const token = localStorage.getItem("customerToken");
     const info  = localStorage.getItem("customerInfo");
     if (token && info) {
       try { setCustomer(JSON.parse(info)); } catch (_) {}
     }
-    setAuthChecked(true); // ← check শেষ
+    setAuthChecked(true);
   }, []);
 
+  // Google OAuth callback — token & info URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token  = params.get("token");
@@ -2125,41 +1946,54 @@ export default function AccountPage() {
     }
   }, []);
 
+  // Google OAuth error — no_account হলে register এ নিয়ে যাও
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const error  = params.get("error");
-  if (error === "no_account") {
-    setMode("register");
-    window.history.replaceState({}, "", "/account");
-  }
-}, []);
+    const params = new URLSearchParams(window.location.search);
+    const error  = params.get("error");
+    if (error === "no_account") {
+      setMode("register");
+      window.history.replaceState({}, "", "/account");
+    }
+  }, []);
 
+  // /account/password এ গেলে profile sidebar খোলো
   useEffect(() => {
     const path = window.location.pathname;
     if (path === "/account/password") setShowProfile(true);
   }, []);
 
+  // openCustomerProfile event
   useEffect(() => {
     const handler = () => setShowProfile(true);
     window.addEventListener("openCustomerProfile", handler);
     return () => window.removeEventListener("openCustomerProfile", handler);
   }, []);
 
+  // FIX: customerAuthChanged event এ customer state re-read করো
+  useEffect(() => {
+    const handler = () => {
+      const info = localStorage.getItem("customerInfo");
+      if (info) {
+        try { setCustomer(JSON.parse(info)); } catch (_) {}
+      } else {
+        // logout হলে customer null করো
+        setCustomer(null);
+      }
+    };
+    window.addEventListener("customerAuthChanged", handler);
+    return () => window.removeEventListener("customerAuthChanged", handler);
+  }, []);
+
   const handleAuthSuccess = (data) => setCustomer(data);
 
-  // auth check শেষ না হওয়া পর্যন্ত কিছু দেখাবে না
   if (!authChecked) return null;
 
   if (customer) {
     const isDesktop = window.innerWidth >= 1024;
     return (
       <>
-        {/* Mobile / Tablet — lg এর নিচে */}
         {!isDesktop && <MobileDashboard customer={customer} t={t} />}
-
-        {/* Desktop — redirect */}
         {isDesktop && <DesktopRedirect navigate={navigate} />}
-
         {showProfile && (
           <ProfileSidebar customer={customer} onClose={() => setShowProfile(false)} t={t} />
         )}
@@ -2169,8 +2003,6 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-white">
-
-      {/* ── Subtle bg pattern ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 opacity-[0.018]"
           style={{ backgroundImage:"radial-gradient(#2e7d32 1px, transparent 1px)", backgroundSize:"28px 28px" }}/>
@@ -2180,7 +2012,6 @@ export default function AccountPage() {
           style={{ background:"radial-gradient(circle,#86efac,transparent)", transform:"translate(-30%,30%)" }}/>
       </div>
 
-      {/* ── Top header ── */}
       <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35 }}
         className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5 border-b border-slate-100">
         <Link to="/" className="no-underline flex items-center gap-2.5 group">
@@ -2196,10 +2027,7 @@ export default function AccountPage() {
         </div>
       </motion.div>
 
-      {/* ── Main ── */}
       <div className="relative z-10 flex flex-col items-center px-4 pt-10 pb-16">
-
-        {/* Headline */}
         <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35, delay:0.05 }}
           className="text-center mb-8 max-w-sm">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4"
@@ -2211,13 +2039,17 @@ export default function AccountPage() {
           </div>
           <h1 className="text-[28px] sm:text-[32px] font-black text-slate-900 leading-tight tracking-tight">
             {t("Nahid Enterprise","Nahid Enterprise")}<br/>
-            <span style={{ color: mode === "register" ? "#dc2626" : undefined, background: mode === "register" ? "none" : "linear-gradient(135deg,#15803d,#4ade80)", WebkitBackgroundClip: mode === "register" ? "unset" : "text", WebkitTextFillColor: mode === "register" ? "unset" : "transparent" }}>
+            <span style={{
+              color: mode === "register" ? "#dc2626" : undefined,
+              background: mode === "register" ? "none" : "linear-gradient(135deg,#15803d,#4ade80)",
+              WebkitBackgroundClip: mode === "register" ? "unset" : "text",
+              WebkitTextFillColor: mode === "register" ? "unset" : "transparent"
+            }}>
               {mode === "register" ? t("রেজিস্ট্রেশন","Registration") : t("লগইন","Sign In")}
             </span>
           </h1>
         </motion.div>
 
-        {/* Form */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.38, delay:0.1 }}
           className="w-full max-w-[420px]">
           <AuthCard mode={mode} setMode={setMode} onSuccess={handleAuthSuccess} t={t} />
