@@ -14,46 +14,51 @@ const transporter = nodemailer.createTransport({
 
 const otpStore = new Map();
 
-// ─── helper ──────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────
+
 const normalizePhone = (p) =>
   p ? p.trim().replace(/^\+880/, "0").replace(/^880/, "0") : "";
+
+// ✅ বাংলাদেশি phone — ঠিক 11 ডিজিট, 01[3-9] দিয়ে শুরু
+const isValidBDPhone = (phone) => /^01[3-9]\d{8}$/.test(phone);
+
+// ✅ email domain MX check — domain টা real কিনা DNS দিয়ে যাচাই
+async function isEmailDomainValid(email) {
+  const domain = email.split("@")[1];
+  if (!domain) return false;
+  return new Promise((resolve) => {
+    const dns = require("dns");
+    dns.resolveMx(domain, (err, addresses) => {
+      if (err || !addresses || addresses.length === 0) resolve(false);
+      else resolve(true);
+    });
+  });
+}
 
 async function checkEmailExists(email) {
   const domain = email.split("@")[1];
   if (!domain) return false;
-
   return new Promise((resolve) => {
     const net = require("net");
     const dns = require("dns");
-
     dns.resolveMx(domain, (err, addresses) => {
       if (err || !addresses || addresses.length === 0) return resolve(false);
-
-      const mx = addresses.sort((a, b) => a.priority - b.priority)[0].exchange;
+      const mx     = addresses.sort((a, b) => a.priority - b.priority)[0].exchange;
       const socket = net.createConnection(25, mx);
-      let buffer = "";
-      let step   = 0;
-      let result = false;
-
+      let buffer   = "";
+      let step     = 0;
+      let result   = false;
       const timeout = setTimeout(() => { socket.destroy(); resolve(true); }, 6000);
-
       socket.on("data", (data) => {
         buffer += data.toString();
         const lines = buffer.split("\r\n");
         buffer = lines.pop();
-
         lines.forEach((line) => {
           const code = parseInt(line.substring(0, 3));
-          if (step === 0 && code === 220) {
-            socket.write(`HELO ${process.env.SMTP_HELO_DOMAIN || "nahidenterprise.com"}\r\n`);
-            step = 1;
-          } else if (step === 1 && code === 250) {
-            socket.write(`MAIL FROM:<${process.env.GMAIL_USER}>\r\n`);
-            step = 2;
-          } else if (step === 2 && code === 250) {
-            socket.write(`RCPT TO:<${email}>\r\n`);
-            step = 3;
-          } else if (step === 3) {
+          if (step === 0 && code === 220) { socket.write(`HELO ${process.env.SMTP_HELO_DOMAIN || "nahidenterprise.com"}\r\n`); step = 1; }
+          else if (step === 1 && code === 250) { socket.write(`MAIL FROM:<${process.env.GMAIL_USER}>\r\n`); step = 2; }
+          else if (step === 2 && code === 250) { socket.write(`RCPT TO:<${email}>\r\n`); step = 3; }
+          else if (step === 3) {
             result = code === 250 || code === 251;
             socket.write("QUIT\r\n");
             clearTimeout(timeout);
@@ -62,7 +67,6 @@ async function checkEmailExists(email) {
           }
         });
       });
-
       socket.on("error", () => { clearTimeout(timeout); resolve(true); });
       socket.on("close", () => { clearTimeout(timeout); resolve(result); });
     });
@@ -74,11 +78,9 @@ exports.verifyEmailExists = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email required" });
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email))
       return res.status(400).json({ exists: false, message: "Invalid email format" });
-
     const exists = await checkEmailExists(email);
     res.json({ exists });
   } catch (err) {
@@ -91,28 +93,40 @@ exports.verifyEmailExists = async (req, res) => {
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
+
     if (!name || !email || !password)
       return res.status(400).json({ message: "Please fill all fields" });
     if (password.length < 6)
       return res.status(400).json({ message: "Password must be at least 6 characters" });
 
+    // ✅ email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email))
+      return res.status(400).json({ message: "সঠিক ইমেইল ফরম্যাট দিন" });
+
+    // ✅ email domain MX check
+    const domainValid = await isEmailDomainValid(email);
+    if (!domainValid)
+      return res.status(400).json({ message: "এই ইমেইল ডোমেইনটি বিদ্যমান নয়। সঠিক ইমেইল দিন" });
+
+    // duplicate email
     const exists = await Customer.findOne({ email });
-    if (exists) return res.status(400).json({ message: "Email already registered" });
+    if (exists)
+      return res.status(400).json({ message: "Email already registered" });
 
+    // ✅ phone validation
     const normalizedPhone = normalizePhone(phone);
-
-    // ✅ phone duplicate check
     if (normalizedPhone) {
+      if (!isValidBDPhone(normalizedPhone))
+        return res.status(400).json({ message: "সঠিক ১১ সংখ্যার বাংলাদেশি ফোন নম্বর দিন (01XXXXXXXXX)" });
       const phoneExists = await Customer.findOne({ phone: normalizedPhone });
       if (phoneExists)
         return res.status(400).json({ message: "এই ফোন নম্বর দিয়ে আগেই একটি অ্যাকাউন্ট আছে" });
     }
 
     const customer = await Customer.create({
-      name,
-      email,
-      password,
-      phone: normalizedPhone || undefined,
+      name, email, password,
+      phone:    normalizedPhone || undefined,
       provider: "local",
     });
 
@@ -196,16 +210,13 @@ exports.updateProfile = async (req, res) => {
     if (phone !== undefined) {
       const normalizedPhone = normalizePhone(phone);
 
-      // ✅ phone unique check — নিজেকে বাদ দিয়ে
+      if (normalizedPhone && !isValidBDPhone(normalizedPhone))
+        return res.status(400).json({ message: "সঠিক ১১ সংখ্যার বাংলাদেশি ফোন নম্বর দিন (01XXXXXXXXX)" });
+
       if (normalizedPhone) {
-        const existing = await Customer.findOne({
-          phone: normalizedPhone,
-          _id: { $ne: customer._id },
-        });
+        const existing = await Customer.findOne({ phone: normalizedPhone, _id: { $ne: customer._id } });
         if (existing)
-          return res.status(400).json({
-            message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে",
-          });
+          return res.status(400).json({ message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে" });
       }
 
       customer.phone = normalizedPhone || undefined;
@@ -237,22 +248,19 @@ exports.updateAddress = async (req, res) => {
   try {
     const { label, street, thana, district, phone, note } = req.body;
 
-    // ✅ phone unique check — নিজেকে বাদ দিয়ে
     if (phone && phone.trim()) {
       const normalizedPhone = normalizePhone(phone);
-      const existing = await Customer.findOne({
-        phone: normalizedPhone,
-        _id: { $ne: req.customer._id },
-      });
+
+      if (!isValidBDPhone(normalizedPhone))
+        return res.status(400).json({ message: "সঠিক ১১ সংখ্যার বাংলাদেশি ফোন নম্বর দিন (01XXXXXXXXX)" });
+
+      const existing = await Customer.findOne({ phone: normalizedPhone, _id: { $ne: req.customer._id } });
       if (existing)
-        return res.status(400).json({
-          message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে",
-        });
+        return res.status(400).json({ message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে" });
     }
 
     const normalizedPhone = normalizePhone(phone);
 
-    // ✅ top-level phone ও আপডেট করো — UI তে দেখানোর জন্য
     const setFields = {
       "address.label":    label    ?? "",
       "address.street":   street   ?? "",
@@ -261,9 +269,7 @@ exports.updateAddress = async (req, res) => {
       "address.phone":    normalizedPhone,
       "address.note":     note     ?? "",
     };
-    if (normalizedPhone) {
-      setFields.phone = normalizedPhone;
-    }
+    if (normalizedPhone) setFields.phone = normalizedPhone;
 
     const updated = await Customer.findByIdAndUpdate(
       req.customer._id,
@@ -273,7 +279,6 @@ exports.updateAddress = async (req, res) => {
 
     if (!updated) return res.status(404).json({ message: "Customer not found" });
 
-    // ✅ পুরো customer পাঠাও যাতে frontend localStorage আপডেট করতে পারে
     res.json({
       message: "Address updated",
       address: updated.address,
@@ -324,7 +329,7 @@ exports.changePassword = async (req, res) => {
 exports.sendForgotOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    const customer = await Customer.findOne({ email });
+    const customer  = await Customer.findOne({ email });
     if (!customer)
       return res.status(404).json({ message: "No account found with this email" });
     if (customer.provider !== "local")
@@ -334,10 +339,10 @@ exports.sendForgotOtp = async (req, res) => {
     otpStore.set(`forgot_${email}`, { otp, expiresAt: Date.now() + 2 * 60 * 1000 });
 
     await transporter.sendMail({
-      from: `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
-      to: email,
+      from:    `"Nahid Enterprise" <${process.env.GMAIL_USER}>`,
+      to:      email,
       subject: "🔑 Password Reset OTP — Nahid Enterprise",
-      html: emailTemplate(otp, "Password Reset Request", "Use the code below to reset your password."),
+      html:    emailTemplate(otp, "Password Reset Request", "Use the code below to reset your password."),
     });
 
     res.json({ message: "OTP sent" });
@@ -383,9 +388,9 @@ exports.resetPassword = async (req, res) => {
 // ─── wishlist toggle ──────────────────────────────────────
 exports.toggleWishlist = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.customer._id);
+    const customer      = await Customer.findById(req.customer._id);
     const { productId } = req.body;
-    const idx = customer.wishlist.indexOf(productId);
+    const idx           = customer.wishlist.indexOf(productId);
     if (idx === -1) customer.wishlist.push(productId);
     else customer.wishlist.splice(idx, 1);
     await customer.save();

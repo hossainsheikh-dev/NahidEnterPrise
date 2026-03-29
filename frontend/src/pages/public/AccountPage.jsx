@@ -7,7 +7,7 @@ import {
   AlertCircle, CheckCircle, Loader2,
   ShoppingBag, Heart, Package, Shield,
   ArrowLeft, MapPin, HelpCircle, ChevronRight, ChevronDown,
-  LogOut, KeyRound, Info, Settings,
+  LogOut, KeyRound, Info,
 } from "lucide-react";
 import { useT } from "../../context/LanguageContext";
 import { useCart } from "../../context/CartContext";
@@ -16,6 +16,13 @@ import logo from "../../assets/logo.png";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+// ✅ বাংলাদেশি phone — ঠিক 11 ডিজিট, 01[3-9] দিয়ে শুরু
+const validateBDPhone = (p) => {
+  const norm = p ? p.trim().replace(/^\+880/, "0").replace(/^880/, "0") : "";
+  return /^01[3-9]\d{8}$/.test(norm);
+};
+
 const notify = () => window.dispatchEvent(new Event("customerAuthChanged"));
 
 /* ══════════════════════════════════════════
@@ -199,13 +206,13 @@ function SocialButtons({ t }) {
    AUTH FORMS
 ══════════════════════════════════════════ */
 function AuthCard({ mode, setMode, onSuccess, t }) {
-  const [loading, setLoading] = useState(false);
+  const [loading,     setLoading    ] = useState(false);
   const [serverError, setServerError] = useState("");
   const [successMsg,  setSuccessMsg ] = useState("");
 
   // Login
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPass,  setLoginPass ] = useState("");
+  const [loginEmail,    setLoginEmail   ] = useState("");
+  const [loginPass,     setLoginPass    ] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [loginErrors,   setLoginErrors  ] = useState({});
 
@@ -217,9 +224,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   const [regConfirm, setRegConfirm] = useState("");
   const [showRegPass, setShowRegPass] = useState(false);
   const [regErrors,   setRegErrors  ] = useState({});
-
-  // FIX: email validation state — শুধু format check, SMTP নয়
-  const [emailValid,    setEmailValid   ] = useState(null); // null | true | false
+  const [emailValid,  setEmailValid  ] = useState(null);
 
   // Forgot
   const [forgotEmail,    setForgotEmail   ] = useState("");
@@ -240,15 +245,9 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   }, [otpTimer]);
 
   const clear = () => { setServerError(""); setSuccessMsg(""); };
-  const go    = (m) => {
-    setMode(m); clear();
-    setOtp(["","","","","",""]);
-    setResendCount(0);
-  };
-  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2,"0")}:${String(s % 60).padStart(2,"0")}`;
+  const go    = (m) => { setMode(m); clear(); setOtp(["","","","","",""]); setResendCount(0); };
+  const fmt   = (s) => `${String(Math.floor(s / 60)).padStart(2,"0")}:${String(s % 60).padStart(2,"0")}`;
 
-  // FIX: শুধু format check করো — SMTP call সরিয়ে দেওয়া হয়েছে।
-  // SMTP check reliable না এবং অনেক সময় নতুন email কে block করে।
   const handleRegEmailChange = (val) => {
     setRegEmail(val);
     setRegErrors(p => ({ ...p, email: "" }));
@@ -275,27 +274,22 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
     otpRefs.current[Math.min(p.length, 5)]?.focus();
   };
 
-  // FIX: validation আগে করো, error set করো, তারপর early return
   const handleLogin = async (e) => {
     e.preventDefault();
     clear();
     const er = {};
-    if (!loginEmail.trim())         er.email    = t("ইমেইল দিন","Email required");
-    else if (!validateEmail(loginEmail)) er.email = t("সঠিক ইমেইল দিন","Enter a valid email");
-    if (!loginPass)                 er.password = t("পাসওয়ার্ড দিন","Password required");
+    if (!loginEmail.trim())              er.email    = t("ইমেইল দিন","Email required");
+    else if (!validateEmail(loginEmail)) er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
+    if (!loginPass)                      er.password = t("পাসওয়ার্ড দিন","Password required");
     if (Object.keys(er).length) { setLoginErrors(er); return; }
     try {
       setLoading(true);
       const res  = await fetch(`${API}/api/customer/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: loginEmail, password: loginPass }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setServerError(data.message || t("লগইন ব্যর্থ হয়েছে","Login failed"));
-        return;
-      }
+      if (!res.ok) { setServerError(data.message || t("লগইন ব্যর্থ হয়েছে","Login failed")); return; }
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
       toast.success(t(`স্বাগতম, ${data.name.split(" ")[0]}! 🎉`, `Welcome back, ${data.name.split(" ")[0]}! 🎉`), {
@@ -305,39 +299,35 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       });
       notify();
       onSuccess(data);
-    } catch (err) {
-      setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again."));
-    } finally {
-      setLoading(false);
-    }
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again.")); }
+    finally { setLoading(false); }
   };
 
-  // FIX: সব validation ঠিক করা হয়েছে
   const handleRegister = async (e) => {
     e.preventDefault();
     clear();
     const er = {};
-    if (!regName.trim())                er.name     = t("নাম দিন","Name required");
-    if (!regEmail.trim())               er.email    = t("ইমেইল দিন","Email required");
-    else if (!validateEmail(regEmail))  er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
-    if (regPass.length < 6)             er.password = t("কমপক্ষে ৬ অক্ষর","Min. 6 characters");
-    if (regPass !== regConfirm)         er.confirm  = t("পাসওয়ার্ড মেলেনি","Passwords don't match");
+    if (!regName.trim())               er.name     = t("নাম দিন","Name required");
+    if (!regEmail.trim())              er.email    = t("ইমেইল দিন","Email required");
+    else if (!validateEmail(regEmail)) er.email    = t("সঠিক ইমেইল দিন","Enter a valid email");
+
+    // ✅ phone — দিলে validate করো (11 ডিজিট, বাংলাদেশি)
+    if (regPhone.trim() && !validateBDPhone(regPhone))
+      er.phone = t("সঠিক ১১ সংখ্যার নম্বর দিন (01XXXXXXXXX)","Enter valid 11-digit BD number");
+
+    if (regPass.length < 6)            er.password = t("কমপক্ষে ৬ অক্ষর","Min. 6 characters");
+    if (regPass !== regConfirm)        er.confirm  = t("পাসওয়ার্ড মেলেনি","Passwords don't match");
     if (Object.keys(er).length) { setRegErrors(er); return; }
     try {
       setLoading(true);
       const res  = await fetch(`${API}/api/customer/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: regName, email: regEmail, phone: regPhone, password: regPass }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setServerError(data.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed"));
-        return;
-      }
+      if (!res.ok) { setServerError(data.message || t("রেজিস্ট্রেশন ব্যর্থ হয়েছে","Registration failed")); return; }
       localStorage.setItem("customerToken", data.token);
       localStorage.setItem("customerInfo",  JSON.stringify(data));
-      // FIX: toast আগে, তারপর state update
       toast.success(t("অ্যাকাউন্ট তৈরি হয়েছে! স্বাগতম 🎉", "Account created! Welcome 🎉"), {
         duration: 3000,
         style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
@@ -345,18 +335,14 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       });
       notify();
       setTimeout(() => onSuccess(data), 300);
-    } catch (err) {
-      setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again."));
-    } finally {
-      setLoading(false);
-    }
+    } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error. Please try again.")); }
+    finally { setLoading(false); }
   };
 
   const handleSendForgotOtp = async (e) => {
-    e.preventDefault();
-    clear();
-    if (!forgotEmail.trim())            { setServerError(t("ইমেইল দিন","Email required")); return; }
-    if (!validateEmail(forgotEmail))    { setServerError(t("সঠিক ইমেইল দিন","Enter a valid email")); return; }
+    e.preventDefault(); clear();
+    if (!forgotEmail.trim())         { setServerError(t("ইমেইল দিন","Email required")); return; }
+    if (!validateEmail(forgotEmail)) { setServerError(t("সঠিক ইমেইল দিন","Enter a valid email")); return; }
     try {
       setLoading(true);
       const res  = await fetch(`${API}/api/customer/forgot-otp`, {
@@ -365,8 +351,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
       });
       const data = await res.json();
       if (!res.ok) { setServerError(data.message || t("OTP পাঠানো যায়নি","Failed to send OTP")); return; }
-      setOtpTimer(120);
-      go("otp-forgot");
+      setOtpTimer(120); go("otp-forgot");
     } catch { setServerError(t("সার্ভার সংযোগ সমস্যা","Connection error")); }
     finally { setLoading(false); }
   };
@@ -405,8 +390,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
   };
 
   const handleResetPassword = async (e) => {
-    e.preventDefault();
-    clear();
+    e.preventDefault(); clear();
     if (newPassword.length < 6)        { setServerError(t("কমপক্ষে ৬ অক্ষর","Min. 6 characters")); return; }
     if (newPassword !== confirmNewPass) { setServerError(t("পাসওয়ার্ড মেলেনি","Passwords don't match")); return; }
     try {
@@ -431,9 +415,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
   return (
     <div className="w-full">
-      {/* FIX: Toaster এখানে রাখা হয়েছে — App.js এ না থাকলেও কাজ করবে */}
       <Toaster position="top-center" />
-
       <div className="relative rounded-3xl overflow-hidden bg-white"
         style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.08), 0 32px 64px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)" }}>
 
@@ -458,7 +440,6 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
         )}
 
         <div className="px-7 py-6">
-          {/* FIX: AnimatePresence ছাড়া সরাসরি render — unmount race condition এড়ানো */}
           {serverError && <InlineAlert type="error"   msg={serverError} />}
           {successMsg  && <InlineAlert type="success" msg={successMsg}  />}
 
@@ -471,13 +452,13 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
                 <FieldWrap label={t("ইমেইল","Email")} error={loginErrors.email}>
                   <InputField icon={Mail} type="email" value={loginEmail}
-                    onChange={e => { setLoginEmail(e.target.value); setLoginErrors(p => ({...p, email:""})); clear(); }}
+                    onChange={e => { setLoginEmail(e.target.value); setLoginErrors(p => ({...p,email:""})); clear(); }}
                     placeholder="you@example.com" hasError={!!loginErrors.email} autoComplete="email" />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড","Password")} error={loginErrors.password}>
                   <InputField icon={Lock} type={showLoginPass ? "text" : "password"} value={loginPass}
-                    onChange={e => { setLoginPass(e.target.value); setLoginErrors(p => ({...p, password:""})); clear(); }}
+                    onChange={e => { setLoginPass(e.target.value); setLoginErrors(p => ({...p,password:""})); clear(); }}
                     placeholder="••••••••" hasError={!!loginErrors.password} autoComplete="current-password"
                     rightEl={<EyeToggle show={showLoginPass} onToggle={() => setShowLoginPass(s => !s)} />} />
                 </FieldWrap>
@@ -491,14 +472,10 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                 </div>
 
                 <SubmitBtn loading={loading}>
-                  {loading
-                    ? <><Loader2 size={15} className="animate-spin" />{t("লগইন হচ্ছে…","Signing in…")}</>
-                    : t("সাইন ইন","Sign In")}
+                  {loading ? <><Loader2 size={15} className="animate-spin" />{t("লগইন হচ্ছে…","Signing in…")}</> : t("সাইন ইন","Sign In")}
                 </SubmitBtn>
-
                 <Divider label={t("অথবা","or")} />
                 <SocialButtons t={t} />
-
                 <p className="text-center text-[13px] text-slate-400 font-medium">
                   {t("অ্যাকাউন্ট নেই?","No account?")}{" "}
                   <button type="button" onClick={() => go("register")}
@@ -517,38 +494,40 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
                 <FieldWrap label={t("পুরো নাম","Full Name")} error={regErrors.name}>
                   <InputField icon={User} value={regName}
-                    onChange={e => { setRegName(e.target.value); setRegErrors(p => ({...p, name:""})); }}
-                    placeholder={t("আপনার নাম","Your name")} hasError={!!regErrors.name}
-                    autoComplete="name" />
+                    onChange={e => { setRegName(e.target.value); setRegErrors(p => ({...p,name:""})); }}
+                    placeholder={t("আপনার নাম","Your name")} hasError={!!regErrors.name} autoComplete="name" />
                 </FieldWrap>
 
                 <FieldWrap label={t("ইমেইল","Email")} error={regErrors.email}
                   hint={
                     !regErrors.email && emailValid === true && validateEmail(regEmail)
-                      ? { color: "#16a34a", icon: <CheckCircle size={11} />, text: t("ইমেইল ঠিক আছে","Email looks good") }
+                      ? { color:"#16a34a", icon:<CheckCircle size={11}/>, text:t("ইমেইল ঠিক আছে","Email looks good") }
                       : emailValid === false && regEmail
-                      ? { color: "#ef4444", icon: <AlertCircle size={11} />, text: t("সঠিক ইমেইল ফরম্যাট দিন","Enter valid email format") }
+                      ? { color:"#ef4444", icon:<AlertCircle size={11}/>, text:t("সঠিক ইমেইল ফরম্যাট দিন","Enter valid email format") }
                       : null
                   }>
                   <InputField icon={Mail} type="email" value={regEmail}
                     onChange={e => handleRegEmailChange(e.target.value)}
-                    placeholder="you@example.com" hasError={!!regErrors.email}
-                    autoComplete="new-password" /* FIX: browser autofill বন্ধ */ />
+                    placeholder="you@example.com" hasError={!!regErrors.email} autoComplete="new-password" />
                 </FieldWrap>
 
-                {/* FIX: Phone field এ autoComplete="off" এবং name দেওয়া হয়নি — browser autofill বন্ধ */}
-                <FieldWrap label={
-                  <span>{t("ফোন","Phone")} <span className="text-slate-300 font-normal text-[10.5px] normal-case tracking-normal">({t("ঐচ্ছিক","optional")})</span></span>
-                }>
+                {/* ✅ phone field — error দেখাবে */}
+                <FieldWrap
+                  label={
+                    <span>{t("ফোন","Phone")} <span className="text-slate-300 font-normal text-[10.5px] normal-case tracking-normal">({t("ঐচ্ছিক","optional")})</span></span>
+                  }
+                  error={regErrors.phone}
+                >
                   <InputField icon={Phone} type="tel" value={regPhone}
-                    onChange={e => setRegPhone(e.target.value)}
+                    onChange={e => { setRegPhone(e.target.value); setRegErrors(p => ({...p,phone:""})); }}
                     placeholder="01XXXXXXXXX"
+                    hasError={!!regErrors.phone}
                     autoComplete="off" />
                 </FieldWrap>
 
                 <FieldWrap label={t("পাসওয়ার্ড","Password")} error={regErrors.password}>
                   <InputField icon={Lock} type={showRegPass ? "text" : "password"} value={regPass}
-                    onChange={e => { setRegPass(e.target.value); setRegErrors(p => ({...p, password:""})); }}
+                    onChange={e => { setRegPass(e.target.value); setRegErrors(p => ({...p,password:""})); }}
                     placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")} hasError={!!regErrors.password}
                     autoComplete="new-password"
                     rightEl={<EyeToggle show={showRegPass} onToggle={() => setShowRegPass(s => !s)} />} />
@@ -556,17 +535,13 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 
                 <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")} error={regErrors.confirm}>
                   <InputField icon={Lock} type="password" value={regConfirm}
-                    onChange={e => { setRegConfirm(e.target.value); setRegErrors(p => ({...p, confirm:""})); }}
-                    placeholder="••••••••" hasError={!!regErrors.confirm}
-                    autoComplete="new-password" />
+                    onChange={e => { setRegConfirm(e.target.value); setRegErrors(p => ({...p,confirm:""})); }}
+                    placeholder="••••••••" hasError={!!regErrors.confirm} autoComplete="new-password" />
                 </FieldWrap>
 
                 <SubmitBtn loading={loading}>
-                  {loading
-                    ? <><Loader2 size={15} className="animate-spin" />{t("তৈরি হচ্ছে…","Creating…")}</>
-                    : t("অ্যাকাউন্ট তৈরি করুন","Create Account")}
+                  {loading ? <><Loader2 size={15} className="animate-spin" />{t("তৈরি হচ্ছে…","Creating…")}</> : t("অ্যাকাউন্ট তৈরি করুন","Create Account")}
                 </SubmitBtn>
-
                 <Divider label={t("অথবা","or")} />
                 <SocialButtons t={t} />
               </motion.form>
@@ -581,26 +556,21 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                   style={{ color: "#94a3b8" }}>
                   <ArrowLeft size={14} />{t("সাইন ইনে ফিরুন","Back to Sign In")}
                 </button>
-
                 <div>
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: "linear-gradient(135deg, rgba(26,46,26,0.08), rgba(46,125,50,0.12))" }}>
-                    <KeyRound size={22} style={{ color: "#2e7d32" }} />
+                    style={{ background:"linear-gradient(135deg,rgba(26,46,26,0.08),rgba(46,125,50,0.12))" }}>
+                    <KeyRound size={22} style={{ color:"#2e7d32" }} />
                   </div>
                   <h2 className="text-[22px] font-black text-slate-800 tracking-tight">{t("পাসওয়ার্ড রিসেট","Reset Password")}</h2>
                   <p className="text-[13px] text-slate-400 mt-1 font-medium">{t("ইমেইলে OTP পাঠানো হবে","We'll send a recovery code to your email")}</p>
                 </div>
-
                 <FieldWrap label={t("আপনার ইমেইল","Your Email")}>
                   <InputField icon={Mail} type="email" value={forgotEmail}
                     onChange={e => { setForgotEmail(e.target.value); clear(); }}
                     placeholder="you@example.com" autoComplete="email" />
                 </FieldWrap>
-
                 <SubmitBtn loading={loading}>
-                  {loading
-                    ? <><Loader2 size={15} className="animate-spin" />{t("পাঠানো হচ্ছে…","Sending…")}</>
-                    : t("OTP পাঠান","Send OTP")}
+                  {loading ? <><Loader2 size={15} className="animate-spin" />{t("পাঠানো হচ্ছে…","Sending…")}</> : t("OTP পাঠান","Send OTP")}
                 </SubmitBtn>
               </motion.form>
             )}
@@ -611,21 +581,19 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                 onSubmit={handleVerifyOtp} className="space-y-5">
                 <div>
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: "linear-gradient(135deg, rgba(26,46,26,0.08), rgba(46,125,50,0.12))" }}>
-                    <Mail size={22} style={{ color: "#2e7d32" }} />
+                    style={{ background:"linear-gradient(135deg,rgba(26,46,26,0.08),rgba(46,125,50,0.12))" }}>
+                    <Mail size={22} style={{ color:"#2e7d32" }} />
                   </div>
                   <h2 className="text-[22px] font-black text-slate-800 tracking-tight">{t("কোড যাচাই","Verify Code")}</h2>
                   <div className="flex items-center gap-2 mt-2 px-3 py-2.5 rounded-xl"
-                    style={{ background: "rgba(46,125,50,0.06)", border: "1px solid rgba(46,125,50,0.15)" }}>
-                    <Mail size={13} style={{ color: "#2e7d32" }} />
-                    <span className="text-[12.5px] font-semibold" style={{ color: "#1a3a1a" }}>{forgotEmail}</span>
+                    style={{ background:"rgba(46,125,50,0.06)", border:"1px solid rgba(46,125,50,0.15)" }}>
+                    <Mail size={13} style={{ color:"#2e7d32" }} />
+                    <span className="text-[12.5px] font-semibold" style={{ color:"#1a3a1a" }}>{forgotEmail}</span>
                   </div>
                 </div>
-
                 <FieldWrap label={t("৬ সংখ্যার কোড","6-Digit Code")}>
                   <OtpInputs otp={otp} onChange={handleOtpChange} onKey={handleOtpKey} onPaste={handleOtpPaste} refs={otpRefs} />
                 </FieldWrap>
-
                 <div className="flex justify-between items-center">
                   <span className="text-[12.5px] font-semibold tabular-nums"
                     style={{ color: otpTimer > 0 ? "#64748b" : "#dc2626" }}>
@@ -637,16 +605,12 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                     {resendCount >= 3 ? t("সর্বোচ্চ চেষ্টা","Max resends") : t("আবার পাঠান","Resend")}
                   </button>
                 </div>
-
                 <SubmitBtn loading={loading} disabled={otp.join("").length < 6}>
-                  {loading
-                    ? <><Loader2 size={15} className="animate-spin" />{t("যাচাই হচ্ছে…","Verifying…")}</>
-                    : t("যাচাই করুন","Verify")}
+                  {loading ? <><Loader2 size={15} className="animate-spin" />{t("যাচাই হচ্ছে…","Verifying…")}</> : t("যাচাই করুন","Verify")}
                 </SubmitBtn>
-
                 <button type="button" onClick={() => go("forgot-email")}
                   className="w-full text-[12.5px] font-semibold cursor-pointer bg-transparent border-none transition-colors text-center"
-                  style={{ color: "#94a3b8" }}>
+                  style={{ color:"#94a3b8" }}>
                   ← {t("পিছনে","Back")}
                 </button>
               </motion.form>
@@ -658,32 +622,25 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
                 onSubmit={handleResetPassword} className="space-y-5" noValidate>
                 <div>
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: "linear-gradient(135deg, rgba(26,46,26,0.08), rgba(46,125,50,0.12))" }}>
-                    <Lock size={22} style={{ color: "#2e7d32" }} />
+                    style={{ background:"linear-gradient(135deg,rgba(26,46,26,0.08),rgba(46,125,50,0.12))" }}>
+                    <Lock size={22} style={{ color:"#2e7d32" }} />
                   </div>
                   <h2 className="text-[22px] font-black text-slate-800 tracking-tight">{t("নতুন পাসওয়ার্ড","New Password")}</h2>
                   <p className="text-[13px] text-slate-400 mt-1 font-medium">{t("শক্তিশালী পাসওয়ার্ড বেছে নিন","Choose a strong password")}</p>
                 </div>
-
                 <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
                   <InputField icon={Lock} type={showNewPass ? "text" : "password"} value={newPassword}
                     onChange={e => { setNewPassword(e.target.value); clear(); }}
-                    placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
-                    autoComplete="new-password"
+                    placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")} autoComplete="new-password"
                     rightEl={<EyeToggle show={showNewPass} onToggle={() => setShowNewPass(s => !s)} />} />
                 </FieldWrap>
-
                 <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
                   <InputField icon={Lock} type="password" value={confirmNewPass}
                     onChange={e => { setConfirmNewPass(e.target.value); clear(); }}
-                    placeholder="••••••••"
-                    autoComplete="new-password" />
+                    placeholder="••••••••" autoComplete="new-password" />
                 </FieldWrap>
-
                 <SubmitBtn loading={loading}>
-                  {loading
-                    ? <><Loader2 size={15} className="animate-spin" />{t("সেভ হচ্ছে…","Saving…")}</>
-                    : t("পাসওয়ার্ড সেট করুন","Set Password")}
+                  {loading ? <><Loader2 size={15} className="animate-spin" />{t("সেভ হচ্ছে…","Saving…")}</> : t("পাসওয়ার্ড সেট করুন","Set Password")}
                 </SubmitBtn>
               </motion.form>
             )}
@@ -701,7 +658,7 @@ function AuthCard({ mode, setMode, onSuccess, t }) {
 function ProfileSidebar({ customer, onClose, t }) {
   const [activeTab, setActiveTab] = useState("info");
   const [loading,   setLoading  ] = useState(false);
-  const [msg,       setMsg      ] = useState({ type: "", text: "" });
+  const [msg,       setMsg      ] = useState({ type:"", text:"" });
 
   const [curPass,  setCurPass ] = useState("");
   const [newPass,  setNewPass ] = useState("");
@@ -712,44 +669,42 @@ function ProfileSidebar({ customer, onClose, t }) {
   const navigate = useNavigate();
 
   const tabs = [
-    { id: "info",     icon: Info,       label: t("আমার তথ্য","My Info")        },
-    { id: "orders",   icon: Package,    label: t("অর্ডারস","Orders")           },
-    { id: "wishlist", icon: Heart,      label: t("উইশলিস্ট","Wishlist")        },
-    { id: "address",  icon: MapPin,     label: t("ঠিকানা","Address")           },
-    { id: "password", icon: Shield,     label: t("পাসওয়ার্ড","Password")       },
-    { id: "faq",      icon: HelpCircle, label: t("FAQs","FAQs")                },
+    { id:"info",     icon:Info,       label:t("আমার তথ্য","My Info")    },
+    { id:"orders",   icon:Package,    label:t("অর্ডারস","Orders")       },
+    { id:"wishlist", icon:Heart,      label:t("উইশলিস্ট","Wishlist")    },
+    { id:"address",  icon:MapPin,     label:t("ঠিকানা","Address")       },
+    { id:"password", icon:Shield,     label:t("পাসওয়ার্ড","Password")   },
+    { id:"faq",      icon:HelpCircle, label:t("FAQs","FAQs")            },
   ];
 
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
-    notify();
-    onClose();
-    navigate("/account");
+    notify(); onClose(); navigate("/account");
   };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (!curPass || !newPass || !confPass) { setMsg({ type:"error", text: t("সব ঘর পূরণ করুন","Fill all fields") }); return; }
-    if (newPass.length < 6)               { setMsg({ type:"error", text: t("কমপক্ষে ৬ অক্ষর","Min. 6 characters") }); return; }
-    if (newPass !== confPass)             { setMsg({ type:"error", text: t("পাসওয়ার্ড মেলেনি","Passwords don't match") }); return; }
+    if (!curPass||!newPass||!confPass) { setMsg({type:"error",text:t("সব ঘর পূরণ করুন","Fill all fields")}); return; }
+    if (newPass.length < 6)            { setMsg({type:"error",text:t("কমপক্ষে ৬ অক্ষর","Min. 6 characters")}); return; }
+    if (newPass !== confPass)          { setMsg({type:"error",text:t("পাসওয়ার্ড মেলেনি","Passwords don't match")}); return; }
     try {
-      setLoading(true); setMsg({ type:"", text:"" });
+      setLoading(true); setMsg({type:"",text:""});
       const token = localStorage.getItem("customerToken");
       const res   = await fetch(`${API}/api/customer/change-password`, {
-        method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
-        body: JSON.stringify({ currentPassword: curPass, newPassword: newPass }),
+        method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
+        body: JSON.stringify({ currentPassword:curPass, newPassword:newPass }),
       });
       const data = await res.json();
-      if (!res.ok) { setMsg({ type:"error", text: data.message || t("পরিবর্তন ব্যর্থ","Failed") }); return; }
-      setMsg({ type:"success", text: t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password updated!") });
+      if (!res.ok) { setMsg({type:"error",text:data.message||t("পরিবর্তন ব্যর্থ","Failed")}); return; }
+      setMsg({type:"success",text:t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password updated!")});
       setCurPass(""); setNewPass(""); setConfPass("");
-    } catch { setMsg({ type:"error", text: t("সার্ভার সংযোগ সমস্যা","Connection error") }); }
+    } catch { setMsg({type:"error",text:t("সার্ভার সংযোগ সমস্যা","Connection error")}); }
     finally { setLoading(false); }
   };
 
   const joinDate = customer?.createdAt
-    ? new Date(customer.createdAt).toLocaleDateString("en-GB", { year:"numeric", month:"long", day:"numeric" })
+    ? new Date(customer.createdAt).toLocaleDateString("en-GB",{year:"numeric",month:"long",day:"numeric"})
     : null;
 
   const renderContent = () => {
@@ -759,16 +714,15 @@ function ProfileSidebar({ customer, onClose, t }) {
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("অ্যাকাউন্ট তথ্য","Account Information")}</h3>
             {[
-              { label: t("নাম","Name"),      value: customer?.name,    icon: User  },
-              { label: t("ইমেইল","Email"),   value: customer?.email,   icon: Mail  },
-              { label: t("ফোন","Phone"),     value: customer?.phone || t("যোগ করা হয়নি","Not added"), icon: Phone },
-              ...(joinDate ? [{ label: t("সদস্য হয়েছেন","Member since"), value: joinDate, icon: Info }] : []),
-            ].map(({ label, value, icon: Icon }) => (
+              { label:t("নাম","Name"),    value:customer?.name,   icon:User  },
+              { label:t("ইমেইল","Email"), value:customer?.email,  icon:Mail  },
+              { label:t("ফোন","Phone"),   value:customer?.phone||t("যোগ করা হয়নি","Not added"), icon:Phone },
+              ...(joinDate?[{label:t("সদস্য হয়েছেন","Member since"),value:joinDate,icon:Info}]:[]),
+            ].map(({label,value,icon:Icon})=>(
               <div key={label} className="flex items-start gap-3 p-3.5 rounded-xl"
-                style={{ background: "rgba(248,250,252,0.8)", border: "1px solid rgba(148,163,184,0.12)" }}>
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(46,125,50,0.08)" }}>
-                  <Icon size={14} style={{ color: "#2e7d32" }} />
+                style={{background:"rgba(248,250,252,0.8)",border:"1px solid rgba(148,163,184,0.12)"}}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:"rgba(46,125,50,0.08)"}}>
+                  <Icon size={14} style={{color:"#2e7d32"}}/>
                 </div>
                 <div>
                   <p className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
@@ -785,8 +739,8 @@ function ProfileSidebar({ customer, onClose, t }) {
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("ঠিকানা ম্যানেজ","Manage Address")}</h3>
             <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(230,81,0,0.06)" }}>
-                <MapPin size={26} style={{ color: "#e65100" }} />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{background:"rgba(230,81,0,0.06)"}}>
+                <MapPin size={26} style={{color:"#e65100"}}/>
               </div>
               <p className="text-[14px] font-bold text-slate-600">{t("ডেলিভারি ঠিকানা","Delivery Address")}</p>
               <p className="text-[12.5px] text-slate-400">{t("শীঘ্রই আসছে","Coming soon")}</p>
@@ -797,58 +751,51 @@ function ProfileSidebar({ customer, onClose, t }) {
         return (
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("পাসওয়ার্ড পরিবর্তন","Change Password")}</h3>
-            {msg.text && <InlineAlert type={msg.type} msg={msg.text} />}
+            {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
             <form onSubmit={handleChangePassword} className="space-y-4" noValidate>
               <FieldWrap label={t("বর্তমান পাসওয়ার্ড","Current Password")}>
-                <InputField icon={Lock} type={showCur ? "text" : "password"} value={curPass}
-                  onChange={e => setCurPass(e.target.value)} placeholder="••••••••"
-                  autoComplete="current-password"
-                  rightEl={<EyeToggle show={showCur} onToggle={() => setShowCur(s => !s)} />} />
+                <InputField icon={Lock} type={showCur?"text":"password"} value={curPass}
+                  onChange={e=>setCurPass(e.target.value)} placeholder="••••••••" autoComplete="current-password"
+                  rightEl={<EyeToggle show={showCur} onToggle={()=>setShowCur(s=>!s)}/>}/>
               </FieldWrap>
               <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
-                <InputField icon={Lock} type={showNew ? "text" : "password"} value={newPass}
-                  onChange={e => setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
+                <InputField icon={Lock} type={showNew?"text":"password"} value={newPass}
+                  onChange={e=>setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
                   autoComplete="new-password"
-                  rightEl={<EyeToggle show={showNew} onToggle={() => setShowNew(s => !s)} />} />
+                  rightEl={<EyeToggle show={showNew} onToggle={()=>setShowNew(s=>!s)}/>}/>
               </FieldWrap>
               <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
                 <InputField icon={Lock} type="password" value={confPass}
-                  onChange={e => setConfPass(e.target.value)} placeholder="••••••••"
-                  autoComplete="new-password" />
+                  onChange={e=>setConfPass(e.target.value)} placeholder="••••••••" autoComplete="new-password"/>
               </FieldWrap>
               <SubmitBtn loading={loading}>
-                {loading
-                  ? <><Loader2 size={14} className="animate-spin" />{t("আপডেট হচ্ছে…","Updating…")}</>
-                  : t("পাসওয়ার্ড আপডেট করুন","Update Password")}
+                {loading?<><Loader2 size={14} className="animate-spin"/>{t("আপডেট হচ্ছে…","Updating…")}</>:t("পাসওয়ার্ড আপডেট করুন","Update Password")}
               </SubmitBtn>
             </form>
           </div>
         );
-      case "faq": return <FaqPanel t={t} />;
+      case "faq": return <FaqPanel t={t}/>;
       default:    return null;
     }
   };
 
   return (
     <AnimatePresence>
-      <motion.div key="backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-40" style={{ background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)" }}
-        onClick={onClose} />
-
+      <motion.div key="backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+        className="fixed inset-0 z-40" style={{background:"rgba(0,0,0,0.35)",backdropFilter:"blur(4px)"}}
+        onClick={onClose}/>
       <motion.div key="panel"
-        initial={{ x: "100%", opacity: 0 }}
-        animate={{ x: 0, opacity: 1, transition: { duration: 0.32, ease: [0.22,1,0.36,1] } }}
-        exit={{ x: "100%", opacity: 0, transition: { duration: 0.24, ease: [0.4,0,1,1] } }}
-        className="fixed right-0 top-0 h-full z-50 flex"
-        style={{ width: "520px" }}>
+        initial={{x:"100%",opacity:0}}
+        animate={{x:0,opacity:1,transition:{duration:0.32,ease:[0.22,1,0.36,1]}}}
+        exit={{x:"100%",opacity:0,transition:{duration:0.24,ease:[0.4,0,1,1]}}}
+        className="fixed right-0 top-0 h-full z-50 flex" style={{width:"520px"}}>
 
         <div className="w-[180px] flex flex-col shrink-0 h-full"
-          style={{ background: "linear-gradient(180deg, #1a2e1a 0%, #1e3620 100%)" }}>
-
+          style={{background:"linear-gradient(180deg,#1a2e1a 0%,#1e3620 100%)"}}>
           <div className="px-4 py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center" style={{ background: "rgba(255,255,255,0.12)" }}>
-                <ShoppingBag size={14} color="#a5d6a7" />
+              <div className="w-8 h-8 rounded-xl overflow-hidden flex items-center justify-center" style={{background:"rgba(255,255,255,0.12)"}}>
+                <ShoppingBag size={14} color="#a5d6a7"/>
               </div>
               <div>
                 <p className="text-white text-[12px] font-black">Nahid</p>
@@ -856,43 +803,29 @@ function ProfileSidebar({ customer, onClose, t }) {
               </div>
             </div>
           </div>
-
           <div className="px-4 py-5 border-b border-white/10">
             <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center text-white text-[18px] font-black mb-2.5"
-              style={{ background: "rgba(255,255,255,0.12)", border: "2px solid rgba(255,255,255,0.15)" }}>
-              {customer?.avatar
-                ? <img src={customer.avatar} alt="" className="w-full h-full object-cover" />
-                : (customer?.name?.[0] || "U").toUpperCase()}
+              style={{background:"rgba(255,255,255,0.12)",border:"2px solid rgba(255,255,255,0.15)"}}>
+              {customer?.avatar?<img src={customer.avatar} alt="" className="w-full h-full object-cover"/>:(customer?.name?.[0]||"U").toUpperCase()}
             </div>
             <p className="text-white text-[12.5px] font-bold truncate leading-tight">{customer?.name}</p>
             <p className="text-white/40 text-[10.5px] truncate mt-0.5">{customer?.email}</p>
           </div>
-
           <div className="flex-1 py-3 overflow-y-auto">
-            {tabs.map(({ id, icon: Icon, label }) => (
-              <button key={id} onClick={() => setActiveTab(id)}
+            {tabs.map(({id,icon:Icon,label})=>(
+              <button key={id} onClick={()=>setActiveTab(id)}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-all border-none cursor-pointer relative"
-                style={{
-                  background: activeTab === id ? "rgba(255,255,255,0.1)" : "transparent",
-                  color: activeTab === id ? "#a5d6a7" : "rgba(255,255,255,0.45)",
-                }}>
-                {activeTab === id && (
-                  <motion.div layoutId="sidebar-tab"
-                    className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full"
-                    style={{ background: "#4caf50" }} />
-                )}
-                <Icon size={15} />
-                <span className="text-[12px] font-semibold">{label}</span>
+                style={{background:activeTab===id?"rgba(255,255,255,0.1)":"transparent",color:activeTab===id?"#a5d6a7":"rgba(255,255,255,0.45)"}}>
+                {activeTab===id&&<motion.div layoutId="sidebar-tab" className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full" style={{background:"#4caf50"}}/>}
+                <Icon size={15}/><span className="text-[12px] font-semibold">{label}</span>
               </button>
             ))}
           </div>
-
           <div className="px-3 py-4 border-t border-white/10">
             <button onClick={handleLogout}
               className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl text-[12px] font-bold cursor-pointer border-none transition-all"
-              style={{ background: "rgba(220,38,38,0.15)", color: "#f87171" }}>
-              <LogOut size={14} />
-              {t("সাইন আউট","Sign Out")}
+              style={{background:"rgba(220,38,38,0.15)",color:"#f87171"}}>
+              <LogOut size={14}/>{t("সাইন আউট","Sign Out")}
             </button>
           </div>
         </div>
@@ -900,16 +833,15 @@ function ProfileSidebar({ customer, onClose, t }) {
         <div className="flex-1 h-full overflow-y-auto bg-white relative">
           <button onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-none transition-all z-10"
-            style={{ background: "rgba(148,163,184,0.1)", color: "#94a3b8" }}>
+            style={{background:"rgba(148,163,184,0.1)",color:"#94a3b8"}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
           <div className="p-7 pt-8">
             <AnimatePresence mode="wait">
-              <motion.div key={activeTab}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+              <motion.div key={activeTab} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
+                exit={{opacity:0,y:-8}} transition={{duration:0.2}}>
                 {renderContent()}
               </motion.div>
             </AnimatePresence>
@@ -924,14 +856,14 @@ function ProfileSidebar({ customer, onClose, t }) {
    STATUS CONFIG
 ══════════════════════════════════════════ */
 const STATUS_CFG = {
-  pending:    { label:"অপেক্ষমাণ",  color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
-  processing: { label:"প্যাকেজিং",  color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
-  shipped:    { label:"পথে আছে",    color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
-  confirmed:  { label:"নিশ্চিত",    color:"#0284c7", bg:"#f0f9ff", border:"#bae6fd" },
+  pending:    { label:"অপেক্ষমাণ", color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
+  processing: { label:"প্যাকেজিং", color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
+  shipped:    { label:"পথে আছে",   color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
+  confirmed:  { label:"নিশ্চিত",   color:"#0284c7", bg:"#f0f9ff", border:"#bae6fd" },
   delivered:  { label:"পৌঁছে গেছে",color:"#059669", bg:"#ecfdf5", border:"#a7f3d0" },
-  cancelled:  { label:"বাতিল",      color:"#dc2626", bg:"#fff1f2", border:"#fecdd3" },
+  cancelled:  { label:"বাতিল",     color:"#dc2626", bg:"#fff1f2", border:"#fecdd3" },
 };
-const getStatusCfg = (s) => STATUS_CFG[s?.toLowerCase()] || { label: s || "—", color:"#64748b", bg:"#f8fafc", border:"#e2e8f0" };
+const getStatusCfg = (s) => STATUS_CFG[s?.toLowerCase()] || {label:s||"—",color:"#64748b",bg:"#f8fafc",border:"#e2e8f0"};
 const STEPS_LIST   = ["pending","processing","shipped","confirmed","delivered"];
 
 function MiniTimeline({ status }) {
@@ -941,27 +873,20 @@ function MiniTimeline({ status }) {
   const pct     = current <= 0 ? 0 : (current / (STEPS_LIST.length - 1)) * 100;
   return (
     <div className="relative mt-3 mb-1 px-1">
-      <div className="absolute top-[7px] left-1 right-1 h-[2px] rounded-full" style={{ background: "#f1f5f9" }}/>
-      <motion.div className="absolute top-[7px] left-1 h-[2px] rounded-full"
-        style={{ background: cfg.color }}
-        initial={{ width: "0%" }} animate={{ width: pct > 0 ? `${pct}%` : "0%" }}
-        transition={{ duration: 0.8, ease: "easeOut" }}/>
+      <div className="absolute top-[7px] left-1 right-1 h-[2px] rounded-full" style={{background:"#f1f5f9"}}/>
+      <motion.div className="absolute top-[7px] left-1 h-[2px] rounded-full" style={{background:cfg.color}}
+        initial={{width:"0%"}} animate={{width:pct>0?`${pct}%`:"0%"}} transition={{duration:0.8,ease:"easeOut"}}/>
       <div className="relative flex justify-between">
-        {STEPS_LIST.map((s, i) => {
-          const done = i <= current;
-          const active = i === current;
+        {STEPS_LIST.map((s,i)=>{
+          const done=i<=current; const active=i===current;
           return (
             <div key={s} className="flex flex-col items-center gap-1">
               <div className="w-[14px] h-[14px] rounded-full z-10 flex items-center justify-center"
-                style={{
-                  background: done ? (active ? cfg.color : "#10b981") : "#e2e8f0",
-                  border: `2px solid ${done ? (active ? cfg.color : "#10b981") : "#e2e8f0"}`,
-                  boxShadow: active ? `0 0 0 3px ${cfg.color}33` : "none",
-                }}>
-                {done && <div className="w-[4px] h-[4px] rounded-full bg-white"/>}
+                style={{background:done?(active?cfg.color:"#10b981"):"#e2e8f0",border:`2px solid ${done?(active?cfg.color:"#10b981"):"#e2e8f0"}`,boxShadow:active?`0 0 0 3px ${cfg.color}33`:"none"}}>
+                {done&&<div className="w-[4px] h-[4px] rounded-full bg-white"/>}
               </div>
-              <p className="text-[8px] font-bold leading-tight text-center" style={{ color: done ? (active ? cfg.color : "#10b981") : "#cbd5e1", maxWidth: "32px" }}>
-                {STATUS_CFG[s]?.label || s}
+              <p className="text-[8px] font-bold leading-tight text-center" style={{color:done?(active?cfg.color:"#10b981"):"#cbd5e1",maxWidth:"32px"}}>
+                {STATUS_CFG[s]?.label||s}
               </p>
             </div>
           );
@@ -972,135 +897,117 @@ function MiniTimeline({ status }) {
 }
 
 /* ══════════════════════════════════════════
-   ORDERS PANEL
+   ORDERS PANEL (Desktop)
 ══════════════════════════════════════════ */
 function OrdersPanel({ customer, t }) {
   const [orders,   setOrders  ] = useState([]);
   const [loading,  setLoading ] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
-  useEffect(() => {
+  useEffect(()=>{
     const fetchOrders = async () => {
       try {
         const phone = customer?.phone;
         const email = customer?.email;
-        const query = phone ? `phone=${encodeURIComponent(phone)}` : `email=${encodeURIComponent(email || "")}`;
+        const query = phone?`phone=${encodeURIComponent(phone)}`:`email=${encodeURIComponent(email||"")}`;
         const res  = await fetch(`${API}/api/orders/track?${query}`);
         const json = await res.json();
-        const list = json.success ? json.data : (Array.isArray(json) ? json : (json.orders || json.data || []));
-        setOrders(list);
+        setOrders(json.success?json.data:(Array.isArray(json)?json:(json.orders||json.data||[])));
       } catch { setOrders([]); }
       finally { setLoading(false); }
     };
     fetchOrders();
-  }, [customer]);
+  },[customer]);
 
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("আমার অর্ডারস","My Orders")}</h3>
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-slate-100 border-t-emerald-500 rounded-full animate-spin"/>
-        </div>
-      )}
-      {!loading && orders.length === 0 && (
+      {loading&&<div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 border-slate-100 border-t-emerald-500 rounded-full animate-spin"/></div>}
+      {!loading&&orders.length===0&&(
         <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
           <div className="text-4xl mb-2">📦</div>
           <p className="text-[14px] font-bold text-slate-600">{t("কোনো অর্ডার নেই","No orders yet")}</p>
-          <p className="text-[12px] text-slate-400">{t("এখনো কোনো অর্ডার করা হয়নি","You haven't placed any orders yet")}</p>
         </div>
       )}
-      {!loading && orders.length > 0 && (
+      {!loading&&orders.length>0&&(
         <div className="space-y-3">
-          {orders.map((order, i) => {
-            const cfg = getStatusCfg(order.status);
-            const isOpen = expanded === i;
-            const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "—";
-            const qty = order.items?.reduce((s, x) => s + (x.quantity || 1), 0) || 0;
-            const isCancelled = order.status === "cancelled";
+          {orders.map((order,i)=>{
+            const cfg=getStatusCfg(order.status); const isOpen=expanded===i;
+            const date=order.createdAt?new Date(order.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"—";
+            const qty=order.items?.reduce((s,x)=>s+(x.quantity||1),0)||0;
+            const isCancelled=order.status==="cancelled";
             return (
-              <div key={order._id || i} className="rounded-2xl overflow-hidden"
-                style={{ border: `1px solid ${cfg.border}`, background: isCancelled ? "linear-gradient(135deg,#1a0a0a,#2d0f0f)" : "#fff" }}>
-                <div className="h-[3px]" style={{ background: `linear-gradient(90deg,${cfg.color},${cfg.color}88)` }}/>
-                <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer" onClick={() => setExpanded(isOpen ? null : i)}>
+              <div key={order._id||i} className="rounded-2xl overflow-hidden"
+                style={{border:`1px solid ${cfg.border}`,background:isCancelled?"linear-gradient(135deg,#1a0a0a,#2d0f0f)":"#fff"}}>
+                <div className="h-[3px]" style={{background:`linear-gradient(90deg,${cfg.color},${cfg.color}88)`}}/>
+                <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer" onClick={()=>setExpanded(isOpen?null:i)}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="text-[13px] font-bold truncate" style={{ color: isCancelled ? "#fff" : "#1e293b" }}>
-                        {order.orderId || `#${String(order._id).slice(-6).toUpperCase()}`}
+                      <span className="text-[13px] font-bold truncate" style={{color:isCancelled?"#fff":"#1e293b"}}>
+                        {order.orderId||`#${String(order._id).slice(-6).toUpperCase()}`}
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: isCancelled ? "rgba(239,68,68,0.2)" : cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                        style={{background:isCancelled?"rgba(239,68,68,0.2)":cfg.bg,color:cfg.color,border:`1px solid ${cfg.border}`}}>
                         {cfg.label}
                       </span>
                     </div>
-                    <p className="text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
-                      {date} · {qty} {t("টি পণ্য","items")}
-                    </p>
+                    <p className="text-[11px]" style={{color:isCancelled?"rgba(255,255,255,0.4)":"#94a3b8"}}>{date} · {qty} {t("টি পণ্য","items")}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="text-[15px] font-black" style={{ color: isCancelled ? "#fff" : "#0f172a" }}>
-                      ৳{(order.total || 0).toLocaleString()}
-                    </p>
-                    <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }}
+                    <p className="text-[15px] font-black" style={{color:isCancelled?"#fff":"#0f172a"}}>৳{(order.total||0).toLocaleString()}</p>
+                    <motion.div animate={{rotate:isOpen?180:0}} transition={{duration:0.22}}
                       className="w-5 h-5 rounded-lg flex items-center justify-center ml-auto mt-1"
-                      style={{ background: isCancelled ? "rgba(255,255,255,0.1)" : "#f1f5f9" }}>
-                      <ChevronDown size={12} style={{ color: isCancelled ? "rgba(255,255,255,0.5)" : "#94a3b8" }}/>
+                      style={{background:isCancelled?"rgba(255,255,255,0.1)":"#f1f5f9"}}>
+                      <ChevronDown size={12} style={{color:isCancelled?"rgba(255,255,255,0.5)":"#94a3b8"}}/>
                     </motion.div>
                   </div>
                 </div>
-                {!isCancelled && <div className="px-4 pb-2"><MiniTimeline status={order.status}/></div>}
-                {order.status === "delivered" && (
-                  <div className="mx-4 mb-3 px-3 py-2 rounded-xl flex items-center gap-2"
-                    style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+                {!isCancelled&&<div className="px-4 pb-2"><MiniTimeline status={order.status}/></div>}
+                {order.status==="delivered"&&(
+                  <div className="mx-4 mb-3 px-3 py-2 rounded-xl flex items-center gap-2" style={{background:"#ecfdf5",border:"1px solid #a7f3d0"}}>
                     <CheckCircle size={12} className="text-emerald-500 flex-shrink-0"/>
                     <p className="text-[11px] font-semibold text-emerald-700">{t("🎉 অর্ডার সফলভাবে পৌঁছে গেছে!","🎉 Order delivered successfully!")}</p>
                   </div>
                 )}
                 <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-                      <div className="px-4 pb-4 pt-1 space-y-3"
-                        style={{ borderTop: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
-                        {order.items?.length > 0 && (
+                  {isOpen&&(
+                    <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}}
+                      exit={{height:0,opacity:0}} transition={{duration:0.25}} className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-1 space-y-3" style={{borderTop:`1px solid ${isCancelled?"rgba(255,255,255,0.06)":"#f1f5f9"}`}}>
+                        {order.items?.length>0&&(
                           <div className="space-y-2 pt-2">
-                            {order.items.map((item, j) => (
+                            {order.items.map((item,j)=>(
                               <div key={j} className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                                style={{ background: isCancelled ? "rgba(255,255,255,0.05)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.08)" : "#f1f5f9"}` }}>
+                                style={{background:isCancelled?"rgba(255,255,255,0.05)":"#f8fafc",border:`1px solid ${isCancelled?"rgba(255,255,255,0.08)":"#f1f5f9"}`}}>
                                 <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0"
-                                  style={{ background: isCancelled ? "rgba(255,255,255,0.1)" : "#fff", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.1)" : "#e2e8f0"}` }}>
-                                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>
-                                    : <div className="w-full h-full flex items-center justify-center"><Package size={12} style={{ color: isCancelled ? "rgba(255,255,255,0.2)" : "#e2e8f0" }}/></div>}
+                                  style={{background:isCancelled?"rgba(255,255,255,0.1)":"#fff",border:`1px solid ${isCancelled?"rgba(255,255,255,0.1)":"#e2e8f0"}`}}>
+                                  {item.image?<img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>
+                                    :<div className="w-full h-full flex items-center justify-center"><Package size={12} style={{color:isCancelled?"rgba(255,255,255,0.2)":"#e2e8f0"}}/></div>}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-[12px] font-semibold truncate" style={{ color: isCancelled ? "rgba(255,255,255,0.75)" : "#334155" }}>{item.name}</p>
-                                  <p className="text-[10.5px]" style={{ color: isCancelled ? "rgba(255,255,255,0.35)" : "#94a3b8" }}>
-                                    ৳{(item.salePrice || item.price || 0).toLocaleString()} × {item.quantity}
-                                  </p>
+                                  <p className="text-[12px] font-semibold truncate" style={{color:isCancelled?"rgba(255,255,255,0.75)":"#334155"}}>{item.name}</p>
+                                  <p className="text-[10.5px]" style={{color:isCancelled?"rgba(255,255,255,0.35)":"#94a3b8"}}>৳{(item.salePrice||item.price||0).toLocaleString()} × {item.quantity}</p>
                                 </div>
-                                <p className="text-[12px] font-bold flex-shrink-0" style={{ color: isCancelled ? "rgba(255,255,255,0.6)" : "#0f172a" }}>
-                                  ৳{((item.salePrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
+                                <p className="text-[12px] font-bold flex-shrink-0" style={{color:isCancelled?"rgba(255,255,255,0.6)":"#0f172a"}}>
+                                  ৳{((item.salePrice||item.price||0)*(item.quantity||1)).toLocaleString()}
                                 </p>
                               </div>
                             ))}
                           </div>
                         )}
-                        <div className="rounded-xl p-3 space-y-1.5"
-                          style={{ background: isCancelled ? "rgba(255,255,255,0.04)" : "#f8fafc", border: `1px solid ${isCancelled ? "rgba(255,255,255,0.06)" : "#f1f5f9"}` }}>
-                          <div className="flex justify-between text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
-                            <span>{t("সাবটোটাল","Subtotal")}</span>
-                            <span>৳{(order.subtotal || 0).toLocaleString()}</span>
+                        <div className="rounded-xl p-3 space-y-1.5" style={{background:isCancelled?"rgba(255,255,255,0.04)":"#f8fafc",border:`1px solid ${isCancelled?"rgba(255,255,255,0.06)":"#f1f5f9"}`}}>
+                          <div className="flex justify-between text-[11px]" style={{color:isCancelled?"rgba(255,255,255,0.4)":"#94a3b8"}}>
+                            <span>{t("সাবটোটাল","Subtotal")}</span><span>৳{(order.subtotal||0).toLocaleString()}</span>
                           </div>
-                          <div className="flex justify-between text-[11px]" style={{ color: isCancelled ? "rgba(255,255,255,0.4)" : "#94a3b8" }}>
+                          <div className="flex justify-between text-[11px]" style={{color:isCancelled?"rgba(255,255,255,0.4)":"#94a3b8"}}>
                             <span>{t("ডেলিভারি","Delivery")}</span>
-                            <span style={{ color: order.deliveryCharge === 0 ? "#059669" : undefined }}>
-                              {order.deliveryCharge === 0 ? t("বিনামূল্যে","Free") : `৳${order.deliveryCharge}`}
+                            <span style={{color:order.deliveryCharge===0?"#059669":undefined}}>
+                              {order.deliveryCharge===0?t("বিনামূল্যে","Free"):`৳${order.deliveryCharge}`}
                             </span>
                           </div>
-                          <div className="h-px" style={{ background: isCancelled ? "rgba(255,255,255,0.06)" : "#e2e8f0" }}/>
-                          <div className="flex justify-between text-[13px] font-bold" style={{ color: isCancelled ? "rgba(255,255,255,0.7)" : "#0f172a" }}>
-                            <span>{t("সর্বমোট","Total")}</span>
-                            <span>৳{(order.total || 0).toLocaleString()}</span>
+                          <div className="h-px" style={{background:isCancelled?"rgba(255,255,255,0.06)":"#e2e8f0"}}/>
+                          <div className="flex justify-between text-[13px] font-bold" style={{color:isCancelled?"rgba(255,255,255,0.7)":"#0f172a"}}>
+                            <span>{t("সর্বমোট","Total")}</span><span>৳{(order.total||0).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
@@ -1117,81 +1024,58 @@ function OrdersPanel({ customer, t }) {
 }
 
 /* ══════════════════════════════════════════
-   WISHLIST PANEL
+   WISHLIST PANEL (Desktop)
 ══════════════════════════════════════════ */
 function WishlistPanel({ t }) {
   const [items,   setItems  ] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      try {
-        const token = localStorage.getItem("customerToken");
-        const res   = await fetch(`${API}/api/customer/wishlist`, { headers: { Authorization: `Bearer ${token}` } });
-        const data  = await res.json();
-        setItems(data.wishlist || []);
-      } catch { setItems([]); }
-      finally { setLoading(false); }
-    };
-    fetchWishlist();
-  }, []);
+  useEffect(()=>{
+    const token = localStorage.getItem("customerToken");
+    fetch(`${API}/api/customer/wishlist`,{headers:{Authorization:`Bearer ${token}`}})
+      .then(r=>r.json()).then(data=>setItems(data.wishlist||[])).catch(()=>setItems([])).finally(()=>setLoading(false));
+  },[]);
 
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("উইশলিস্ট","Wishlist")}</h3>
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-slate-100 border-t-red-400 rounded-full animate-spin"/>
-        </div>
-      )}
-      {!loading && items.length === 0 && (
+      {loading&&<div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 border-slate-100 border-t-red-400 rounded-full animate-spin"/></div>}
+      {!loading&&items.length===0&&(
         <div className="flex flex-col items-center justify-center py-10 text-center space-y-2">
           <div className="text-4xl mb-2">🤍</div>
           <p className="text-[14px] font-bold text-slate-600">{t("উইশলিস্ট খালি","Wishlist is empty")}</p>
-          <p className="text-[12px] text-slate-400">{t("পছন্দের পণ্য সেভ করুন","Save your favourite products")}</p>
         </div>
       )}
-      {!loading && items.length > 0 && (
+      {!loading&&items.length>0&&(
         <div className="space-y-2.5">
-          {items.map((item, i) => (
-            <Link key={item._id || i} to={`/product/${item.slug || item._id}`} className="no-underline block group">
-              <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+          {items.map((item,i)=>(
+            <Link key={item._id||i} to={`/product/${item.slug||item._id}`} className="no-underline block group">
+              <motion.div whileHover={{scale:1.01}} whileTap={{scale:0.98}}
                 className="flex items-center gap-3 p-3 rounded-2xl transition-all"
-                style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#a7f3d0"; e.currentTarget.style.background = "#f0fdf4"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#f8fafc"; }}>
-                <div className="w-[52px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-white" style={{ border: "1.5px solid #e2e8f0" }}>
-                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>
-                    : <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-slate-200"/></div>}
+                style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="#a7f3d0";e.currentTarget.style.background="#f0fdf4";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#f8fafc";}}>
+                <div className="w-[52px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-white" style={{border:"1.5px solid #e2e8f0"}}>
+                  {item.image?<img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>
+                    :<div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-slate-200"/></div>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-bold text-slate-800 truncate leading-snug group-hover:text-emerald-700 transition-colors">
-                    {item.name || t("পণ্য","Product")}
-                  </p>
+                  <p className="text-[13px] font-bold text-slate-800 truncate leading-snug group-hover:text-emerald-700 transition-colors">{item.name||t("পণ্য","Product")}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    {item.price && item.salePrice && item.salePrice < item.price && (
-                      <span className="text-[11px] text-slate-400 line-through">৳{item.price.toLocaleString()}</span>
-                    )}
-                    <span className="text-[13px] font-black" style={{ color: "#059669" }}>
-                      ৳{(item.salePrice || item.price || 0).toLocaleString()}
-                    </span>
-                    {item.price && item.salePrice && item.salePrice < item.price && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">
-                        -{Math.round((1 - item.salePrice / item.price) * 100)}%
-                      </span>
+                    {item.price&&item.salePrice&&item.salePrice<item.price&&<span className="text-[11px] text-slate-400 line-through">৳{item.price.toLocaleString()}</span>}
+                    <span className="text-[13px] font-black" style={{color:"#059669"}}>৳{(item.salePrice||item.price||0).toLocaleString()}</span>
+                    {item.price&&item.salePrice&&item.salePrice<item.price&&(
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-500">-{Math.round((1-item.salePrice/item.price)*100)}%</span>
                     )}
                   </div>
                 </div>
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
-                  style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
-                  <ChevronRight size={13} style={{ color: "#059669" }}/>
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:"#ecfdf5",border:"1px solid #a7f3d0"}}>
+                  <ChevronRight size={13} style={{color:"#059669"}}/>
                 </div>
               </motion.div>
             </Link>
           ))}
-          <p className="text-[11px] text-slate-400 text-center pt-1">
-            {items.length} {t("টি পণ্য সেভ করা","items saved")}
-          </p>
+          <p className="text-[11px] text-slate-400 text-center pt-1">{items.length} {t("টি পণ্য সেভ করা","items saved")}</p>
         </div>
       )}
     </div>
@@ -1199,84 +1083,51 @@ function WishlistPanel({ t }) {
 }
 
 /* ══════════════════════════════════════════
-   FAQ PANEL
+   FAQ PANEL (Desktop)
 ══════════════════════════════════════════ */
 const FAQ_SECTIONS = [
-  {
-    tag: "০১", titleBn: "অর্ডার সংক্রান্ত প্রশ্ন", titleEn: "Order Related Questions",
-    faqs: [
-      { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?",
-        aBn:"পছন্দের পণ্য কার্টে যোগ করুন, তারপর চেকআউট পেজে গিয়ে আপনার নাম, ফোন নম্বর ও ঠিকানা দিন।",
-        aEn:"Add your preferred product to the cart, then go to checkout and enter your name, phone number and address." },
-      { qBn:"অর্ডার কীভাবে ট্র্যাক করবো?", qEn:"How do I track my order?",
-        aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং ফোন নম্বর দিন।",
-        aEn:"Go to the Order Track page (/order) and enter your phone number." },
-      { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?",
-        aBn:"হ্যাঁ, Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করলে বাতিল করা সম্ভব।",
-        aEn:"Yes, contact our helpline while the order is Pending or Processing." },
-      { qBn:"একসাথে কতটি পণ্য অর্ডার করা যাবে?", qEn:"How many products can I order at once?",
-        aBn:"যত খুশি পণ্য যোগ করতে পারবেন। ২৫০০ টাকার উপরে ডেলিভারি বিনামূল্যে।",
-        aEn:"As many as you like. Free delivery above ৳2500." },
-    ],
-  },
-  {
-    tag: "০২", titleBn: "পেমেন্ট সংক্রান্ত প্রশ্ন", titleEn: "Payment Related Questions",
-    faqs: [
-      { qBn:"কোন পেমেন্ট পদ্ধতি ব্যবহার করা যাবে?", qEn:"Which payment methods are available?",
-        aBn:"bKash, Nagad এবং ক্যাশ অন ডেলিভারি (COD)। মার্চেন্ট নম্বর: 01938360666।",
-        aEn:"bKash, Nagad and Cash on Delivery (COD). Merchant number: 01938360666." },
-      { qBn:"ট্র্যান্সাকশন আইডি কোথায় পাবো?", qEn:"Where do I find the Transaction ID?",
-        aBn:"bKash বা Nagad পেমেন্টের পরে কনফার্মেশন SMS এ TrxID থাকবে।",
-        aEn:"Check your confirmation SMS after bKash or Nagad payment." },
-      { qBn:"COD অর্ডারে কি অতিরিক্ত চার্জ আছে?", qEn:"Are there extra charges for COD?",
-        aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই।",
-        aEn:"No extra charges for COD." },
-    ],
-  },
-  {
-    tag: "০৩", titleBn: "ডেলিভারি সংক্রান্ত প্রশ্ন", titleEn: "Delivery Related Questions",
-    faqs: [
-      { qBn:"ডেলিভারি কতদিন লাগে?", qEn:"How long does delivery take?",
-        aBn:"ঢাকায় ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।",
-        aEn:"Within Dhaka 1-2 business days, outside Dhaka 2-4 business days." },
-      { qBn:"ডেলিভারি চার্জ কত?", qEn:"What is the delivery charge?",
-        aBn:"২৫০০ টাকার উপরে বিনামূল্যে। ২৫০০ টাকার কম হলে মাত্র ৬০ টাকা।",
-        aEn:"Free for orders ৳2500 or above. Only ৳60 below ৳2500." },
-      { qBn:"পুরো বাংলাদেশে ডেলিভারি হয়?", qEn:"Do you deliver all over Bangladesh?",
-        aBn:"হ্যাঁ, সকল ৬৪টি জেলায় ডেলিভারি দেওয়া হয়।",
-        aEn:"Yes, we deliver to all 64 districts of Bangladesh." },
-    ],
-  },
-  {
-    tag: "০৪", titleBn: "রিটার্ন ও রিফান্ড", titleEn: "Return & Refund",
-    faqs: [
-      { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return a product?",
-        aBn:"হ্যাঁ, পণ্য পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।",
-        aEn:"Yes, within 7 days of receipt with original packaging." },
-      { qBn:"রিফান্ড পেতে কতদিন লাগে?", qEn:"How long does a refund take?",
-        aBn:"পরিদর্শনের পরে ৩-৫ কার্যদিবসের মধ্যে bKash বা Nagad এ রিফান্ড।",
-        aEn:"3-5 business days via bKash or Nagad after inspection." },
-    ],
-  },
+  { tag:"০১", titleBn:"অর্ডার সংক্রান্ত প্রশ্ন", titleEn:"Order Related Questions",
+    faqs:[
+      { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?", aBn:"পছন্দের পণ্য কার্টে যোগ করুন, তারপর চেকআউট পেজে গিয়ে আপনার নাম, ফোন নম্বর ও ঠিকানা দিন।", aEn:"Add your preferred product to the cart, then go to checkout and enter your name, phone number and address." },
+      { qBn:"অর্ডার কীভাবে ট্র্যাক করবো?", qEn:"How do I track my order?", aBn:"অর্ডার ট্র্যাক পেজে (/order) যান এবং ফোন নম্বর দিন।", aEn:"Go to the Order Track page (/order) and enter your phone number." },
+      { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?", aBn:"হ্যাঁ, Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করলে বাতিল করা সম্ভব।", aEn:"Yes, contact our helpline while the order is Pending or Processing." },
+      { qBn:"একসাথে কতটি পণ্য অর্ডার করা যাবে?", qEn:"How many products can I order at once?", aBn:"যত খুশি পণ্য যোগ করতে পারবেন। ২৫০০ টাকার উপরে ডেলিভারি বিনামূল্যে।", aEn:"As many as you like. Free delivery above ৳2500." },
+    ]},
+  { tag:"০২", titleBn:"পেমেন্ট সংক্রান্ত প্রশ্ন", titleEn:"Payment Related Questions",
+    faqs:[
+      { qBn:"কোন পেমেন্ট পদ্ধতি ব্যবহার করা যাবে?", qEn:"Which payment methods are available?", aBn:"bKash, Nagad এবং ক্যাশ অন ডেলিভারি (COD)। মার্চেন্ট নম্বর: 01938360666।", aEn:"bKash, Nagad and Cash on Delivery (COD). Merchant number: 01938360666." },
+      { qBn:"ট্র্যান্সাকশন আইডি কোথায় পাবো?", qEn:"Where do I find the Transaction ID?", aBn:"bKash বা Nagad পেমেন্টের পরে কনফার্মেশন SMS এ TrxID থাকবে।", aEn:"Check your confirmation SMS after bKash or Nagad payment." },
+      { qBn:"COD অর্ডারে কি অতিরিক্ত চার্জ আছে?", qEn:"Are there extra charges for COD?", aBn:"না, COD তে কোনো অতিরিক্ত চার্জ নেই।", aEn:"No extra charges for COD." },
+    ]},
+  { tag:"০৩", titleBn:"ডেলিভারি সংক্রান্ত প্রশ্ন", titleEn:"Delivery Related Questions",
+    faqs:[
+      { qBn:"ডেলিভারি কতদিন লাগে?", qEn:"How long does delivery take?", aBn:"ঢাকায় ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।", aEn:"Within Dhaka 1-2 business days, outside Dhaka 2-4 business days." },
+      { qBn:"ডেলিভারি চার্জ কত?", qEn:"What is the delivery charge?", aBn:"২৫০০ টাকার উপরে বিনামূল্যে। ২৫০০ টাকার কম হলে মাত্র ৬০ টাকা।", aEn:"Free for orders ৳2500 or above. Only ৳60 below ৳2500." },
+      { qBn:"পুরো বাংলাদেশে ডেলিভারি হয়?", qEn:"Do you deliver all over Bangladesh?", aBn:"হ্যাঁ, সকল ৬৪টি জেলায় ডেলিভারি দেওয়া হয়।", aEn:"Yes, we deliver to all 64 districts of Bangladesh." },
+    ]},
+  { tag:"০৪", titleBn:"রিটার্ন ও রিফান্ড", titleEn:"Return & Refund",
+    faqs:[
+      { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return a product?", aBn:"হ্যাঁ, পণ্য পাওয়ার ৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।", aEn:"Yes, within 7 days of receipt with original packaging." },
+      { qBn:"রিফান্ড পেতে কতদিন লাগে?", qEn:"How long does a refund take?", aBn:"পরিদর্শনের পরে ৩-৫ কার্যদিবসের মধ্যে bKash বা Nagad এ রিফান্ড।", aEn:"3-5 business days via bKash or Nagad after inspection." },
+    ]},
 ];
 
 function SidebarFaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl overflow-hidden border transition-all duration-200"
-      style={{ borderColor: open ? "#d9770644" : "#f1f5f9", background: open ? "#d9770614" : "#fafafa" }}>
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left gap-3" type="button">
-        <p className="text-sm font-semibold leading-snug" style={{ color: "#1e293b" }}>{q}</p>
-        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="flex-shrink-0">
-          <ChevronDown size={15} style={{ color: "#d97706" }}/>
+      style={{borderColor:open?"#d9770644":"#f1f5f9",background:open?"#d9770614":"#fafafa"}}>
+      <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center justify-between px-4 py-3.5 text-left gap-3" type="button">
+        <p className="text-sm font-semibold leading-snug" style={{color:"#1e293b"}}>{q}</p>
+        <motion.div animate={{rotate:open?180:0}} transition={{duration:0.2}} className="flex-shrink-0">
+          <ChevronDown size={15} style={{color:"#d97706"}}/>
         </motion.div>
       </button>
       <AnimatePresence initial={false}>
-        {open && (
-          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }}
-            exit={{ height:0, opacity:0 }} transition={{ duration:0.25, ease:[0.4,0,0.2,1] }}>
-            <p className="px-4 pb-4 text-sm leading-relaxed" style={{ color:"#475569", borderTop:"1px solid #f1f5f9" }}>
+        {open&&(
+          <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}}
+            exit={{height:0,opacity:0}} transition={{duration:0.25,ease:[0.4,0,0.2,1]}}>
+            <p className="px-4 pb-4 text-sm leading-relaxed" style={{color:"#475569",borderTop:"1px solid #f1f5f9"}}>
               <span className="block pt-3">{a}</span>
             </p>
           </motion.div>
@@ -1290,16 +1141,14 @@ function FaqPanel({ t }) {
   return (
     <div className="space-y-5">
       <h3 className="text-[16px] font-black text-slate-800">{t("সাধারণ জিজ্ঞাসা","FAQs")}</h3>
-      {FAQ_SECTIONS.map((sec, si) => (
-        <div key={si} className="rounded-2xl overflow-hidden shadow-sm" style={{ background: "#ffffff", border: "1px solid #f1f5f9" }}>
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-50" style={{ background: "#d9770614" }}>
-            <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: "#d9770688" }}>{sec.tag}</span>
-            <h4 className="text-sm font-bold text-slate-800">{t(sec.titleBn, sec.titleEn)}</h4>
+      {FAQ_SECTIONS.map((sec,si)=>(
+        <div key={si} className="rounded-2xl overflow-hidden shadow-sm" style={{background:"#ffffff",border:"1px solid #f1f5f9"}}>
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-50" style={{background:"#d9770614"}}>
+            <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0" style={{color:"#d9770688"}}>{sec.tag}</span>
+            <h4 className="text-sm font-bold text-slate-800">{t(sec.titleBn,sec.titleEn)}</h4>
           </div>
           <div className="px-4 py-4 space-y-2.5">
-            {sec.faqs.map((faq, fi) => (
-              <SidebarFaqItem key={fi} q={t(faq.qBn, faq.qEn)} a={t(faq.aBn, faq.aEn)} />
-            ))}
+            {sec.faqs.map((faq,fi)=><SidebarFaqItem key={fi} q={t(faq.qBn,faq.qEn)} a={t(faq.aBn,faq.aEn)}/>)}
           </div>
         </div>
       ))}
@@ -1320,8 +1169,9 @@ function MobileSectionContent({ section, customer, t, onNavigate }) {
         {[
           { label:t("নাম","Name"),    value:customer?.name,  icon:User  },
           { label:t("ইমেইল","Email"), value:customer?.email, icon:Mail  },
-          { label:t("ফোন","Phone"),   value:customer?.phone || t("যোগ করা হয়নি","Not added"), icon:Phone },
-          ...(joinDate ? [{label:t("সদস্য","Member since"),value:joinDate,icon:Info}] : []),
+          // ✅ top-level phone দেখাও
+          { label:t("ফোন","Phone"),   value:customer?.phone||t("যোগ করা হয়নি","Not added"), icon:Phone },
+          ...(joinDate?[{label:t("সদস্য","Member since"),value:joinDate,icon:Info}]:[]),
         ].map(({label,value,icon:Icon})=>(
           <div key={label} className="flex items-start gap-3 p-3.5 rounded-2xl"
             style={{background:"rgba(248,250,252,0.8)",border:"1px solid rgba(148,163,184,0.12)"}}>
@@ -1337,52 +1187,47 @@ function MobileSectionContent({ section, customer, t, onNavigate }) {
       </div>
     );
   }
-  if (section === "orders")   return <MobileOrdersPanel customer={customer} t={t} />;
-  if (section === "wishlist") return <MobileWishlistPanel t={t} onNavigate={onNavigate} />;
-  if (section === "cart")     return <MobileCartPanel t={t} onNavigate={onNavigate} />;
-  if (section === "address")  return <MobileAddressPanel customer={customer} t={t} />;
-  if (section === "password") return <MobilePasswordPanel t={t} />;
-  if (section === "faq")      return <MobileFaqPanel t={t} />;
+  if (section==="orders")   return <MobileOrdersPanel customer={customer} t={t}/>;
+  if (section==="wishlist") return <MobileWishlistPanel t={t} onNavigate={onNavigate}/>;
+  if (section==="cart")     return <MobileCartPanel t={t} onNavigate={onNavigate}/>;
+  if (section==="address")  return <MobileAddressPanel customer={customer} t={t}/>;
+  if (section==="password") return <MobilePasswordPanel t={t}/>;
+  if (section==="faq")      return <MobileFaqPanel t={t}/>;
   return null;
 }
 
+/* ── Mobile Orders ── */
 function MobileOrdersPanel({ customer, t }) {
   const [orders,   setOrders  ] = useState([]);
   const [loading,  setLoading ] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
-  useEffect(() => {
+  useEffect(()=>{
     const token = localStorage.getItem("customerToken");
-    const q = customer?.phone
-      ? `phone=${encodeURIComponent(customer.phone)}`
-      : `email=${encodeURIComponent(customer?.email||"")}`;
-    fetch(`${API}/api/orders/track?${q}`, { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json())
-      .then(json=>setOrders(json.success ? json.data : []))
-      .catch(()=>setOrders([]))
-      .finally(()=>setLoading(false));
-  }, [customer]);
+    const q = customer?.phone?`phone=${encodeURIComponent(customer.phone)}`:`email=${encodeURIComponent(customer?.email||"")}`;
+    fetch(`${API}/api/orders/track?${q}`,{headers:{Authorization:`Bearer ${token}`}})
+      .then(r=>r.json()).then(json=>setOrders(json.success?json.data:[])).catch(()=>setOrders([])).finally(()=>setLoading(false));
+  },[customer]);
 
   const S = {
-    pending:    { label:"অপেক্ষমাণ", color:"#d97706", bg:"#fffbeb", border:"#fde68a" },
-    processing: { label:"প্যাকেজিং", color:"#7c3aed", bg:"#f5f3ff", border:"#ddd6fe" },
-    shipped:    { label:"পথে আছে",   color:"#1d4ed8", bg:"#eff6ff", border:"#bfdbfe" },
-    confirmed:  { label:"নিশ্চিত",   color:"#0284c7", bg:"#f0f9ff", border:"#bae6fd" },
-    delivered:  { label:"পৌঁছেছে",  color:"#059669", bg:"#ecfdf5", border:"#a7f3d0" },
-    cancelled:  { label:"বাতিল",     color:"#dc2626", bg:"#fff1f2", border:"#fecdd3" },
+    pending:    {label:"অপেক্ষমাণ",color:"#d97706",bg:"#fffbeb",border:"#fde68a"},
+    processing: {label:"প্যাকেজিং",color:"#7c3aed",bg:"#f5f3ff",border:"#ddd6fe"},
+    shipped:    {label:"পথে আছে",  color:"#1d4ed8",bg:"#eff6ff",border:"#bfdbfe"},
+    confirmed:  {label:"নিশ্চিত",  color:"#0284c7",bg:"#f0f9ff",border:"#bae6fd"},
+    delivered:  {label:"পৌঁছেছে", color:"#059669",bg:"#ecfdf5",border:"#a7f3d0"},
+    cancelled:  {label:"বাতিল",    color:"#dc2626",bg:"#fff1f2",border:"#fecdd3"},
   };
 
   if (loading) return <div className="flex justify-center py-8"><div className="w-8 h-8 border-2 border-slate-100 border-t-emerald-500 rounded-full animate-spin"/></div>;
-  if (orders.length === 0) return <div className="text-center py-8"><div className="text-3xl mb-2">📦</div><p className="text-[14px] font-bold text-slate-500">{t("কোনো অর্ডার নেই","No orders yet")}</p></div>;
+  if (orders.length===0) return <div className="text-center py-8"><div className="text-3xl mb-2">📦</div><p className="text-[14px] font-bold text-slate-500">{t("কোনো অর্ডার নেই","No orders yet")}</p></div>;
 
   return (
     <div className="space-y-3">
-      {orders.map((order,i) => {
-        const cfg = S[order.status] || { label:order.status, color:"#64748b", bg:"#f8fafc", border:"#e2e8f0" };
-        const isOpen = expanded === i;
-        const isCancelled = order.status === "cancelled";
-        const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}) : "—";
-        const qty = order.items?.reduce((s,x)=>s+(x.quantity||1),0)||0;
+      {orders.map((order,i)=>{
+        const cfg=S[order.status]||{label:order.status,color:"#64748b",bg:"#f8fafc",border:"#e2e8f0"};
+        const isOpen=expanded===i; const isCancelled=order.status==="cancelled";
+        const date=order.createdAt?new Date(order.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"—";
+        const qty=order.items?.reduce((s,x)=>s+(x.quantity||1),0)||0;
         return (
           <div key={order._id||i} className="rounded-2xl overflow-hidden"
             style={{border:`1px solid ${cfg.border}`,background:isCancelled?"linear-gradient(135deg,#1a0a0a,#2d0f0f)":"#fff"}}>
@@ -1390,13 +1235,8 @@ function MobileOrdersPanel({ customer, t }) {
             <div className="flex items-start justify-between gap-2 px-4 py-3 cursor-pointer" onClick={()=>setExpanded(isOpen?null:i)}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  <span className="text-[13px] font-bold" style={{color:isCancelled?"#fff":"#1e293b"}}>
-                    {order.orderId||`#${String(order._id).slice(-6).toUpperCase()}`}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{background:isCancelled?"rgba(239,68,68,0.2)":cfg.bg,color:cfg.color,border:`1px solid ${cfg.border}`}}>
-                    {cfg.label}
-                  </span>
+                  <span className="text-[13px] font-bold" style={{color:isCancelled?"#fff":"#1e293b"}}>{order.orderId||`#${String(order._id).slice(-6).toUpperCase()}`}</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{background:isCancelled?"rgba(239,68,68,0.2)":cfg.bg,color:cfg.color,border:`1px solid ${cfg.border}`}}>{cfg.label}</span>
                 </div>
                 <p className="text-[11px]" style={{color:isCancelled?"rgba(255,255,255,0.4)":"#94a3b8"}}>{date} · {qty} {t("টি","items")}</p>
               </div>
@@ -1408,15 +1248,14 @@ function MobileOrdersPanel({ customer, t }) {
               </div>
             </div>
             <AnimatePresence initial={false}>
-              {isOpen && (
+              {isOpen&&(
                 <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}}
                   exit={{height:0,opacity:0}} transition={{duration:0.25}} className="overflow-hidden">
                   <div className="px-4 pb-4 space-y-2.5" style={{borderTop:`1px solid ${isCancelled?"rgba(255,255,255,0.06)":"#f1f5f9"}`}}>
                     {order.items?.slice(0,3).map((item,j)=>(
-                      <div key={j} className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                        style={{background:isCancelled?"rgba(255,255,255,0.05)":"#f8fafc"}}>
+                      <div key={j} className="flex items-center gap-2.5 p-2.5 rounded-xl" style={{background:isCancelled?"rgba(255,255,255,0.05)":"#f8fafc"}}>
                         <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-white">
-                          {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/> : <Package size={12} className="m-auto mt-3 text-slate-200"/>}
+                          {item.image?<img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>:<Package size={12} className="m-auto mt-3 text-slate-200"/>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-semibold truncate" style={{color:isCancelled?"rgba(255,255,255,0.75)":"#334155"}}>{item.name}</p>
@@ -1438,31 +1277,27 @@ function MobileOrdersPanel({ customer, t }) {
   );
 }
 
+/* ── Mobile Wishlist ── */
 function MobileWishlistPanel({ t, onNavigate }) {
-  const [items, setItems] = useState([]);
+  const [items,   setItems  ] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useEffect(()=>{
     const token = localStorage.getItem("customerToken");
-    fetch(`${API}/api/customer/wishlist`, { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r=>r.json())
-      .then(data=>setItems(data.wishlist||[]))
-      .catch(()=>setItems([]))
-      .finally(()=>setLoading(false));
-  }, []);
+    fetch(`${API}/api/customer/wishlist`,{headers:{Authorization:`Bearer ${token}`}})
+      .then(r=>r.json()).then(data=>setItems(data.wishlist||[])).catch(()=>setItems([])).finally(()=>setLoading(false));
+  },[]);
 
   if (loading) return <div className="flex justify-center py-8"><div className="w-8 h-8 border-2 border-slate-100 border-t-red-400 rounded-full animate-spin"/></div>;
-  if (items.length === 0) return <div className="text-center py-8"><div className="text-3xl mb-2">🤍</div><p className="text-[14px] font-bold text-slate-500">{t("উইশলিস্ট খালি","Wishlist is empty")}</p></div>;
+  if (items.length===0) return <div className="text-center py-8"><div className="text-3xl mb-2">🤍</div><p className="text-[14px] font-bold text-slate-500">{t("উইশলিস্ট খালি","Wishlist is empty")}</p></div>;
 
   return (
     <div className="space-y-2.5">
-      {items.map((item,i) => (
-        <motion.div key={item._id||i} whileTap={{scale:0.98}}
-          onClick={()=>onNavigate(`/product/${item.slug||item._id}`)}
-          className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer"
-          style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
+      {items.map((item,i)=>(
+        <motion.div key={item._id||i} whileTap={{scale:0.98}} onClick={()=>onNavigate(`/product/${item.slug||item._id}`)}
+          className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer" style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
           <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-white" style={{border:"1.5px solid #e2e8f0"}}>
-            {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/> : <Package size={18} className="m-auto mt-4 text-slate-200"/>}
+            {item.image?<img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>:<Package size={18} className="m-auto mt-4 text-slate-200"/>}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-bold text-slate-800 truncate">{item.name}</p>
@@ -1478,17 +1313,18 @@ function MobileWishlistPanel({ t, onNavigate }) {
   );
 }
 
+/* ── Mobile Cart ── */
 function MobileCartPanel({ t, onNavigate }) {
   const { cartItems, cartCount, cartSubtotal, cartTotal, deliveryCharge, removeFromCart, updateQuantity } = useCart();
 
-  if (cartItems.length === 0) return <div className="text-center py-8"><div className="text-3xl mb-2">🛒</div><p className="text-[14px] font-bold text-slate-500">{t("কার্ট খালি","Cart is empty")}</p></div>;
+  if (cartItems.length===0) return <div className="text-center py-8"><div className="text-3xl mb-2">🛒</div><p className="text-[14px] font-bold text-slate-500">{t("কার্ট খালি","Cart is empty")}</p></div>;
 
   return (
     <div className="space-y-3">
-      {cartItems.map((item,i) => (
+      {cartItems.map((item,i)=>(
         <div key={item._id||i} className="flex items-center gap-3 p-3 rounded-2xl" style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
           <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-white" style={{border:"1.5px solid #e2e8f0"}}>
-            {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/> : <Package size={18} className="m-auto mt-4 text-slate-200"/>}
+            {item.image?<img src={item.image} alt={item.name} className="w-full h-full object-contain p-1"/>:<Package size={18} className="m-auto mt-4 text-slate-200"/>}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-bold text-slate-800 truncate">{item.name}</p>
@@ -1530,16 +1366,20 @@ function MobileCartPanel({ t, onNavigate }) {
   );
 }
 
+/* ── Mobile Address ── */
 function MobileAddressPanel({ customer, t }) {
   const saved = customer?.address || {};
   const [street,   setStreet  ] = useState(saved.street   || "");
   const [district, setDistrict] = useState(saved.district || "");
   const [upazila,  setUpazila ] = useState(saved.thana    || "");
-  const [phone,    setPhone   ] = useState(saved.phone    || "");
+  const [phone,    setPhone   ] = useState("");
   const [loading,  setLoading ] = useState(false);
   const [msg,      setMsg     ] = useState({ type:"", text:"" });
-  const hasPhone   = !!customer?.phone;
-  const hasAddress = saved.street || saved.thana || saved.district;
+
+  // ✅ top-level phone check
+  const currentPhone = customer?.phone || saved.phone || "";
+  const hasPhone     = !!customer?.phone;
+  const hasAddress   = saved.street || saved.thana || saved.district;
 
   const districts = Object.keys(BD_LOCATIONS).filter(d=>!d.includes("(alt)"));
   const upazilas  = district ? (BD_LOCATIONS[district]||[]) : [];
@@ -1549,23 +1389,34 @@ function MobileAddressPanel({ customer, t }) {
     if (!street)   { setMsg({type:"error",text:t("পুরো ঠিকানা দিন","Enter full address")}); return; }
     if (!district) { setMsg({type:"error",text:t("জেলা বেছে নিন","Select district")}); return; }
     if (!upazila)  { setMsg({type:"error",text:t("উপজেলা বেছে নিন","Select upazila")}); return; }
+
+    // ✅ phone validation
+    if (!hasPhone && phone.trim() && !validateBDPhone(phone)) {
+      setMsg({type:"error",text:t("সঠিক ১১ সংখ্যার নম্বর দিন (01XXXXXXXXX)","Enter valid 11-digit BD number")});
+      return;
+    }
+
     try {
       setLoading(true); setMsg({type:"",text:""});
       const token = localStorage.getItem("customerToken");
       const body  = { street, thana:upazila, district };
-      if (!hasPhone) body.phone = phone;
-      const res  = await fetch(`${API}/api/customer/address`,{
+      if (!hasPhone && phone) body.phone = phone;
+      const res = await fetch(`${API}/api/customer/address`,{
         method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
         body: JSON.stringify(body),
       });
       const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
+      if (!contentType||!contentType.includes("application/json"))
         throw new Error(t("সার্ভার সংযোগ সমস্যা","Server connection error"));
-      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      const info = JSON.parse(localStorage.getItem("customerInfo")||"{}");
-      localStorage.setItem("customerInfo",JSON.stringify({...info,address:data.address}));
+
+      // ✅ backend এর পুরো customer object save করো — phone দেখাবে
+      const prevInfo = JSON.parse(localStorage.getItem("customerInfo")||"{}");
+      const updatedCustomer = data.customer
+        ? data.customer
+        : { ...prevInfo, address:data.address, phone:body.phone||prevInfo.phone||"" };
+      localStorage.setItem("customerInfo", JSON.stringify(updatedCustomer));
       window.dispatchEvent(new Event("customerAuthChanged"));
       setMsg({type:"success",text:t("ঠিকানা সেভ হয়েছে!","Address saved!")});
     } catch(err) {
@@ -1581,7 +1432,8 @@ function MobileAddressPanel({ customer, t }) {
         <div className="p-4 rounded-2xl" style={{background:"#f0f7f0",border:"1px solid #a5d6a7"}}>
           <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{color:"#2e7d32"}}>{t("বর্তমান ঠিকানা","Current Address")}</p>
           <p className="text-[13px] font-semibold text-slate-700">{[saved.street,saved.thana,saved.district].filter(Boolean).join(", ")}</p>
-          {saved.phone && <p className="text-[11.5px] text-slate-500 mt-1">📞 {saved.phone}</p>}
+          {/* ✅ top-level phone দেখাও */}
+          {currentPhone && <p className="text-[11.5px] text-slate-500 mt-1">📞 {currentPhone}</p>}
         </div>
       )}
       {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
@@ -1626,6 +1478,7 @@ function MobileAddressPanel({ customer, t }) {
   );
 }
 
+/* ── Mobile Password ── */
 function MobilePasswordPanel({ t }) {
   const [curPass,  setCurPass ] = useState("");
   const [newPass,  setNewPass ] = useState("");
@@ -1635,250 +1488,85 @@ function MobilePasswordPanel({ t }) {
   const [loading,  setLoading ] = useState(false);
   const [msg,      setMsg     ] = useState({ type:"", text:"" });
 
-
-
-
-  // ─────────────────────────────────────────────────────────────────
-// AccountPage.js এ এই পুরো function টা খুঁজে বের করে replace করো
-// function name: MobileAddressPanel
-// ─────────────────────────────────────────────────────────────────
-
-function MobileAddressPanel({ customer, t }) {
-  const saved = customer?.address || {};
-  const [street,   setStreet  ] = useState(saved.street   || "");
-  const [district, setDistrict] = useState(saved.district || "");
-  const [upazila,  setUpazila ] = useState(saved.thana    || "");
-  const [phone,    setPhone   ] = useState(saved.phone    || "");
-  const [loading,  setLoading ] = useState(false);
-  const [msg,      setMsg     ] = useState({ type: "", text: "" });
-
-  const hasPhone   = !!customer?.phone;
-  const hasAddress = saved.street || saved.thana || saved.district;
-
-  const districts = Object.keys(BD_LOCATIONS).filter((d) => !d.includes("(alt)"));
-  const upazilas  = district ? (BD_LOCATIONS[district] || []) : [];
-
   const submit = async (e) => {
     e.preventDefault();
-    if (!street)   { setMsg({ type: "error", text: t("পুরো ঠিকানা দিন", "Enter full address") }); return; }
-    if (!district) { setMsg({ type: "error", text: t("জেলা বেছে নিন", "Select district") }); return; }
-    if (!upazila)  { setMsg({ type: "error", text: t("উপজেলা বেছে নিন", "Select upazila") }); return; }
-
+    if (!curPass||!newPass||!confPass) { setMsg({type:"error",text:t("সব ঘর পূরণ করুন","Fill all fields")}); return; }
+    if (newPass.length<6)             { setMsg({type:"error",text:t("কমপক্ষে ৬ অক্ষর","Min. 6 characters")}); return; }
+    if (newPass!==confPass)           { setMsg({type:"error",text:t("পাসওয়ার্ড মেলেনি","Passwords don't match")}); return; }
     try {
-      setLoading(true);
-      setMsg({ type: "", text: "" });
-
+      setLoading(true); setMsg({type:"",text:""});
       const token = localStorage.getItem("customerToken");
-      const body  = { street, thana: upazila, district };
-      if (!hasPhone && phone) body.phone = phone;
-
-      const res = await fetch(`${API}/api/customer/address`, {
-        method:  "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body:    JSON.stringify(body),
+      const res   = await fetch(`${API}/api/customer/change-password`,{
+        method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
+        body:JSON.stringify({currentPassword:curPass,newPassword:newPass}),
       });
-
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error(t("সার্ভার সংযোগ সমস্যা", "Server connection error"));
-      }
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
-      // ✅ পুরো customer object localStorage এ সেভ করো
-      const prevInfo = JSON.parse(localStorage.getItem("customerInfo") || "{}");
-      const updatedCustomer = data.customer
-        ? data.customer
-        : {
-            ...prevInfo,
-            address: data.address,
-            // phone backend থেকে না আসলে নিজে set করো
-            phone: body.phone || prevInfo.phone || "",
-          };
-
-      localStorage.setItem("customerInfo", JSON.stringify(updatedCustomer));
-
-      // ✅ এই event dispatch হলে AccountPage এর customer state আপডেট হবে
-      // ফলে UI তে phone তাৎক্ষণিক দেখাবে — refresh ছাড়াই
-      window.dispatchEvent(new Event("customerAuthChanged"));
-
-      setMsg({ type: "success", text: t("ঠিকানা সেভ হয়েছে!", "Address saved!") });
-    } catch (err) {
-      setMsg({ type: "error", text: err.message });
-    } finally {
-      setLoading(false);
-    }
+      setMsg({type:"success",text:t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password updated!")});
+      setCurPass(""); setNewPass(""); setConfPass("");
+    } catch(err) { setMsg({type:"error",text:err.message}); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="space-y-4">
-      {/* ✅ বর্তমান ঠিকানা + phone দেখাও */}
-      {hasAddress && (
-        <div
-          className="p-4 rounded-2xl"
-          style={{ background: "#f0f7f0", border: "1px solid #a5d6a7" }}
-        >
-          <p
-            className="text-[10px] font-black uppercase tracking-widest mb-2"
-            style={{ color: "#2e7d32" }}
-          >
-            {t("বর্তমান ঠিকানা", "Current Address")}
-          </p>
-          <p className="text-[13px] font-semibold text-slate-700">
-            {[saved.street, saved.thana, saved.district].filter(Boolean).join(", ")}
-          </p>
-          {/* ✅ phone — customer.phone (top-level) দেখাও */}
-          {(customer?.phone || saved.phone) && (
-            <p className="text-[11.5px] text-slate-500 mt-1">
-              📞 {customer?.phone || saved.phone}
-            </p>
-          )}
-        </div>
-      )}
-
-      {msg.text && <InlineAlert type={msg.type} msg={msg.text} />}
-
-      <form onSubmit={submit} className="space-y-3" noValidate>
-        <FieldWrap label={t("পুরো ঠিকানা", "Full Address")}>
-          <InputField
-            icon={MapPin}
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            placeholder={t("বাড়ি/রাস্তা নম্বর, এলাকা", "House/Road, Area")}
-            autoComplete="off"
-          />
+      {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <FieldWrap label={t("বর্তমান পাসওয়ার্ড","Current Password")}>
+          <InputField icon={Lock} type={showCur?"text":"password"} value={curPass} onChange={e=>setCurPass(e.target.value)} placeholder="••••••••"
+            autoComplete="current-password" rightEl={<EyeToggle show={showCur} onToggle={()=>setShowCur(s=>!s)}/>}/>
         </FieldWrap>
-
-        {/* District dropdown */}
-        <div>
-          <label className="block text-[11.5px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-1.5">
-            {t("জেলা", "District")}
-          </label>
-          <div className="relative">
-            <select
-              value={district}
-              onChange={(e) => { setDistrict(e.target.value); setUpazila(""); }}
-              className="w-full text-[13.5px] font-medium rounded-2xl outline-none appearance-none cursor-pointer"
-              style={{
-                padding:    "11px 36px 11px 14px",
-                color:      district ? "#1e293b" : "#94a3b8",
-                border:     "1.5px solid rgba(148,163,184,0.3)",
-                background: "rgba(248,250,252,0.8)",
-              }}
-            >
-              <option value="">{t("জেলা বেছে নিন", "Select district")}</option>
-              {districts.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
-            />
-          </div>
-        </div>
-
-        {/* Upazila dropdown */}
-        <div>
-          <label className="block text-[11.5px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-1.5">
-            {t("উপজেলা / থানা", "Upazila")}
-          </label>
-          <div className="relative">
-            <select
-              value={upazila}
-              onChange={(e) => setUpazila(e.target.value)}
-              disabled={!district}
-              className="w-full text-[13.5px] font-medium rounded-2xl outline-none appearance-none cursor-pointer disabled:opacity-40"
-              style={{
-                padding:    "11px 36px 11px 14px",
-                color:      upazila ? "#1e293b" : "#94a3b8",
-                border:     "1.5px solid rgba(148,163,184,0.3)",
-                background: "rgba(248,250,252,0.8)",
-              }}
-            >
-              <option value="">
-                {district
-                  ? t("উপজেলা বেছে নিন", "Select upazila")
-                  : t("আগে জেলা বেছে নিন", "Select district first")}
-              </option>
-              {upazilas.map((u) => (
-                <option key={u} value={u}>{u}</option>
-              ))}
-            </select>
-            <ChevronDown
-              size={14}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
-            />
-          </div>
-        </div>
-
-        {/* phone field — শুধু তখনই দেখাবে যখন account এ phone নেই */}
-        {!hasPhone && (
-          <FieldWrap label={t("ডেলিভারি ফোন", "Delivery Phone")}>
-            <InputField
-              icon={Phone}
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="01XXXXXXXXX"
-              autoComplete="off"
-            />
-          </FieldWrap>
-        )}
-
+        <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
+          <InputField icon={Lock} type={showNew?"text":"password"} value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
+            autoComplete="new-password" rightEl={<EyeToggle show={showNew} onToggle={()=>setShowNew(s=>!s)}/>}/>
+        </FieldWrap>
+        <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
+          <InputField icon={Lock} type="password" value={confPass} onChange={e=>setConfPass(e.target.value)} placeholder="••••••••" autoComplete="new-password"/>
+        </FieldWrap>
         <SubmitBtn loading={loading}>
-          {loading ? (
-            <><Loader2 size={14} className="animate-spin" />{t("সেভ হচ্ছে…", "Saving…")}</>
-          ) : (
-            t("ঠিকানা সেভ করুন", "Save Address")
-          )}
+          {loading?<><Loader2 size={14} className="animate-spin"/>{t("আপডেট হচ্ছে…","Updating…")}</>:t("পাসওয়ার্ড আপডেট করুন","Update Password")}
         </SubmitBtn>
       </form>
     </div>
   );
 }
 
-
+/* ── Mobile FAQ ── */
 const MOBILE_FAQ_SECTIONS = [
   { tag:"০১", titleBn:"অর্ডার সংক্রান্ত", titleEn:"Order Questions",
     faqs:[
       { qBn:"কীভাবে অর্ডার করবো?", qEn:"How do I place an order?", aBn:"পণ্য কার্টে যোগ করুন, চেকআউটে নাম-ফোন-ঠিকানা দিন।", aEn:"Add product to cart, enter details at checkout." },
       { qBn:"অর্ডার বাতিল করা যাবে?", qEn:"Can I cancel my order?", aBn:"Pending বা Processing অবস্থায় হেল্পলাইনে যোগাযোগ করুন।", aEn:"Contact helpline while Pending or Processing." },
-    ],
-  },
+    ]},
   { tag:"০২", titleBn:"পেমেন্ট সংক্রান্ত", titleEn:"Payment Questions",
     faqs:[
       { qBn:"কোন পেমেন্ট পদ্ধতি আছে?", qEn:"Payment methods?", aBn:"bKash, Nagad এবং ক্যাশ অন ডেলিভারি। মার্চেন্ট: 01938360666।", aEn:"bKash, Nagad and COD. Merchant: 01938360666." },
       { qBn:"COD তে কি অতিরিক্ত চার্জ?", qEn:"Extra charges for COD?", aBn:"না, কোনো অতিরিক্ত চার্জ নেই।", aEn:"No extra charges for COD." },
-    ],
-  },
+    ]},
   { tag:"০৩", titleBn:"ডেলিভারি সংক্রান্ত", titleEn:"Delivery Questions",
     faqs:[
       { qBn:"ডেলিভারি কতদিন লাগে?", qEn:"Delivery time?", aBn:"ঢাকায় ১-২ কার্যদিবস, ঢাকার বাইরে ২-৪ কার্যদিবস।", aEn:"Dhaka: 1-2 days, outside: 2-4 business days." },
       { qBn:"ডেলিভারি চার্জ কত?", qEn:"Delivery charge?", aBn:"২৫০০ টাকার উপরে বিনামূল্যে, অন্যথায় ৬০ টাকা।", aEn:"Free above ৳2500, otherwise ৳60." },
-    ],
-  },
+    ]},
   { tag:"০৪", titleBn:"রিটার্ন ও রিফান্ড", titleEn:"Return & Refund",
     faqs:[
       { qBn:"পণ্য ফেরত দেওয়া যাবে?", qEn:"Can I return?", aBn:"৭ দিনের মধ্যে মূল প্যাকেজিংসহ ফেরত দেওয়া যাবে।", aEn:"Within 7 days with original packaging." },
       { qBn:"রিফান্ড পেতে কতদিন?", qEn:"Refund time?", aBn:"৩-৫ কার্যদিবসের মধ্যে bKash/Nagad এ রিফান্ড।", aEn:"3-5 business days via bKash/Nagad." },
-    ],
-  },
+    ]},
 ];
 
 function MobileFaqPanel({ t }) {
   const [openFaq, setOpenFaq] = useState(null);
   return (
     <div className="space-y-4">
-      {MOBILE_FAQ_SECTIONS.map((sec,si) => (
+      {MOBILE_FAQ_SECTIONS.map((sec,si)=>(
         <div key={si} className="rounded-2xl overflow-hidden" style={{border:"1px solid #f1f5f9"}}>
           <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-50" style={{background:"#d9770614"}}>
             <span className="text-[10px] font-black uppercase tracking-widest" style={{color:"#d9770688"}}>{sec.tag}</span>
             <h4 className="text-[13px] font-bold text-slate-800">{t(sec.titleBn,sec.titleEn)}</h4>
           </div>
           <div className="px-4 py-3 space-y-2">
-            {sec.faqs.map((faq,fi) => {
+            {sec.faqs.map((faq,fi)=>{
               const key=`${si}-${fi}`; const isOpen=openFaq===key;
               return (
                 <div key={fi} className="rounded-xl overflow-hidden border transition-all"
@@ -1891,7 +1579,7 @@ function MobileFaqPanel({ t }) {
                     </motion.div>
                   </button>
                   <AnimatePresence initial={false}>
-                    {isOpen && (
+                    {isOpen&&(
                       <motion.div initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}}
                         exit={{height:0,opacity:0}} transition={{duration:0.22}}>
                         <p className="px-4 pb-3 text-[13px] text-slate-500 leading-relaxed" style={{borderTop:"1px solid #f1f5f9"}}>
@@ -1921,108 +1609,94 @@ function MobileDashboard({ customer, t }) {
   const handleLogout = () => {
     localStorage.removeItem("customerToken");
     localStorage.removeItem("customerInfo");
-    notify();
-    navigate("/account");
+    notify(); navigate("/account");
   };
 
   const menuItems = [
-    { id:"info",     icon: Info,        label: t("অ্যাকাউন্ট ইনফো","Account Info"),  sub: t("প্রোফাইল ও তথ্য","Profile & details"),  iconColor:"#2e7d32", iconBg:"rgba(46,125,50,0.1)"    },
-    { id:"orders",   icon: Package,     label: t("মাই অর্ডারস","My Orders"),          sub: t("অর্ডার ট্র্যাক","Track orders"),         iconColor:"#1565c0", iconBg:"rgba(21,101,192,0.1)"   },
-    { id:"wishlist", icon: Heart,       label: t("উইশলিস্ট","Wishlist"),             sub: t("সেভ করা পণ্য","Saved items"),             iconColor:"#c62828", iconBg:"rgba(198,40,40,0.08)"   },
-    { id:"cart",     icon: ShoppingBag, label: t("আমার কার্ট","My Cart"),            sub: t("কার্টের পণ্য","Cart items"),              iconColor:"#0277bd", iconBg:"rgba(2,119,189,0.1)"    },
-    { id:"address",  icon: MapPin,      label: t("ঠিকানা","Address"),               sub: t("ডেলিভারি ঠিকানা","Delivery address"),     iconColor:"#e65100", iconBg:"rgba(230,81,0,0.08)"    },
-    { id:"password", icon: Shield,      label: t("পাসওয়ার্ড","Password"),           sub: t("নিরাপত্তা আপডেট","Security update"),      iconColor:"#6a1b9a", iconBg:"rgba(106,27,154,0.08)"  },
-    { id:"faq",      icon: HelpCircle,  label: t("FAQs","FAQs"),                    sub: t("সাহায্য ও প্রশ্ন","Help & support"),       iconColor:"#00695c", iconBg:"rgba(0,105,92,0.08)"    },
+    { id:"info",     icon:Info,        label:t("অ্যাকাউন্ট ইনফো","Account Info"), sub:t("প্রোফাইল ও তথ্য","Profile & details"), iconColor:"#2e7d32", iconBg:"rgba(46,125,50,0.1)"   },
+    { id:"orders",   icon:Package,     label:t("মাই অর্ডারস","My Orders"),         sub:t("অর্ডার ট্র্যাক","Track orders"),        iconColor:"#1565c0", iconBg:"rgba(21,101,192,0.1)"  },
+    { id:"wishlist", icon:Heart,       label:t("উইশলিস্ট","Wishlist"),            sub:t("সেভ করা পণ্য","Saved items"),            iconColor:"#c62828", iconBg:"rgba(198,40,40,0.08)"  },
+    { id:"cart",     icon:ShoppingBag, label:t("আমার কার্ট","My Cart"),           sub:t("কার্টের পণ্য","Cart items"),             iconColor:"#0277bd", iconBg:"rgba(2,119,189,0.1)"   },
+    { id:"address",  icon:MapPin,      label:t("ঠিকানা","Address"),              sub:t("ডেলিভারি ঠিকানা","Delivery address"),    iconColor:"#e65100", iconBg:"rgba(230,81,0,0.08)"   },
+    { id:"password", icon:Shield,      label:t("পাসওয়ার্ড","Password"),          sub:t("নিরাপত্তা আপডেট","Security update"),     iconColor:"#6a1b9a", iconBg:"rgba(106,27,154,0.08)" },
+    { id:"faq",      icon:HelpCircle,  label:t("FAQs","FAQs"),                   sub:t("সাহায্য ও প্রশ্ন","Help & support"),      iconColor:"#00695c", iconBg:"rgba(0,105,92,0.08)"   },
   ];
 
   const handleCardClick = (id) => {
     setActiveSection(id);
-    setTimeout(() => contentRef.current?.scrollIntoView({ behavior:"smooth", block:"start" }), 80);
+    setTimeout(()=>contentRef.current?.scrollIntoView({behavior:"smooth",block:"start"}),80);
   };
 
-  const activeItem = menuItems.find(m => m.id === activeSection);
+  const activeItem = menuItems.find(m=>m.id===activeSection);
 
   return (
-    <div className="min-h-screen" style={{ background:"#f0f4f0" }}>
-      <div className="relative" style={{ background:"linear-gradient(160deg,#1a2e1a 0%,#2e7d32 60%,#388e3c 100%)" }}>
+    <div className="min-h-screen" style={{background:"#f0f4f0"}}>
+      <div className="relative" style={{background:"linear-gradient(160deg,#1a2e1a 0%,#2e7d32 60%,#388e3c 100%)"}}>
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10"
-          style={{ background:"radial-gradient(circle,#a5d6a7,transparent)", transform:"translate(30%,-30%)" }}/>
+          style={{background:"radial-gradient(circle,#a5d6a7,transparent)",transform:"translate(30%,-30%)"}}/>
         <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full opacity-10"
-          style={{ background:"radial-gradient(circle,#81c784,transparent)", transform:"translate(-20%,20%)" }}/>
+          style={{background:"radial-gradient(circle,#81c784,transparent)",transform:"translate(-20%,20%)"}}/>
         <div className="relative px-5 pt-8 pb-8">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center text-white text-2xl font-black shrink-0 shadow-lg"
-              style={{ background:"rgba(255,255,255,0.15)", backdropFilter:"blur(8px)", border:"2px solid rgba(255,255,255,0.25)" }}>
-              {customer?.avatar
-                ? <img src={customer.avatar} alt="" className="w-full h-full object-cover"/>
-                : (customer?.name?.[0]||"U").toUpperCase()}
+              style={{background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",border:"2px solid rgba(255,255,255,0.25)"}}>
+              {customer?.avatar?<img src={customer.avatar} alt="" className="w-full h-full object-cover"/>:(customer?.name?.[0]||"U").toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-black text-[19px] leading-tight truncate">{customer?.name}</p>
               <p className="text-white/55 text-[12px] mt-0.5 truncate">{customer?.email}</p>
+              {/* ✅ phone header এ দেখাও */}
               {customer?.phone && <p className="text-white/40 text-[11px] mt-0.5">{customer.phone}</p>}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 pt-4 pb-6" style={{ background:"#f0f4f0" }}>
+      <div className="px-4 pt-4 pb-6" style={{background:"#f0f4f0"}}>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {menuItems.map(({ id, icon:Icon, label, sub, iconColor, iconBg }) => (
-            <motion.button key={id}
-              whileTap={{ scale:0.96 }} whileHover={{ scale:1.02 }}
-              onClick={() => handleCardClick(id)}
+          {menuItems.map(({id,icon:Icon,label,sub,iconColor,iconBg})=>(
+            <motion.button key={id} whileTap={{scale:0.96}} whileHover={{scale:1.02}} onClick={()=>handleCardClick(id)}
               className="bg-white rounded-2xl p-4 flex flex-col text-left border-none cursor-pointer w-full relative overflow-hidden"
-              style={{
-                boxShadow: activeSection===id ? `0 0 0 2.5px ${iconColor}, 0 4px 16px rgba(0,0,0,0.1)` : "0 2px 12px rgba(0,0,0,0.06)",
-                minHeight:"100px",
-              }}>
-              {activeSection===id && (
-                <motion.div layoutId="mobile-active"
-                  className="absolute top-0 left-0 right-0 h-[3px]"
-                  style={{ background:`linear-gradient(90deg,${iconColor},${iconColor}88)` }}/>
-              )}
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ background:iconBg }}>
-                <Icon size={18} style={{ color:iconColor }}/>
+              style={{boxShadow:activeSection===id?`0 0 0 2.5px ${iconColor}, 0 4px 16px rgba(0,0,0,0.1)`:"0 2px 12px rgba(0,0,0,0.06)",minHeight:"100px"}}>
+              {activeSection===id&&<motion.div layoutId="mobile-active" className="absolute top-0 left-0 right-0 h-[3px]" style={{background:`linear-gradient(90deg,${iconColor},${iconColor}88)`}}/>}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{background:iconBg}}>
+                <Icon size={18} style={{color:iconColor}}/>
               </div>
               <p className="text-[13px] font-black text-slate-800 leading-tight">{label}</p>
               <p className="text-[11px] text-slate-400 mt-1 leading-tight">{sub}</p>
             </motion.button>
           ))}
         </div>
-
-        <motion.button onClick={handleLogout} whileTap={{ scale:0.98 }}
+        <motion.button onClick={handleLogout} whileTap={{scale:0.98}}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[13.5px] font-bold transition-all mt-3 cursor-pointer border-none"
-          style={{ background:"rgba(220,38,38,0.08)", color:"#dc2626", border:"1px solid rgba(220,38,38,0.15)" }}>
+          style={{background:"rgba(220,38,38,0.08)",color:"#dc2626",border:"1px solid rgba(220,38,38,0.15)"}}>
           <LogOut size={15}/>{t("সাইন আউট","Sign Out")}
         </motion.button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeSection && (
-          <motion.div ref={contentRef}
-            key={activeSection}
-            initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0, y:-8 }} transition={{ duration:0.25 }}
+          <motion.div ref={contentRef} key={activeSection}
+            initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:0.25}}
             className="mx-4 mb-8 bg-white rounded-3xl overflow-hidden"
-            style={{ boxShadow:"0 4px 24px rgba(0,0,0,0.08)", border:"1px solid rgba(0,0,0,0.04)" }}>
+            style={{boxShadow:"0 4px 24px rgba(0,0,0,0.08)",border:"1px solid rgba(0,0,0,0.04)"}}>
             <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-              {activeItem && (
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background:activeItem.iconBg }}>
-                  <activeItem.icon size={16} style={{ color:activeItem.iconColor }}/>
+              {activeItem&&(
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{background:activeItem.iconBg}}>
+                  <activeItem.icon size={16} style={{color:activeItem.iconColor}}/>
                 </div>
               )}
               <h3 className="text-[15px] font-black text-slate-800 flex-1">{activeItem?.label}</h3>
               <button onClick={()=>setActiveSection(null)}
                 className="w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-none"
-                style={{ background:"rgba(148,163,184,0.1)", color:"#94a3b8" }}>
+                style={{background:"rgba(148,163,184,0.1)",color:"#94a3b8"}}>
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </button>
             </div>
             <div className="p-5">
-              <MobileSectionContent section={activeSection} customer={customer} t={t} onNavigate={navigate} />
+              <MobileSectionContent section={activeSection} customer={customer} t={t} onNavigate={navigate}/>
             </div>
           </motion.div>
         )}
@@ -2035,11 +1709,11 @@ function MobileDashboard({ customer, t }) {
    MAIN PAGE
 ══════════════════════════════════════════ */
 function DesktopRedirect({ navigate }) {
-  useEffect(() => {
+  useEffect(()=>{
     if (window.innerWidth < 1024) return;
-    const timer = setTimeout(() => navigate("/"), 100);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    const timer = setTimeout(()=>navigate("/"),100);
+    return ()=>clearTimeout(timer);
+  },[navigate]);
   return null;
 }
 
@@ -2051,16 +1725,14 @@ export default function AccountPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  useEffect(() => {
+  useEffect(()=>{
     const token = localStorage.getItem("customerToken");
     const info  = localStorage.getItem("customerInfo");
-    if (token && info) {
-      try { setCustomer(JSON.parse(info)); } catch (_) {}
-    }
+    if (token && info) { try { setCustomer(JSON.parse(info)); } catch (_) {} }
     setAuthChecked(true);
-  }, []);
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=>{
     const params = new URLSearchParams(window.location.search);
     const token  = params.get("token");
     const info   = params.get("info");
@@ -2068,51 +1740,45 @@ export default function AccountPage() {
       try {
         const parsed = JSON.parse(decodeURIComponent(info));
         localStorage.setItem("customerToken", token);
-        localStorage.setItem("customerInfo", JSON.stringify(parsed));
+        localStorage.setItem("customerInfo",  JSON.stringify(parsed));
         setCustomer(parsed);
         notify();
-        window.history.replaceState({}, "", "/account");
-        toast.success(t(`স্বাগতম, ${parsed.name?.split(" ")[0]}! 🎉`, `Welcome, ${parsed.name?.split(" ")[0]}! 🎉`), {
-          duration: 3000,
-          style: { background:"#1a2e1a", color:"#fff", fontWeight:"600", borderRadius:"16px", padding:"12px 18px" },
-          iconTheme: { primary:"#4ade80", secondary:"#1a2e1a" },
+        window.history.replaceState({},""," /account");
+        toast.success(t(`স্বাগতম, ${parsed.name?.split(" ")[0]}! 🎉`,`Welcome, ${parsed.name?.split(" ")[0]}! 🎉`),{
+          duration:3000,
+          style:{background:"#1a2e1a",color:"#fff",fontWeight:"600",borderRadius:"16px",padding:"12px 18px"},
+          iconTheme:{primary:"#4ade80",secondary:"#1a2e1a"},
         });
       } catch (_) {}
     }
-  }, []);
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=>{
     const params = new URLSearchParams(window.location.search);
     const error  = params.get("error");
-    if (error === "no_account") {
-      setMode("register");
-      window.history.replaceState({}, "", "/account");
-    }
-  }, []);
+    if (error==="no_account") { setMode("register"); window.history.replaceState({},"","/account"); }
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=>{
     const path = window.location.pathname;
-    if (path === "/account/password") setShowProfile(true);
-  }, []);
+    if (path==="/account/password") setShowProfile(true);
+  },[]);
 
-  useEffect(() => {
-    const handler = () => setShowProfile(true);
-    window.addEventListener("openCustomerProfile", handler);
-    return () => window.removeEventListener("openCustomerProfile", handler);
-  }, []);
+  useEffect(()=>{
+    const handler = ()=>setShowProfile(true);
+    window.addEventListener("openCustomerProfile",handler);
+    return ()=>window.removeEventListener("openCustomerProfile",handler);
+  },[]);
 
-  useEffect(() => {
-    const handler = () => {
+  useEffect(()=>{
+    const handler = ()=>{
       const info = localStorage.getItem("customerInfo");
-      if (info) {
-        try { setCustomer(JSON.parse(info)); } catch (_) {}
-      } else {
-        setCustomer(null);
-      }
+      if (info) { try { setCustomer(JSON.parse(info)); } catch (_) {} }
+      else setCustomer(null);
     };
-    window.addEventListener("customerAuthChanged", handler);
-    return () => window.removeEventListener("customerAuthChanged", handler);
-  }, []);
+    window.addEventListener("customerAuthChanged",handler);
+    return ()=>window.removeEventListener("customerAuthChanged",handler);
+  },[]);
 
   const handleAuthSuccess = (data) => setCustomer(data);
 
@@ -2122,34 +1788,29 @@ export default function AccountPage() {
     const isDesktop = window.innerWidth >= 1024;
     return (
       <>
-        {!isDesktop && <MobileDashboard customer={customer} t={t} />}
-        {isDesktop && <DesktopRedirect navigate={navigate} />}
-        {showProfile && (
-          <ProfileSidebar customer={customer} onClose={() => setShowProfile(false)} t={t} />
-        )}
+        {!isDesktop && <MobileDashboard customer={customer} t={t}/>}
+        {isDesktop  && <DesktopRedirect navigate={navigate}/>}
+        {showProfile && <ProfileSidebar customer={customer} onClose={()=>setShowProfile(false)} t={t}/>}
       </>
     );
   }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-white">
-      {/* FIX: Global Toaster — সবার উপরে */}
-      <Toaster position="top-center" />
-
+      <Toaster position="top-center"/>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 opacity-[0.018]"
-          style={{ backgroundImage:"radial-gradient(#2e7d32 1px, transparent 1px)", backgroundSize:"28px 28px" }}/>
+          style={{backgroundImage:"radial-gradient(#2e7d32 1px, transparent 1px)",backgroundSize:"28px 28px"}}/>
         <div className="absolute top-0 right-0 w-[480px] h-[480px] rounded-full opacity-[0.06]"
-          style={{ background:"radial-gradient(circle,#4ade80,transparent)", transform:"translate(30%,-30%)" }}/>
+          style={{background:"radial-gradient(circle,#4ade80,transparent)",transform:"translate(30%,-30%)"}}/>
         <div className="absolute bottom-0 left-0 w-[360px] h-[360px] rounded-full opacity-[0.04]"
-          style={{ background:"radial-gradient(circle,#86efac,transparent)", transform:"translate(-30%,30%)" }}/>
+          style={{background:"radial-gradient(circle,#86efac,transparent)",transform:"translate(-30%,30%)"}}/>
       </div>
 
-      <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35 }}
+      <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{duration:0.35}}
         className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-5 border-b border-slate-100">
         <Link to="/" className="no-underline flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background:"linear-gradient(135deg,#1a2e1a,#2e7d32)" }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
             <ShoppingBag size={14} color="white"/>
           </div>
           <span className="text-[14px] font-black text-slate-800 group-hover:text-[#2e7d32] transition-colors">Nahid Enterprise</span>
@@ -2161,34 +1822,33 @@ export default function AccountPage() {
       </motion.div>
 
       <div className="relative z-10 flex flex-col items-center px-4 pt-10 pb-16">
-        <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.35, delay:0.05 }}
+        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.35,delay:0.05}}
           className="text-center mb-8 max-w-sm">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4"
-            style={{ background:"#f0fdf4", border:"1px solid #bbf7d0" }}>
+            style={{background:"#f0fdf4",border:"1px solid #bbf7d0"}}>
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/>
             <span className="text-[11.5px] font-bold text-emerald-700">
-              {mode === "register" ? t("বিনামূল্যে","Free Account") : t("আবার স্বাগতম","Welcome Back")}
+              {mode==="register"?t("বিনামূল্যে","Free Account"):t("আবার স্বাগতম","Welcome Back")}
             </span>
           </div>
           <h1 className="text-[28px] sm:text-[32px] font-black text-slate-900 leading-tight tracking-tight">
             {t("Nahid Enterprise","Nahid Enterprise")}<br/>
             <span style={{
-              color: mode === "register" ? "#dc2626" : undefined,
-              background: mode === "register" ? "none" : "linear-gradient(135deg,#15803d,#4ade80)",
-              WebkitBackgroundClip: mode === "register" ? "unset" : "text",
-              WebkitTextFillColor: mode === "register" ? "unset" : "transparent"
+              color: mode==="register"?"#dc2626":undefined,
+              background: mode==="register"?"none":"linear-gradient(135deg,#15803d,#4ade80)",
+              WebkitBackgroundClip: mode==="register"?"unset":"text",
+              WebkitTextFillColor: mode==="register"?"unset":"transparent",
             }}>
-              {mode === "register" ? t("রেজিস্ট্রেশন","Registration") : t("লগইন","Sign In")}
+              {mode==="register"?t("রেজিস্ট্রেশন","Registration"):t("লগইন","Sign In")}
             </span>
           </h1>
         </motion.div>
 
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.38, delay:0.1 }}
+        <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{duration:0.38,delay:0.1}}
           className="w-full max-w-[420px]">
-          <AuthCard mode={mode} setMode={setMode} onSuccess={handleAuthSuccess} t={t} />
-
-          {(mode === "login" || mode === "register") && (
-            <motion.p initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}
+          <AuthCard mode={mode} setMode={setMode} onSuccess={handleAuthSuccess} t={t}/>
+          {(mode==="login"||mode==="register")&&(
+            <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.3}}
               className="text-center text-[11.5px] text-slate-400 mt-5 leading-relaxed">
               {t("প্রবেশ করে আপনি আমাদের","By continuing, you agree to our")}{" "}
               <Link to="/terms" className="text-slate-600 font-semibold hover:text-slate-800 no-underline transition-colors">{t("শর্তাবলী","Terms")}</Link>
