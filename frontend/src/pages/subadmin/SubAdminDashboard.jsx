@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users,
   BarChart3, Settings, User, LogOut,
   ShieldCheck, Truck, Link as LinkIcon, Layers,
-  Search, ChevronRight, X,
+  Search, ChevronRight, X, Menu,
 } from "lucide-react";
 import { showLogoutToast } from "../../utils/toast/logoutToast";
 import { SubAdminLangProvider, useSubLang } from "../../context/SubAdminLangContext";
@@ -22,29 +22,20 @@ import Divider from "@mui/material/Divider";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
-/* ══════════════════════════════
-   TOKENS
-══════════════════════════════ */
 const D = {
   sb:        "#16191f",
   sbSurface: "#1c2030",
   sbBorder:  "rgba(255,255,255,0.055)",
   sbText:    "#bfc4d4",
   sbMuted:   "#525869",
-
   tb:        "#1a1d26",
   tbBorder:  "rgba(255,255,255,0.065)",
   tbText:    "#cdd1df",
   tbMuted:   "#626880",
-
   bg:        "#eef0f6",
-
   accent:    "#6c6ff5",
-  accentGlow:"rgba(108,111,245,0.2)",
-  accentBd:  "rgba(108,111,245,0.28)",
-
-  green: "#22c55e",
-  red:   "#ef4444",
+  green:     "#22c55e",
+  red:       "#ef4444",
 };
 
 const FULL = 256;
@@ -62,119 +53,49 @@ const MENU = [
   { key:"settings",  icon:Settings,        path:"/subadmin/settings",  color:"#94a3b8", grad:"linear-gradient(135deg,#94a3b8,#64748b)", bn:"সেটিংস",      en:"Settings"  },
 ];
 
-const navStagger = {
-  container: { hidden:{}, show:{ transition:{ staggerChildren:0.04, delayChildren:0.05 } } },
-  item: {
-    hidden:{ opacity:0, x:-14 },
-    show:{ opacity:1, x:0, transition:{ type:"spring", stiffness:280, damping:26 } },
-  },
-};
-
-/* ══════════════════════════════
-   ANIMATED HAMBURGER
-══════════════════════════════ */
-function HamburgerIcon({ isOpen }) {
-  return (
-    <div style={{ width:18, height:13, display:"flex", flexDirection:"column", justifyContent:"space-between", position:"relative" }}>
-      {[0,1,2].map(i => (
-        <motion.span
-          key={i}
-          style={{ display:"block", height:2, borderRadius:2, background:"currentColor", transformOrigin:"center" }}
-          animate={
-            isOpen
-              ? i===0 ? { rotate:45,  y:5.5, width:"100%" }
-              : i===1 ? { opacity:0,  scaleX:0 }
-              :          { rotate:-45, y:-5.5, width:"100%" }
-              : { rotate:0, y:0, opacity:1, scaleX:1, width: i===1 ? "70%" : "100%" }
-          }
-          transition={{ type:"spring", stiffness:360, damping:30 }}
-        />
-      ))}
-    </div>
-  );
-}
-
 /* ══════════════════════════════
    NAV ITEM
 ══════════════════════════════ */
 function NavItem({ item, isActive, onClick, t, slim }) {
   const Icon = item.icon;
-  const [hov, setHov] = useState(false);
-
   return (
     <Tooltip title={slim ? t(item.bn, item.en) : ""} placement="right">
-      <motion.div
+      <div
         onClick={onClick}
-        onHoverStart={() => setHov(true)}
-        onHoverEnd={() => setHov(false)}
-        whileTap={{ scale:0.96 }}
-        animate={{ x: hov && !isActive ? 3 : 0 }}
-        transition={{ type:"spring", stiffness:340, damping:28 }}
+        className={`sa-nav-item ${isActive ? "active" : ""}`}
         style={{
-          position:"relative", display:"flex", alignItems:"center",
-          gap:10, marginBottom:2, cursor:"pointer", userSelect:"none",
-          padding: slim ? "10px 0" : "9px 12px",
+          "--item-color": item.color,
+          "--item-grad":  item.grad,
           justifyContent: slim ? "center" : "flex-start",
-          borderRadius:11,
-          background: isActive ? `${item.color}18` : hov ? "rgba(255,255,255,0.04)" : "transparent",
-          border:`1px solid ${isActive ? item.color+"28" : "transparent"}`,
-          transition:"background 0.15s, border-color 0.15s",
-          overflow:"hidden",
+          padding:        slim ? "10px 0" : "9px 12px",
         }}
       >
-        <AnimatePresence>
-          {isActive && (
-            <motion.div
-              layoutId="active-pill"
-              initial={{ scaleY:0 }} animate={{ scaleY:1 }} exit={{ scaleY:0 }}
-              transition={{ type:"spring", stiffness:400, damping:30 }}
-              style={{ position:"absolute", left:0, top:"18%", bottom:"18%", width:3, borderRadius:"0 3px 3px 0", background:item.color }}
-            />
-          )}
-        </AnimatePresence>
+        {/* Left active pill */}
+        {isActive && <div className="sa-active-pill" style={{ background: item.color }} />}
 
-        <motion.div
-          animate={{ scale: isActive ? 1 : hov ? 1.07 : 1 }}
-          transition={{ type:"spring", stiffness:380, damping:22 }}
+        {/* Icon */}
+        <div
+          className="sa-nav-icon"
           style={{
-            width:32, height:32, borderRadius:9, flexShrink:0,
-            display:"flex", alignItems:"center", justifyContent:"center",
             background: isActive ? item.grad : `${item.color}14`,
-            boxShadow: isActive ? `0 4px 14px ${item.color}35` : "none",
-            transition:"background 0.2s, box-shadow 0.2s",
+            boxShadow:  isActive ? `0 4px 14px ${item.color}35` : "none",
           }}
         >
           <Icon size={14} color={isActive ? "#fff" : item.color} strokeWidth={isActive ? 2.2 : 1.9} />
-        </motion.div>
+        </div>
 
-        <AnimatePresence>
-          {!slim && (
-            <motion.span
-              initial={{ opacity:0, x:-6 }}
-              animate={{ opacity:1, x:0 }}
-              exit={{ opacity:0, x:-6 }}
-              transition={{ duration:0.16 }}
-              style={{
-                flex:1, fontSize:13, fontWeight:600,
-                color: isActive ? "#fff" : D.sbText,
-                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-              }}
-            >
-              {t(item.bn, item.en)}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {/* Label */}
+        {!slim && (
+          <span className="sa-nav-label" style={{ color: isActive ? "#fff" : D.sbText }}>
+            {t(item.bn, item.en)}
+          </span>
+        )}
 
-        <AnimatePresence>
-          {isActive && !slim && (
-            <motion.div
-              layoutId="nav-dot"
-              initial={{ scale:0 }} animate={{ scale:1 }} exit={{ scale:0 }}
-              style={{ width:5, height:5, borderRadius:"50%", background:item.color, flexShrink:0 }}
-            />
-          )}
-        </AnimatePresence>
-      </motion.div>
+        {/* Active dot */}
+        {isActive && !slim && (
+          <div className="sa-nav-dot" style={{ background: item.color }} />
+        )}
+      </div>
     </Tooltip>
   );
 }
@@ -188,7 +109,7 @@ function DashboardInner() {
   const { t }    = useSubLang();
 
   const [isDesktop,     setIsDesktop]     = useState(() => window.innerWidth >= 1024);
-  const [sidebarOpen,   setSidebarOpen]   = useState(() => window.innerWidth >= 1024);
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
   const [search,        setSearch]        = useState("");
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
   const [searchOpen,    setSearchOpen]    = useState(false);
@@ -197,13 +118,12 @@ function DashboardInner() {
 
   const subAdminInfo = JSON.parse(localStorage.getItem("subAdminInfo") || "{}");
 
-  /* Responsive breakpoint */
+  /* Responsive */
   useEffect(() => {
     const fn = () => {
       const desk = window.innerWidth >= 1024;
       setIsDesktop(desk);
-      if (desk) setSidebarOpen(true);
-      else setSidebarOpen(false);
+      if (!desk) setSidebarOpen(false);
     };
     window.addEventListener("resize", fn);
     return () => window.removeEventListener("resize", fn);
@@ -212,7 +132,7 @@ function DashboardInner() {
   /* Auth guard */
   useEffect(() => {
     if (!localStorage.getItem("subAdminToken") || !localStorage.getItem("subAdminInfo"))
-      navigate("/subadmin/signup-login-page", { replace:true });
+      navigate("/subadmin/signup-login-page", { replace: true });
   }, [navigate]);
 
   /* Admin info */
@@ -221,10 +141,10 @@ function DashboardInner() {
       try {
         const token = localStorage.getItem("subAdminToken");
         if (!token) return;
-        const res  = await fetch(`${API}/api/auth/admin-info`, { headers:{ Authorization:`Bearer ${token}` } });
+        const res  = await fetch(`${API}/api/auth/admin-info`, { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
-        if (data?._id) setAdminInfo({ id:data._id, name:data.name, role:"admin", model:"User" });
-      } catch(e) { console.error(e); }
+        if (data?._id) setAdminInfo({ id: data._id, name: data.name, role: "admin", model: "User" });
+      } catch (e) { console.error(e); }
     })();
   }, [subAdminInfo._id]);
 
@@ -238,9 +158,9 @@ function DashboardInner() {
     }
   }, [subAdminInfo?._id, subAdminInfo?.status]);
 
-  const getInitials = (name="") => {
+  const getInitials = (name = "") => {
     const w = name.trim().split(/\s+/);
-    return ((w[0]?.[0]||"")+(w[1]?.[0]||"")).toUpperCase()||"SA";
+    return ((w[0]?.[0] || "") + (w[1]?.[0] || "")).toUpperCase() || "SA";
   };
 
   const filteredMenu = useMemo(() =>
@@ -252,17 +172,14 @@ function DashboardInner() {
     showLogoutToast(subAdminInfo?.name);
     localStorage.removeItem("subAdminToken");
     localStorage.removeItem("subAdminInfo");
-    setTimeout(() => navigate("/subadmin/signup-login-page", { replace:true }), 1200);
+    setTimeout(() => navigate("/subadmin/signup-login-page", { replace: true }), 1200);
   };
 
-  const activeItem = MENU.find(i => i.path === location.pathname);
-
+  const activeItem  = MENU.find(i => i.path === location.pathname);
   const slim        = isDesktop && !sidebarOpen;
-  const sidebarW    = slim ? SLIM : FULL;
   const showOverlay = !isDesktop && sidebarOpen;
 
   const toggleSidebar = () => setSidebarOpen(o => !o);
-  const hamburgerOpen = isDesktop ? !sidebarOpen : sidebarOpen;
 
   return (
     <>
@@ -270,467 +187,552 @@ function DashboardInner() {
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
 
-        .sa-root {
+        .sa-shell {
           font-family: 'Outfit', sans-serif;
           height: 100vh;
           display: flex;
+          flex-direction: column;
           overflow: hidden;
           background: ${D.bg};
         }
 
-        .sa-nav-sc::-webkit-scrollbar { width:3px; }
-        .sa-nav-sc::-webkit-scrollbar-track { background:transparent; }
-        .sa-nav-sc::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:99px; }
-        .sa-main-sc::-webkit-scrollbar { width:5px; }
-        .sa-main-sc::-webkit-scrollbar-track { background:transparent; }
-        .sa-main-sc::-webkit-scrollbar-thumb { background:rgba(108,111,245,0.14); border-radius:99px; }
-
-        .sa-sidebar {
-          position:fixed; top:0; left:0; height:100vh; z-index:50;
-          display:flex; flex-direction:column;
-          background:${D.sb};
-          border-right:1px solid ${D.sbBorder};
-          box-shadow:4px 0 40px rgba(0,0,0,0.3);
-          overflow:hidden;
-        }
-        .sa-sidebar::before {
-          content:''; position:absolute; top:0; left:0; right:0; height:3px; z-index:1;
-          background:linear-gradient(90deg,#6c6ff5 0%,#a78bfa 50%,#2dd4bf 100%);
-        }
-        .sa-noise {
-          position:absolute; inset:0; pointer-events:none; opacity:0.016; z-index:0;
-          background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-        }
-
+        /* ── TOPBAR ── */
         .sa-topbar {
-          height:60px; flex-shrink:0;
-          display:flex; align-items:center; justify-content:space-between;
-          padding:0 18px;
-          background:${D.tb};
-          border-bottom:1px solid ${D.tbBorder};
-          box-shadow:0 2px 24px rgba(0,0,0,0.22);
-          position:relative;
+          height: 60px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 18px;
+          background: ${D.tb};
+          border-bottom: 1px solid ${D.tbBorder};
+          box-shadow: 0 2px 24px rgba(0,0,0,0.22);
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          z-index: 60;
         }
         .sa-topbar::after {
-          content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-          background:linear-gradient(90deg,transparent,rgba(108,111,245,0.32),transparent);
+          content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(108,111,245,0.32), transparent);
         }
 
         .tb-btn {
-          width:36px; height:36px; border-radius:10px; flex-shrink:0;
-          display:flex; align-items:center; justify-content:center;
-          cursor:pointer; outline:none;
-          border:1px solid rgba(255,255,255,0.07);
-          background:rgba(255,255,255,0.04);
-          color:${D.tbMuted};
-          transition:background 0.15s, border-color 0.15s, color 0.15s;
+          width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; outline: none;
+          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(255,255,255,0.04);
+          color: ${D.tbMuted};
+          transition: background 0.15s, border-color 0.15s, color 0.15s;
         }
         .tb-btn:hover {
-          background:rgba(108,111,245,0.12);
-          border-color:rgba(108,111,245,0.25);
-          color:${D.accent};
+          background: rgba(108,111,245,0.12);
+          border-color: rgba(108,111,245,0.25);
+          color: ${D.accent};
+        }
+
+        .tb-search {
+          width: 100%; background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.09);
+          color: ${D.tbText}; border-radius: 10px;
+          padding: 7px 12px 7px 34px;
+          font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+          outline: none; transition: all 0.2s;
+        }
+        .tb-search::placeholder { color: ${D.tbMuted}; }
+        .tb-search:focus {
+          background: rgba(108,111,245,0.1);
+          border-color: rgba(108,111,245,0.3);
+          box-shadow: 0 0 0 3px rgba(108,111,245,0.1);
+        }
+
+        /* ── BODY ── */
+        .sa-body {
+          display: flex;
+          padding-top: 60px;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        /* ── OVERLAY ── */
+        .sa-overlay {
+          position: fixed; inset: 0; z-index: 40;
+          background: rgba(0,0,0,0.55);
+          backdrop-filter: blur(4px);
+        }
+
+        /* ── SIDEBAR ── */
+        .sa-sidebar {
+          position: fixed;
+          top: 60px; left: 0; bottom: 0;
+          width: ${FULL}px;
+          background: ${D.sb};
+          border-right: 1px solid ${D.sbBorder};
+          box-shadow: 4px 0 40px rgba(0,0,0,0.3);
+          display: flex;
+          flex-direction: column;
+          z-index: 50;
+          overflow: hidden;
+
+          /* CSS-based smooth transition like Admin */
+          transform: translateX(-100%);
+          transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        .sa-sidebar::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 1;
+          background: linear-gradient(90deg, #6c6ff5 0%, #a78bfa 50%, #2dd4bf 100%);
+        }
+        .sa-noise {
+          position: absolute; inset: 0; pointer-events: none; opacity: 0.016; z-index: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        /* Mobile open */
+        .sa-sidebar.open {
+          transform: translateX(0);
+        }
+
+        /* Desktop: always visible, slim or full */
+        @media (min-width: 1024px) {
+          .sa-sidebar {
+            transform: translateX(0) !important;
+          }
+          .sa-sidebar.slim {
+            width: ${SLIM}px;
+          }
+          .sa-content {
+            margin-left: ${FULL}px;
+            transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+          }
+          .sa-content.slim {
+            margin-left: ${SLIM}px;
+          }
+        }
+        @media (max-width: 1023px) {
+          .sa-content { margin-left: 0 !important; }
+        }
+
+        /* ── NAV ── */
+        .sa-nav-sc::-webkit-scrollbar { width: 3px; }
+        .sa-nav-sc::-webkit-scrollbar-track { background: transparent; }
+        .sa-nav-sc::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+
+        .sa-nav-item {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 2px;
+          cursor: pointer;
+          user-select: none;
+          border-radius: 11px;
+          border: 1px solid transparent;
+          transition: background 0.15s, border-color 0.15s;
+          overflow: hidden;
+        }
+        .sa-nav-item:hover { background: rgba(255,255,255,0.04); }
+        .sa-nav-item.active {
+          background: rgba(var(--item-color-rgb, 129,140,248), 0.094);
+          border-color: rgba(var(--item-color-rgb, 129,140,248), 0.16);
+          background: color-mix(in srgb, var(--item-color) 9%, transparent);
+          border-color: color-mix(in srgb, var(--item-color) 16%, transparent);
+        }
+
+        .sa-active-pill {
+          position: absolute;
+          left: 0; top: 18%; bottom: 18%;
+          width: 3px;
+          border-radius: 0 3px 3px 0;
+        }
+
+        .sa-nav-icon {
+          width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        .sa-nav-label {
+          flex: 1; font-size: 13px; font-weight: 600;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          transition: opacity 0.15s;
+        }
+
+        .sa-nav-dot {
+          width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+        }
+
+        .sec-label {
+          font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+          letter-spacing: 0.22em; color: ${D.sbMuted}; padding: 12px 13px 6px;
         }
 
         .sb-search {
-          width:100%; background:rgba(255,255,255,0.04);
-          border:1px solid rgba(255,255,255,0.07);
-          color:${D.sbText}; border-radius:10px;
-          padding:8px 10px 8px 33px;
-          font-family:'Outfit',sans-serif; font-size:12.5px; font-weight:500;
-          outline:none; transition:all 0.2s;
+          width: 100%; background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          color: ${D.sbText}; border-radius: 10px;
+          padding: 8px 10px 8px 33px;
+          font-family: 'Outfit', sans-serif; font-size: 12.5px; font-weight: 500;
+          outline: none; transition: all 0.2s;
         }
-        .sb-search::placeholder { color:${D.sbMuted}; }
-        .sb-search:focus { background:rgba(108,111,245,0.08); border-color:rgba(108,111,245,0.3); box-shadow:0 0 0 3px rgba(108,111,245,0.1); }
-
-        .tb-search {
-          width:100%; background:rgba(255,255,255,0.05);
-          border:1px solid rgba(255,255,255,0.09);
-          color:${D.tbText}; border-radius:10px;
-          padding:7px 12px 7px 34px;
-          font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
-          outline:none; transition:all 0.2s;
-        }
-        .tb-search::placeholder { color:${D.tbMuted}; }
-        .tb-search:focus { background:rgba(108,111,245,0.1); border-color:rgba(108,111,245,0.3); box-shadow:0 0 0 3px rgba(108,111,245,0.1); }
-
-        .sa-dd {
-          position:absolute; right:0; top:calc(100% + 10px); width:270px;
-          background:#1c2030; border:1px solid rgba(255,255,255,0.09);
-          border-radius:16px; overflow:hidden; z-index:9999;
-          box-shadow:0 24px 64px rgba(0,0,0,0.55);
-        }
-        .dd-item {
-          display:flex; align-items:center; gap:11px;
-          padding:9px 14px; cursor:pointer;
-          font-size:13px; font-weight:600; color:#9199b0;
-          border-radius:9px; margin:2px 8px;
-          transition:background 0.13s, color 0.13s;
-        }
-        .dd-item:hover { background:rgba(108,111,245,0.1); color:#c4c8dc; }
-
-        .sec-label {
-          font-size:9.5px; font-weight:800; text-transform:uppercase;
-          letter-spacing:0.22em; color:${D.sbMuted}; padding:12px 13px 6px;
+        .sb-search::placeholder { color: ${D.sbMuted}; }
+        .sb-search:focus {
+          background: rgba(108,111,245,0.08);
+          border-color: rgba(108,111,245,0.3);
+          box-shadow: 0 0 0 3px rgba(108,111,245,0.1);
         }
 
-        @keyframes shimmer { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
+        /* ── BRAND ── */
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
         .brand-text {
-          background:linear-gradient(90deg,#818cf8 0%,#c4b5fd 30%,#6c6ff5 50%,#c4b5fd 70%,#818cf8 100%);
-          background-size:200% auto;
-          -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-          animation:shimmer 6s linear infinite;
-          font-weight:900; font-size:15px; letter-spacing:-0.02em;
+          background: linear-gradient(90deg,#818cf8 0%,#c4b5fd 30%,#6c6ff5 50%,#c4b5fd 70%,#818cf8 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+          animation: shimmer 6s linear infinite;
+          font-weight: 900; font-size: 15px; letter-spacing: -0.02em;
         }
 
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.72)} }
-        .pulse-dot { animation:pulse-dot 2.4s ease-in-out infinite; }
+        .pulse-dot { animation: pulse-dot 2.4s ease-in-out infinite; }
 
-        .sa-overlay {
-          position:fixed; inset:0; z-index:40;
-          background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+        /* ── CONTENT ── */
+        .sa-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          overflow: hidden;
         }
+        .sa-main-sc::-webkit-scrollbar { width: 5px; }
+        .sa-main-sc::-webkit-scrollbar-track { background: transparent; }
+        .sa-main-sc::-webkit-scrollbar-thumb { background: rgba(108,111,245,0.14); border-radius: 99px; }
 
-        @media(max-width:1023px){ .sa-content{ margin-left:0 !important; } }
-        @media(max-width:639px){ .sa-topbar{ padding:0 12px; } .search-wrap{ display:none !important; } .breadcrumb{ display:none !important; } }
-        @media(max-width:479px){ .user-name{ display:none !important; } }
+        /* ── DROPDOWN ── */
+        .sa-dd {
+          position: absolute; right: 0; top: calc(100% + 10px); width: 270px;
+          background: #1c2030; border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 16px; overflow: hidden; z-index: 9999;
+          box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+        }
+        .dd-item {
+          display: flex; align-items: center; gap: 11px;
+          padding: 9px 14px; cursor: pointer;
+          font-size: 13px; font-weight: 600; color: #9199b0;
+          border-radius: 9px; margin: 2px 8px;
+          transition: background 0.13s, color 0.13s;
+        }
+        .dd-item:hover { background: rgba(108,111,245,0.1); color: #c4c8dc; }
+
+        @media (max-width: 639px) {
+          .sa-topbar { padding: 0 12px; }
+          .search-wrap { display: none !important; }
+          .breadcrumb { display: none !important; }
+        }
+        @media (max-width: 479px) { .user-name { display: none !important; } }
       `}</style>
 
-      <ConfigProvider theme={{ algorithm:antTheme.darkAlgorithm, token:{ colorPrimary:"#6c6ff5", fontFamily:"'Outfit',sans-serif" } }}>
-        <div className="sa-root">
+      <ConfigProvider theme={{ algorithm: antTheme.darkAlgorithm, token: { colorPrimary: "#6c6ff5", fontFamily: "'Outfit',sans-serif" } }}>
+        <div className="sa-shell">
 
-          {/* Mobile overlay */}
-          <AnimatePresence>
-            {showOverlay && (
-              <motion.div className="sa-overlay"
-                initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-                transition={{ duration:0.2 }}
-                onClick={() => setSidebarOpen(false)}
-              />
-            )}
-          </AnimatePresence>
+          {/* ── TOPBAR ── */}
+          <header className="sa-topbar">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <button className="tb-btn" onClick={toggleSidebar} aria-label="Toggle sidebar">
+                {(!isDesktop && sidebarOpen) ? <X size={16} /> : <Menu size={16} />}
+              </button>
 
-          {/* ═══════════════
-              SIDEBAR
-          ═══════════════ */}
-          <motion.aside
-            className="sa-sidebar"
-            initial={false}
-            animate={{
-              width: sidebarW,
-              x: (!isDesktop && !sidebarOpen) ? -FULL : 0,
-            }}
-            transition={{ type:"spring", stiffness:600, damping:45 }}
-          >
-            <div className="sa-noise" />
+              <div className="breadcrumb" style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                <AnimatePresence mode="wait">
+                  {activeItem ? (
+                    <motion.div
+                      key={activeItem.key}
+                      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+                      style={{ display: "flex", alignItems: "center", gap: 7 }}
+                    >
+                      <div style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, background: `${activeItem.color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <activeItem.icon size={12} color={activeItem.color} strokeWidth={2} />
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: D.tbText, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>
+                        {t(activeItem.bn, activeItem.en)}
+                      </span>
+                    </motion.div>
+                  ) : (
+                    <motion.span key="default" style={{ fontSize: 14, fontWeight: 800, color: D.tbText }}>SubAdmin</motion.span>
+                  )}
+                </AnimatePresence>
+                <ChevronRight size={11} color={D.tbMuted} style={{ flexShrink: 0 }} />
+                <span style={{ fontSize: 11, fontWeight: 500, color: D.tbMuted, whiteSpace: "nowrap" }}>Nahid Enterprise</span>
+              </div>
+            </div>
 
-            {/* Brand */}
-            <div style={{
-              position:"relative", zIndex:1, flexShrink:0, minHeight:70,
-              padding: slim ? "18px 0" : "18px 16px",
-              borderBottom:`1px solid ${D.sbBorder}`,
-              display:"flex", alignItems:"center",
-              justifyContent: slim ? "center" : "flex-start",
-            }}>
-              <div style={{ display:"flex", alignItems:"center", gap:11, overflow:"hidden" }}>
-                <motion.div
-                  whileHover={{ rotate:8, scale:1.08 }}
-                  transition={{ type:"spring", stiffness:380, damping:18 }}
+            <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+              {/* Search */}
+              <div className="search-wrap" style={{ display: "flex", alignItems: "center", position: "relative" }}>
+                <AnimatePresence>
+                  {searchOpen && (
+                    <motion.div
+                      initial={{ width: 0, opacity: 0 }} animate={{ width: 176, opacity: 1 }}
+                      exit={{ width: 0, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      style={{ overflow: "hidden", position: "relative", marginRight: 6 }}
+                    >
+                      <Search size={12} color={D.tbMuted} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+                      <input autoFocus type="text" placeholder={t("খুঁজুন...", "Search...")} className="tb-search" onBlur={() => setSearchOpen(false)} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <Tooltip title={t("খুঁজুন", "Search")} placement="bottom">
+                  <button className="tb-btn" onClick={() => setSearchOpen(o => !o)} style={{ color: searchOpen ? D.accent : undefined }}>
+                    <Search size={15} />
+                  </button>
+                </Tooltip>
+              </div>
+
+              <SubAdminOrderBell />
+
+              {/* Profile dropdown */}
+              <div style={{ position: "relative" }}>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setDropdownOpen(o => !o)}
                   style={{
-                    width:40, height:40, borderRadius:12, flexShrink:0,
-                    background:"linear-gradient(135deg,#6c6ff5,#4f46e5)",
-                    boxShadow:"0 6px 22px rgba(108,111,245,0.45)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "4px 10px 4px 4px", borderRadius: 11, cursor: "pointer", outline: "none",
+                    background: dropdownOpen ? "rgba(108,111,245,0.12)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${dropdownOpen ? "rgba(108,111,245,0.3)" : "rgba(255,255,255,0.08)"}`,
+                    transition: "background 0.15s, border-color 0.15s",
                   }}
                 >
-                  <ShieldCheck size={18} color="#fff" strokeWidth={2} />
-                </motion.div>
+                  <Avatar sx={{ width: 28, height: 28, fontSize: 11, fontWeight: 800, fontFamily: "Outfit", background: "linear-gradient(135deg,#818cf8,#6366f1)", boxShadow: "0 2px 10px rgba(108,111,245,0.38)" }}>
+                    {getInitials(subAdminInfo?.name)}
+                  </Avatar>
+                  <span className="user-name" style={{ fontSize: 12.5, fontWeight: 700, color: D.tbText, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {subAdminInfo?.name?.split(" ")[0] || "SubAdmin"}
+                  </span>
+                </motion.button>
 
                 <AnimatePresence>
-                  {!slim && (
-                    <motion.div
-                      initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }}
-                      exit={{ opacity:0, x:-10 }} transition={{ duration:0.18 }}
-                    >
-                      <div className="brand-text">SubAdmin</div>
-                      <div style={{ fontSize:9, fontWeight:700, letterSpacing:"0.2em", textTransform:"uppercase", color:D.sbMuted, marginTop:2 }}>
-                        Nahid Enterprise
-                      </div>
-                    </motion.div>
+                  {dropdownOpen && (
+                    <>
+                      <div style={{ position: "fixed", inset: 0, zIndex: 10 }} onClick={() => setDropdownOpen(false)} />
+                      <motion.div
+                        className="sa-dd"
+                        initial={{ opacity: 0, y: 12, scale: 0.93 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 12, scale: 0.93 }}
+                        transition={{ type: "spring", stiffness: 360, damping: 30 }}
+                      >
+                        <div style={{ height: 2, background: "linear-gradient(90deg,#6c6ff5,#a78bfa,#2dd4bf)" }} />
+                        <div style={{ padding: 16, borderBottom: `1px solid ${D.sbBorder}` }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                            <Avatar sx={{ width: 42, height: 42, fontSize: 14, fontWeight: 800, fontFamily: "Outfit", background: "linear-gradient(135deg,#818cf8,#6366f1)", boxShadow: "0 4px 18px rgba(108,111,245,0.42)" }}>
+                              {getInitials(subAdminInfo?.name)}
+                            </Avatar>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontSize: 13.5, fontWeight: 800, color: "#dde0ef", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subAdminInfo?.name}</div>
+                              <div style={{ fontSize: 11, color: D.sbMuted, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subAdminInfo?.email}</div>
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 10 }}>
+                            <Chip size="small"
+                              label={
+                                <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                                  <ShieldCheck size={9} />{t("সাবএডমিন", "SubAdmin")}
+                                  <span className="pulse-dot" style={{ width: 5, height: 5, borderRadius: "50%", background: D.green, display: "inline-block" }} />
+                                </span>
+                              }
+                              sx={{ background: "rgba(108,111,245,0.1)", border: "1px solid rgba(108,111,245,0.22)", color: "#818cf8", height: 22, fontFamily: "Outfit", "& .MuiChip-label": { padding: "0 8px" } }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ padding: 8 }}>
+                          {[
+                            { icon: User,     bn: "আমার প্রোফাইল", en: "My Profile", path: "/subadmin/profile",  color: "#818cf8" },
+                            { icon: Settings, bn: "সেটিংস",        en: "Settings",   path: "/subadmin/settings", color: "#94a3b8" },
+                          ].map(({ icon: Icon, bn, en, path, color }) => (
+                            <motion.div key={path} className="dd-item" whileHover={{ x: 3 }}
+                              onClick={() => { navigate(path); setDropdownOpen(false); }}>
+                              <div style={{ width: 27, height: 27, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: `${color}12`, border: `1px solid ${color}1e`, flexShrink: 0 }}>
+                                <Icon size={13} color={color} />
+                              </div>
+                              {t(bn, en)}
+                            </motion.div>
+                          ))}
+                        </div>
+                        <Divider style={{ borderColor: D.sbBorder, margin: 0 }} />
+                        <div style={{ padding: 8 }}>
+                          <motion.div className="dd-item" whileHover={{ x: 3 }} onClick={handleLogout}
+                            style={{ color: "#f87171" }}
+                            onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                            <div style={{ width: 27, height: 27, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(239,68,68,0.09)", border: "1px solid rgba(239,68,68,0.18)", flexShrink: 0 }}>
+                              <LogOut size={13} color="#f87171" />
+                            </div>
+                            {t("সাইন আউট", "Sign Out")}
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    </>
                   )}
                 </AnimatePresence>
               </div>
             </div>
+          </header>
 
-            {/* Search */}
+          {/* ── BODY ── */}
+          <div className="sa-body">
+
+            {/* Mobile overlay */}
             <AnimatePresence>
-              {!slim && (
-                <motion.div
-                  initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }}
-                  exit={{ opacity:0, height:0 }} transition={{ duration:0.18 }}
-                  style={{ padding:"10px 13px 4px", flexShrink:0, position:"relative", zIndex:1, overflow:"hidden" }}
-                >
-                  <Search size={13} color={D.sbMuted} style={{ position:"absolute", left:25, top:"50%", transform:"translateY(-28%)", pointerEvents:"none" }} />
-                  <input type="text" className="sb-search" value={search} onChange={e => setSearch(e.target.value)} placeholder={t("মেনু খুঁজুন...", "Search menu...")} />
-                </motion.div>
+              {showOverlay && (
+                <motion.div className="sa-overlay"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setSidebarOpen(false)}
+                />
               )}
             </AnimatePresence>
 
-            {/* Nav */}
-            <nav className="sa-nav-sc" style={{ flex:1, overflowY:"auto", padding: slim ? "8px 9px" : "4px 11px 12px", position:"relative", zIndex:1 }}>
-              {!slim && <div className="sec-label">{t("নেভিগেশন", "Navigation")}</div>}
-              <motion.div variants={navStagger.container} initial="hidden" animate="show">
-                {filteredMenu.map(item => (
-                  <motion.div key={item.key} variants={navStagger.item}>
-                    <NavItem
-                      item={item}
-                      isActive={location.pathname === item.path}
-                      onClick={() => { navigate(item.path); if (!isDesktop) setSidebarOpen(false); }}
-                      t={t} slim={slim}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </nav>
+            {/* ── SIDEBAR ── */}
+            <aside className={`sa-sidebar ${sidebarOpen ? "open" : ""} ${slim ? "slim" : ""}`}>
+              <div className="sa-noise" />
 
-            {/* User footer */}
-            <div style={{ flexShrink:0, position:"relative", zIndex:1 }}>
-              <Divider style={{ borderColor:D.sbBorder, margin:0 }} />
-              <div style={{ padding: slim ? "12px 9px" : "12px 13px" }}>
-                {slim ? (
-                  <Tooltip title={subAdminInfo?.name || "SubAdmin"} placement="right">
-                    <div style={{ display:"flex", justifyContent:"center" }}>
-                      <Avatar sx={{ width:34, height:34, fontSize:12, fontWeight:800, fontFamily:"Outfit", cursor:"pointer", background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 4px 14px rgba(108,111,245,0.4)" }}>
-                        {getInitials(subAdminInfo?.name)}
-                      </Avatar>
-                    </div>
-                  </Tooltip>
-                ) : (
-                  <motion.div
-                    initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.1 }}
-                    style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 11px", borderRadius:11, background:"rgba(255,255,255,0.035)", border:`1px solid ${D.sbBorder}` }}
-                  >
-                    <Avatar sx={{ width:34, height:34, fontSize:12, fontWeight:800, fontFamily:"Outfit", flexShrink:0, background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 4px 12px rgba(108,111,245,0.38)" }}>
-                      {getInitials(subAdminInfo?.name)}
-                    </Avatar>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:12.5, fontWeight:700, color:D.sbText, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {subAdminInfo?.name || "SubAdmin"}
-                      </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:2 }}>
-                        <span className="pulse-dot" style={{ width:5, height:5, borderRadius:"50%", background:D.green, display:"inline-block", flexShrink:0 }} />
-                        <span style={{ fontSize:10, fontWeight:600, color:D.sbMuted }}>{t("সক্রিয়","Active")}</span>
+              {/* Brand */}
+              <div style={{
+                position: "relative", zIndex: 1, flexShrink: 0, minHeight: 70,
+                padding: slim ? "18px 0" : "18px 16px",
+                borderBottom: `1px solid ${D.sbBorder}`,
+                display: "flex", alignItems: "center",
+                justifyContent: slim ? "center" : "space-between",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 11, overflow: "hidden" }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: "linear-gradient(135deg,#6c6ff5,#4f46e5)",
+                    boxShadow: "0 6px 22px rgba(108,111,245,0.45)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <ShieldCheck size={18} color="#fff" strokeWidth={2} />
+                  </div>
+                  {!slim && (
+                    <div>
+                      <div className="brand-text">SubAdmin</div>
+                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: D.sbMuted, marginTop: 2 }}>
+                        Nahid Enterprise
                       </div>
                     </div>
-                    <Tooltip title={t("সাইন আউট","Sign Out")} placement="top">
-                      <motion.button whileHover={{ scale:1.08 }} whileTap={{ scale:0.92 }} onClick={handleLogout}
-                        style={{ width:28, height:28, borderRadius:8, flexShrink:0, background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.16)", color:D.red, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", outline:"none" }}>
-                        <LogOut size={12} />
-                      </motion.button>
-                    </Tooltip>
-                  </motion.div>
+                  )}
+                </div>
+                {/* Close button on mobile */}
+                {!isDesktop && (
+                  <button className="tb-btn" onClick={() => setSidebarOpen(false)} style={{ flexShrink: 0 }}>
+                    <X size={15} />
+                  </button>
                 )}
               </div>
-            </div>
-          </motion.aside>
 
-          {/* ═══════════════
-              CONTENT
-          ═══════════════ */}
-          <motion.div
-            className="sa-content"
-            initial={false}
-            animate={{ marginLeft: isDesktop ? sidebarW : 0 }}
-            transition={{ type:"spring", stiffness:600, damping:45 }}
-            style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}
-          >
-
-            {/* ── TOPBAR ── */}
-            <header className="sa-topbar">
-              <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-                <motion.button
-                  className="tb-btn"
-                  onClick={toggleSidebar}
-                  whileTap={{ scale:0.9 }}
-                  aria-label="Toggle sidebar"
-                >
-                  <HamburgerIcon isOpen={hamburgerOpen} />
-                </motion.button>
-
-                <div className="breadcrumb" style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
-                  <AnimatePresence mode="wait">
-                    {activeItem ? (
-                      <motion.div
-                        key={activeItem.key}
-                        initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0 }}
-                        transition={{ type:"spring", stiffness:300, damping:28 }}
-                        style={{ display:"flex", alignItems:"center", gap:7 }}
-                      >
-                        <div style={{ width:26, height:26, borderRadius:7, flexShrink:0, background:`${activeItem.color}18`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <activeItem.icon size={12} color={activeItem.color} strokeWidth={2} />
-                        </div>
-                        <span style={{ fontSize:14, fontWeight:800, color:D.tbText, letterSpacing:"-0.01em", whiteSpace:"nowrap" }}>
-                          {t(activeItem.bn, activeItem.en)}
-                        </span>
-                      </motion.div>
-                    ) : (
-                      <motion.span key="default" style={{ fontSize:14, fontWeight:800, color:D.tbText }}>SubAdmin</motion.span>
-                    )}
-                  </AnimatePresence>
-                  <ChevronRight size={11} color={D.tbMuted} style={{ flexShrink:0 }} />
-                  <span style={{ fontSize:11, fontWeight:500, color:D.tbMuted, whiteSpace:"nowrap" }}>Nahid Enterprise</span>
+              {/* Search */}
+              {!slim && (
+                <div style={{ padding: "10px 13px 4px", flexShrink: 0, position: "relative", zIndex: 1 }}>
+                  <Search size={13} color={D.sbMuted} style={{ position: "absolute", left: 25, top: "50%", transform: "translateY(-28%)", pointerEvents: "none" }} />
+                  <input type="text" className="sb-search" value={search} onChange={e => setSearch(e.target.value)} placeholder={t("মেনু খুঁজুন...", "Search menu...")} />
                 </div>
-              </div>
-
-              <div style={{ display:"flex", alignItems:"center", gap:7, flexShrink:0 }}>
-                <div className="search-wrap" style={{ display:"flex", alignItems:"center", position:"relative" }}>
-                  <AnimatePresence>
-                    {searchOpen && (
-                      <motion.div
-                        initial={{ width:0, opacity:0 }} animate={{ width:176, opacity:1 }}
-                        exit={{ width:0, opacity:0 }}
-                        transition={{ type:"spring", stiffness:300, damping:30 }}
-                        style={{ overflow:"hidden", position:"relative", marginRight:6 }}
-                      >
-                        <Search size={12} color={D.tbMuted} style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", pointerEvents:"none" }} />
-                        <input autoFocus type="text" placeholder={t("খুঁজুন...","Search...")} className="tb-search" onBlur={() => setSearchOpen(false)} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  <Tooltip title={t("খুঁজুন","Search")} placement="bottom">
-                    <motion.button className="tb-btn" whileTap={{ scale:0.92 }}
-                      onClick={() => setSearchOpen(o => !o)}
-                      style={{ color: searchOpen ? D.accent : undefined }}>
-                      <Search size={15} />
-                    </motion.button>
-                  </Tooltip>
-                </div>
-
-                <SubAdminOrderBell />
-
-                <div style={{ position:"relative" }}>
-                  <motion.button
-                    whileTap={{ scale:0.95 }}
-                    onClick={() => setDropdownOpen(o => !o)}
-                    style={{
-                      display:"flex", alignItems:"center", gap:8,
-                      padding:"4px 10px 4px 4px", borderRadius:11, cursor:"pointer", outline:"none",
-                      background: dropdownOpen ? "rgba(108,111,245,0.12)" : "rgba(255,255,255,0.04)",
-                      border:`1px solid ${dropdownOpen ? "rgba(108,111,245,0.3)" : "rgba(255,255,255,0.08)"}`,
-                      transition:"background 0.15s, border-color 0.15s",
-                    }}
-                  >
-                    <Avatar sx={{ width:28, height:28, fontSize:11, fontWeight:800, fontFamily:"Outfit", background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 2px 10px rgba(108,111,245,0.38)" }}>
-                      {getInitials(subAdminInfo?.name)}
-                    </Avatar>
-                    <span className="user-name" style={{ fontSize:12.5, fontWeight:700, color:D.tbText, maxWidth:80, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {subAdminInfo?.name?.split(" ")[0] || "SubAdmin"}
-                    </span>
-                  </motion.button>
-
-                  <AnimatePresence>
-                    {dropdownOpen && (
-                      <>
-                        <div style={{ position:"fixed", inset:0, zIndex:10 }} onClick={() => setDropdownOpen(false)} />
-                        <motion.div
-                          className="sa-dd"
-                          initial={{ opacity:0, y:12, scale:0.93 }}
-                          animate={{ opacity:1, y:0, scale:1 }}
-                          exit={{ opacity:0, y:12, scale:0.93 }}
-                          transition={{ type:"spring", stiffness:360, damping:30 }}
-                        >
-                          <div style={{ height:2, background:"linear-gradient(90deg,#6c6ff5,#a78bfa,#2dd4bf)" }} />
-                          <div style={{ padding:16, borderBottom:`1px solid ${D.sbBorder}` }}>
-                            <div style={{ display:"flex", alignItems:"center", gap:11 }}>
-                              <Avatar sx={{ width:42, height:42, fontSize:14, fontWeight:800, fontFamily:"Outfit", background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 4px 18px rgba(108,111,245,0.42)" }}>
-                                {getInitials(subAdminInfo?.name)}
-                              </Avatar>
-                              <div style={{ minWidth:0, flex:1 }}>
-                                <div style={{ fontSize:13.5, fontWeight:800, color:"#dde0ef", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{subAdminInfo?.name}</div>
-                                <div style={{ fontSize:11, color:D.sbMuted, marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{subAdminInfo?.email}</div>
-                              </div>
-                            </div>
-                            <div style={{ marginTop:10 }}>
-                              <Chip size="small"
-                                label={
-                                  <span style={{ display:"flex", alignItems:"center", gap:5, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em" }}>
-                                    <ShieldCheck size={9} />{t("সাবএডমিন","SubAdmin")}
-                                    <span className="pulse-dot" style={{ width:5, height:5, borderRadius:"50%", background:D.green, display:"inline-block" }} />
-                                  </span>
-                                }
-                                sx={{ background:"rgba(108,111,245,0.1)", border:"1px solid rgba(108,111,245,0.22)", color:"#818cf8", height:22, fontFamily:"Outfit", "& .MuiChip-label":{ padding:"0 8px" } }}
-                              />
-                            </div>
-                          </div>
-                          <div style={{ padding:8 }}>
-                            {[
-                              { icon:User,     bn:"আমার প্রোফাইল", en:"My Profile", path:"/subadmin/profile",  color:"#818cf8" },
-                              { icon:Settings, bn:"সেটিংস",        en:"Settings",   path:"/subadmin/settings", color:"#94a3b8" },
-                            ].map(({ icon:Icon, bn, en, path, color }) => (
-                              <motion.div key={path} className="dd-item" whileHover={{ x:3 }}
-                                onClick={() => { navigate(path); setDropdownOpen(false); }}>
-                                <div style={{ width:27, height:27, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", background:`${color}12`, border:`1px solid ${color}1e`, flexShrink:0 }}>
-                                  <Icon size={13} color={color} />
-                                </div>
-                                {t(bn, en)}
-                              </motion.div>
-                            ))}
-                          </div>
-                          <Divider style={{ borderColor:D.sbBorder, margin:0 }} />
-                          <div style={{ padding:8 }}>
-                            <motion.div className="dd-item" whileHover={{ x:3 }} onClick={handleLogout}
-                              style={{ color:"#f87171" }}
-                              onMouseEnter={e => e.currentTarget.style.background="rgba(239,68,68,0.08)"}
-                              onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                              <div style={{ width:27, height:27, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(239,68,68,0.09)", border:"1px solid rgba(239,68,68,0.18)", flexShrink:0 }}>
-                                <LogOut size={13} color="#f87171" />
-                              </div>
-                              {t("সাইন আউট","Sign Out")}
-                            </motion.div>
-                          </div>
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </header>
-
-            {/* Approval banner */}
-            <AnimatePresence>
-              {approvedNotif && (
-                <motion.div
-                  initial={{ opacity:0, y:-14, scale:0.96 }}
-                  animate={{ opacity:1, y:0, scale:1 }}
-                  exit={{ opacity:0, y:-14 }}
-                  transition={{ type:"spring", stiffness:300, damping:26 }}
-                  style={{ margin:"12px 16px 0", display:"flex", alignItems:"flex-start", gap:12, padding:"12px 16px", borderRadius:12, background:"linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.06))", border:"1px solid rgba(34,197,94,0.22)", boxShadow:"0 4px 20px rgba(34,197,94,0.1)" }}
-                >
-                  <div style={{ width:30, height:30, borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(34,197,94,0.14)", border:"1px solid rgba(34,197,94,0.24)", flexShrink:0 }}>
-                    <ShieldCheck size={14} color={D.green} />
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color:"#4ade80" }}>🎉 আপনার অ্যাকাউন্ট অনুমোদিত হয়েছে!</div>
-                    <div style={{ fontSize:11, color:"#86efac", marginTop:2 }}>অ্যাডমিন আপনার SubAdmin অ্যাকাউন্ট অনুমোদন করেছেন।</div>
-                  </div>
-                  <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }} onClick={() => setApprovedNotif(false)}
-                    style={{ background:"none", border:"none", cursor:"pointer", color:"#86efac", padding:0, flexShrink:0 }}>
-                    <X size={14} />
-                  </motion.button>
-                </motion.div>
               )}
-            </AnimatePresence>
 
-            {/* Main */}
-            <main className="sa-main-sc" style={{ flex:1, overflowY:"auto", padding:"18px 16px 24px", background:D.bg }}>
-              <Outlet />
-            </main>
-          </motion.div>
+              {/* Nav */}
+              <nav className="sa-nav-sc" style={{ flex: 1, overflowY: "auto", padding: slim ? "8px 9px" : "4px 11px 12px", position: "relative", zIndex: 1 }}>
+                {!slim && <div className="sec-label">{t("নেভিগেশন", "Navigation")}</div>}
+                {filteredMenu.map(item => (
+                  <NavItem
+                    key={item.key}
+                    item={item}
+                    isActive={location.pathname === item.path}
+                    onClick={() => { navigate(item.path); if (!isDesktop) setSidebarOpen(false); }}
+                    t={t}
+                    slim={slim}
+                  />
+                ))}
+              </nav>
+
+              {/* User footer */}
+              <div style={{ flexShrink: 0, position: "relative", zIndex: 1 }}>
+                <Divider style={{ borderColor: D.sbBorder, margin: 0 }} />
+                <div style={{ padding: slim ? "12px 9px" : "12px 13px" }}>
+                  {slim ? (
+                    <Tooltip title={subAdminInfo?.name || "SubAdmin"} placement="right">
+                      <div style={{ display: "flex", justifyContent: "center" }}>
+                        <Avatar sx={{ width: 34, height: 34, fontSize: 12, fontWeight: 800, fontFamily: "Outfit", cursor: "pointer", background: "linear-gradient(135deg,#818cf8,#6366f1)", boxShadow: "0 4px 14px rgba(108,111,245,0.4)" }}>
+                          {getInitials(subAdminInfo?.name)}
+                        </Avatar>
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 11, background: "rgba(255,255,255,0.035)", border: `1px solid ${D.sbBorder}` }}>
+                      <Avatar sx={{ width: 34, height: 34, fontSize: 12, fontWeight: 800, fontFamily: "Outfit", flexShrink: 0, background: "linear-gradient(135deg,#818cf8,#6366f1)", boxShadow: "0 4px 12px rgba(108,111,245,0.38)" }}>
+                        {getInitials(subAdminInfo?.name)}
+                      </Avatar>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: D.sbText, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {subAdminInfo?.name || "SubAdmin"}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 2 }}>
+                          <span className="pulse-dot" style={{ width: 5, height: 5, borderRadius: "50%", background: D.green, display: "inline-block", flexShrink: 0 }} />
+                          <span style={{ fontSize: 10, fontWeight: 600, color: D.sbMuted }}>{t("সক্রিয়", "Active")}</span>
+                        </div>
+                      </div>
+                      <Tooltip title={t("সাইন আউট", "Sign Out")} placement="top">
+                        <button onClick={handleLogout}
+                          style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.16)", color: D.red, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", outline: "none" }}>
+                          <LogOut size={12} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </aside>
+
+            {/* ── CONTENT ── */}
+            <div className={`sa-content ${slim ? "slim" : ""}`}>
+
+              {/* Approval banner */}
+              <AnimatePresence>
+                {approvedNotif && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -14, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -14 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                    style={{ margin: "12px 16px 0", display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px", borderRadius: 12, background: "linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.06))", border: "1px solid rgba(34,197,94,0.22)", boxShadow: "0 4px 20px rgba(34,197,94,0.1)" }}
+                  >
+                    <div style={{ width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(34,197,94,0.14)", border: "1px solid rgba(34,197,94,0.24)", flexShrink: 0 }}>
+                      <ShieldCheck size={14} color={D.green} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#4ade80" }}>🎉 আপনার অ্যাকাউন্ট অনুমোদিত হয়েছে!</div>
+                      <div style={{ fontSize: 11, color: "#86efac", marginTop: 2 }}>অ্যাডমিন আপনার SubAdmin অ্যাকাউন্ট অনুমোদন করেছেন।</div>
+                    </div>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setApprovedNotif(false)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#86efac", padding: 0, flexShrink: 0 }}>
+                      <X size={14} />
+                    </motion.button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Main */}
+              <main className="sa-main-sc" style={{ flex: 1, overflowY: "auto", padding: "18px 16px 24px", background: D.bg, height: "100%" }}>
+                <Outlet />
+              </main>
+            </div>
+
+          </div>
         </div>
       </ConfigProvider>
 
       {subAdminInfo?._id && (
         <FloatingChat
-          me={{ id:subAdminInfo._id, name:subAdminInfo.name, role:"subadmin" }}
+          me={{ id: subAdminInfo._id, name: subAdminInfo.name, role: "subadmin" }}
           other={adminInfo}
         />
       )}
