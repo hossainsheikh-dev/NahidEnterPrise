@@ -72,7 +72,6 @@ const navStagger = {
 
 /* ══════════════════════════════
    ANIMATED HAMBURGER
-   Three bars morph to ✕
 ══════════════════════════════ */
 function HamburgerIcon({ isOpen }) {
   return (
@@ -123,7 +122,6 @@ function NavItem({ item, isActive, onClick, t, slim }) {
           overflow:"hidden",
         }}
       >
-        {/* Left active pill */}
         <AnimatePresence>
           {isActive && (
             <motion.div
@@ -135,7 +133,6 @@ function NavItem({ item, isActive, onClick, t, slim }) {
           )}
         </AnimatePresence>
 
-        {/* Icon */}
         <motion.div
           animate={{ scale: isActive ? 1 : hov ? 1.07 : 1 }}
           transition={{ type:"spring", stiffness:380, damping:22 }}
@@ -150,7 +147,6 @@ function NavItem({ item, isActive, onClick, t, slim }) {
           <Icon size={14} color={isActive ? "#fff" : item.color} strokeWidth={isActive ? 2.2 : 1.9} />
         </motion.div>
 
-        {/* Label */}
         <AnimatePresence>
           {!slim && (
             <motion.span
@@ -169,7 +165,6 @@ function NavItem({ item, isActive, onClick, t, slim }) {
           )}
         </AnimatePresence>
 
-        {/* Active dot */}
         <AnimatePresence>
           {isActive && !slim && (
             <motion.div
@@ -192,8 +187,8 @@ function DashboardInner() {
   const location = useLocation();
   const { t }    = useSubLang();
 
-  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 1024);
+  const [isDesktop,     setIsDesktop]     = useState(() => window.innerWidth >= 1024);
+  const [sidebarOpen,   setSidebarOpen]   = useState(() => window.innerWidth >= 1024);
   const [search,        setSearch]        = useState("");
   const [dropdownOpen,  setDropdownOpen]  = useState(false);
   const [searchOpen,    setSearchOpen]    = useState(false);
@@ -208,6 +203,7 @@ function DashboardInner() {
       const desk = window.innerWidth >= 1024;
       setIsDesktop(desk);
       if (desk) setSidebarOpen(true);
+      else setSidebarOpen(false);
     };
     window.addEventListener("resize", fn);
     return () => window.removeEventListener("resize", fn);
@@ -261,21 +257,11 @@ function DashboardInner() {
 
   const activeItem = MENU.find(i => i.path === location.pathname);
 
-  /* Sidebar states:
-     Desktop open   → full width
-     Desktop closed → slim icon-only
-     Mobile  open   → slide-in drawer
-     Mobile  closed → hidden off-screen */
   const slim        = isDesktop && !sidebarOpen;
   const sidebarW    = slim ? SLIM : FULL;
   const showOverlay = !isDesktop && sidebarOpen;
 
-  /* ── SINGLE toggle ── */
   const toggleSidebar = () => setSidebarOpen(o => !o);
-
-  /* hamburger shows "open" state when:
-     desktop → sidebar is collapsed (we want to show "open" = ready to expand)
-     mobile  → sidebar is open (we want to show ✕) */
   const hamburgerOpen = isDesktop ? !sidebarOpen : sidebarOpen;
 
   return (
@@ -292,7 +278,6 @@ function DashboardInner() {
           background: ${D.bg};
         }
 
-        /* scrollbars */
         .sa-nav-sc::-webkit-scrollbar { width:3px; }
         .sa-nav-sc::-webkit-scrollbar-track { background:transparent; }
         .sa-nav-sc::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:99px; }
@@ -300,7 +285,6 @@ function DashboardInner() {
         .sa-main-sc::-webkit-scrollbar-track { background:transparent; }
         .sa-main-sc::-webkit-scrollbar-thumb { background:rgba(108,111,245,0.14); border-radius:99px; }
 
-        /* sidebar */
         .sa-sidebar {
           position:fixed; top:0; left:0; height:100vh; z-index:50;
           display:flex; flex-direction:column;
@@ -318,7 +302,6 @@ function DashboardInner() {
           background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
         }
 
-        /* topbar */
         .sa-topbar {
           height:60px; flex-shrink:0;
           display:flex; align-items:center; justify-content:space-between;
@@ -333,7 +316,6 @@ function DashboardInner() {
           background:linear-gradient(90deg,transparent,rgba(108,111,245,0.32),transparent);
         }
 
-        /* icon button */
         .tb-btn {
           width:36px; height:36px; border-radius:10px; flex-shrink:0;
           display:flex; align-items:center; justify-content:center;
@@ -349,7 +331,6 @@ function DashboardInner() {
           color:${D.accent};
         }
 
-        /* sidebar search */
         .sb-search {
           width:100%; background:rgba(255,255,255,0.04);
           border:1px solid rgba(255,255,255,0.07);
@@ -361,7 +342,6 @@ function DashboardInner() {
         .sb-search::placeholder { color:${D.sbMuted}; }
         .sb-search:focus { background:rgba(108,111,245,0.08); border-color:rgba(108,111,245,0.3); box-shadow:0 0 0 3px rgba(108,111,245,0.1); }
 
-        /* topbar search */
         .tb-search {
           width:100%; background:rgba(255,255,255,0.05);
           border:1px solid rgba(255,255,255,0.09);
@@ -373,7 +353,6 @@ function DashboardInner() {
         .tb-search::placeholder { color:${D.tbMuted}; }
         .tb-search:focus { background:rgba(108,111,245,0.1); border-color:rgba(108,111,245,0.3); box-shadow:0 0 0 3px rgba(108,111,245,0.1); }
 
-        /* dropdown */
         .sa-dd {
           position:absolute; right:0; top:calc(100% + 10px); width:270px;
           background:#1c2030; border:1px solid rgba(255,255,255,0.09);
@@ -389,13 +368,11 @@ function DashboardInner() {
         }
         .dd-item:hover { background:rgba(108,111,245,0.1); color:#c4c8dc; }
 
-        /* section label */
         .sec-label {
           font-size:9.5px; font-weight:800; text-transform:uppercase;
           letter-spacing:0.22em; color:${D.sbMuted}; padding:12px 13px 6px;
         }
 
-        /* brand shimmer */
         @keyframes shimmer { 0% { background-position:-200% center; } 100% { background-position:200% center; } }
         .brand-text {
           background:linear-gradient(90deg,#818cf8 0%,#c4b5fd 30%,#6c6ff5 50%,#c4b5fd 70%,#818cf8 100%);
@@ -405,17 +382,14 @@ function DashboardInner() {
           font-weight:900; font-size:15px; letter-spacing:-0.02em;
         }
 
-        /* pulse */
         @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.72)} }
         .pulse-dot { animation:pulse-dot 2.4s ease-in-out infinite; }
 
-        /* overlay */
         .sa-overlay {
           position:fixed; inset:0; z-index:40;
           background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
         }
 
-        /* responsive */
         @media(max-width:1023px){ .sa-content{ margin-left:0 !important; } }
         @media(max-width:639px){ .sa-topbar{ padding:0 12px; } .search-wrap{ display:none !important; } .breadcrumb{ display:none !important; } }
         @media(max-width:479px){ .user-name{ display:none !important; } }
@@ -445,7 +419,7 @@ function DashboardInner() {
               width: sidebarW,
               x: (!isDesktop && !sidebarOpen) ? -FULL : 0,
             }}
-            transition={{ type:"tween", duration:0.2, ease:"easeInOut" }}
+            transition={{ type:"spring", stiffness:600, damping:45 }}
           >
             <div className="sa-noise" />
 
@@ -564,18 +538,15 @@ function DashboardInner() {
           ═══════════════ */}
           <motion.div
             className="sa-content"
+            initial={false}
             animate={{ marginLeft: isDesktop ? sidebarW : 0 }}
-            transition={{ type:"spring", stiffness:300, damping:32 }}
+            transition={{ type:"spring", stiffness:600, damping:45 }}
             style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}
           >
 
             {/* ── TOPBAR ── */}
             <header className="sa-topbar">
-
-              {/* Left: ONE hamburger + breadcrumb */}
               <div style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
-
-                {/* ✦ Single hamburger — all devices, all states ✦ */}
                 <motion.button
                   className="tb-btn"
                   onClick={toggleSidebar}
@@ -585,7 +556,6 @@ function DashboardInner() {
                   <HamburgerIcon isOpen={hamburgerOpen} />
                 </motion.button>
 
-                {/* Breadcrumb */}
                 <div className="breadcrumb" style={{ display:"flex", alignItems:"center", gap:8, minWidth:0 }}>
                   <AnimatePresence mode="wait">
                     {activeItem ? (
@@ -611,10 +581,7 @@ function DashboardInner() {
                 </div>
               </div>
 
-              {/* Right */}
               <div style={{ display:"flex", alignItems:"center", gap:7, flexShrink:0 }}>
-
-                {/* Expandable search */}
                 <div className="search-wrap" style={{ display:"flex", alignItems:"center", position:"relative" }}>
                   <AnimatePresence>
                     {searchOpen && (
@@ -638,10 +605,8 @@ function DashboardInner() {
                   </Tooltip>
                 </div>
 
-                {/* Bell */}
                 <SubAdminOrderBell />
 
-                {/* Profile */}
                 <div style={{ position:"relative" }}>
                   <motion.button
                     whileTap={{ scale:0.95 }}
