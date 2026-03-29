@@ -111,6 +111,9 @@ function LinkShow({
     boxShadow: "0 1px 4px rgba(99,102,241,0.05)",
   };
 
+  /* same grid as sublinks: serial | name | actions */
+  const gridCols = "28px 1fr 80px";
+
   return (
     <div style={{ marginTop: 28 }}>
       <AnimatePresence mode="wait">
@@ -224,10 +227,10 @@ function LinkShow({
               </div>
             </div>
 
-            {/* Column headers */}
+            {/* Column headers — same as sublinks */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "28px 1fr 140px 80px",
+              gridTemplateColumns: gridCols,
               alignItems: "center",
               padding: "10px 20px",
               fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
@@ -237,7 +240,6 @@ function LinkShow({
             }}>
               <div>#</div>
               <div>{t("নাম", "Name")}</div>
-              <div>{t("স্ট্যাটাস", "Status")}</div>
               <div style={{ textAlign: "right" }}>{t("কার্যক্রম", "Actions")}</div>
             </div>
 
@@ -263,7 +265,7 @@ function LinkShow({
                   transition={{ delay: index * 0.03 }}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "28px 1fr 140px 80px",
+                    gridTemplateColumns: gridCols,
                     alignItems: "center",
                     padding: "12px 20px",
                     borderBottom: "1px solid rgba(99,102,241,0.06)",
@@ -275,17 +277,12 @@ function LinkShow({
                   {/* # */}
                   <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>{index + 1}</div>
 
-                  {/* Name */}
+                  {/* Name + status below — same as sublinks */}
                   <div style={{ minWidth: 0, paddingRight: 12 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {link.name}
                     </p>
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".04em", color: link.isActive ? "#10b981" : "#f43f5e", display: "flex", alignItems: "center", gap: 5 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: link.isActive ? "#10b981" : "#f43f5e", display: "inline-block", flexShrink: 0 }} />
+                    <p style={{ fontSize: 10, marginTop: 2, fontWeight: 700, letterSpacing: ".04em", color: link.isActive ? "#10b981" : "#f43f5e" }}>
                       {link.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
                     </p>
                   </div>
