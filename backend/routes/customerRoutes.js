@@ -31,12 +31,22 @@ router.get("/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 router.get("/auth/google/callback",
-  passport.authenticate("google", { session: false, failureRedirect: `${process.env.FRONTEND_URL}/account?error=google` }),
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${process.env.FRONTEND_URL}/account?error=google`,
+  }),
   (req, res) => {
+    if (!req.user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/account?error=no_account`);
+    }
     const token = generateToken(req.user._id, "customer");
     const info  = encodeURIComponent(JSON.stringify({
-      _id: req.user._id, name: req.user.name,
-      email: req.user.email, avatar: req.user.avatar,
+      _id:     req.user._id,
+      name:    req.user.name,
+      email:   req.user.email,
+      avatar:  req.user.avatar,
+      phone:   req.user.phone,
+      address: req.user.address,
     }));
     res.redirect(`${process.env.FRONTEND_URL}/account?token=${token}&info=${info}`);
   }

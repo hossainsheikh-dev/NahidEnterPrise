@@ -12,25 +12,27 @@ passport.use(new GoogleStrategy({
   callbackURL:  `${process.env.BACKEND_URL}/api/customer/auth/google/callback`,
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    const email = profile.emails?.[0]?.value;
+
     let customer = await Customer.findOne({ googleId: profile.id });
+
     if (!customer) {
-      customer = await Customer.findOne({ email: profile.emails?.[0]?.value });
+      customer = await Customer.findOne({ email });
+
       if (customer) {
         customer.googleId = profile.id;
         customer.provider = "google";
         if (!customer.avatar) customer.avatar = profile.photos?.[0]?.value || "";
         await customer.save();
       } else {
-        customer = await Customer.create({
-          name:       profile.displayName,
-          email:      profile.emails?.[0]?.value || "",
-          googleId:   profile.id,
-          avatar:     profile.photos?.[0]?.value || "",
-          provider:   "google",
-          isVerified: true,
-        });
+        return done(null, false, { message: "no_account" });
       }
     }
+
+    if (customer.isBlocked) {
+      return done(null, false, { message: "blocked" });
+    }
+
     return done(null, customer);
   } catch (err) { return done(err, null); }
 }));

@@ -2126,6 +2126,15 @@ export default function AccountPage() {
   }, []);
 
   useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const error  = params.get("error");
+  if (error === "no_account") {
+    setMode("register");
+    window.history.replaceState({}, "", "/account");
+  }
+}, []);
+
+  useEffect(() => {
     const path = window.location.pathname;
     if (path === "/account/password") setShowProfile(true);
   }, []);
