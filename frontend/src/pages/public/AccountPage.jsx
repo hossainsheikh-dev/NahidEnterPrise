@@ -1635,48 +1635,210 @@ function MobilePasswordPanel({ t }) {
   const [loading,  setLoading ] = useState(false);
   const [msg,      setMsg     ] = useState({ type:"", text:"" });
 
+
+
+
+  // ─────────────────────────────────────────────────────────────────
+// AccountPage.js এ এই পুরো function টা খুঁজে বের করে replace করো
+// function name: MobileAddressPanel
+// ─────────────────────────────────────────────────────────────────
+
+function MobileAddressPanel({ customer, t }) {
+  const saved = customer?.address || {};
+  const [street,   setStreet  ] = useState(saved.street   || "");
+  const [district, setDistrict] = useState(saved.district || "");
+  const [upazila,  setUpazila ] = useState(saved.thana    || "");
+  const [phone,    setPhone   ] = useState(saved.phone    || "");
+  const [loading,  setLoading ] = useState(false);
+  const [msg,      setMsg     ] = useState({ type: "", text: "" });
+
+  const hasPhone   = !!customer?.phone;
+  const hasAddress = saved.street || saved.thana || saved.district;
+
+  const districts = Object.keys(BD_LOCATIONS).filter((d) => !d.includes("(alt)"));
+  const upazilas  = district ? (BD_LOCATIONS[district] || []) : [];
+
   const submit = async (e) => {
     e.preventDefault();
-    if (!curPass||!newPass||!confPass) { setMsg({type:"error",text:t("সব ঘর পূরণ করুন","Fill all fields")}); return; }
-    if (newPass.length<6)             { setMsg({type:"error",text:t("কমপক্ষে ৬ অক্ষর","Min. 6 characters")}); return; }
-    if (newPass!==confPass)           { setMsg({type:"error",text:t("পাসওয়ার্ড মেলেনি","Passwords don't match")}); return; }
+    if (!street)   { setMsg({ type: "error", text: t("পুরো ঠিকানা দিন", "Enter full address") }); return; }
+    if (!district) { setMsg({ type: "error", text: t("জেলা বেছে নিন", "Select district") }); return; }
+    if (!upazila)  { setMsg({ type: "error", text: t("উপজেলা বেছে নিন", "Select upazila") }); return; }
+
     try {
-      setLoading(true); setMsg({type:"",text:""});
+      setLoading(true);
+      setMsg({ type: "", text: "" });
+
       const token = localStorage.getItem("customerToken");
-      const res   = await fetch(`${API}/api/customer/change-password`,{
-        method:"PUT", headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},
-        body:JSON.stringify({currentPassword:curPass,newPassword:newPass}),
+      const body  = { street, thana: upazila, district };
+      if (!hasPhone && phone) body.phone = phone;
+
+      const res = await fetch(`${API}/api/customer/address`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify(body),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(t("সার্ভার সংযোগ সমস্যা", "Server connection error"));
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      setMsg({type:"success",text:t("পাসওয়ার্ড পরিবর্তন হয়েছে!","Password updated!")});
-      setCurPass(""); setNewPass(""); setConfPass("");
-    } catch(err) { setMsg({type:"error",text:err.message}); }
-    finally { setLoading(false); }
+
+      // ✅ পুরো customer object localStorage এ সেভ করো
+      const prevInfo = JSON.parse(localStorage.getItem("customerInfo") || "{}");
+      const updatedCustomer = data.customer
+        ? data.customer
+        : {
+            ...prevInfo,
+            address: data.address,
+            // phone backend থেকে না আসলে নিজে set করো
+            phone: body.phone || prevInfo.phone || "",
+          };
+
+      localStorage.setItem("customerInfo", JSON.stringify(updatedCustomer));
+
+      // ✅ এই event dispatch হলে AccountPage এর customer state আপডেট হবে
+      // ফলে UI তে phone তাৎক্ষণিক দেখাবে — refresh ছাড়াই
+      window.dispatchEvent(new Event("customerAuthChanged"));
+
+      setMsg({ type: "success", text: t("ঠিকানা সেভ হয়েছে!", "Address saved!") });
+    } catch (err) {
+      setMsg({ type: "error", text: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="space-y-4">
-      {msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <FieldWrap label={t("বর্তমান পাসওয়ার্ড","Current Password")}>
-          <InputField icon={Lock} type={showCur?"text":"password"} value={curPass} onChange={e=>setCurPass(e.target.value)} placeholder="••••••••"
-            autoComplete="current-password" rightEl={<EyeToggle show={showCur} onToggle={()=>setShowCur(s=>!s)}/>}/>
+      {/* ✅ বর্তমান ঠিকানা + phone দেখাও */}
+      {hasAddress && (
+        <div
+          className="p-4 rounded-2xl"
+          style={{ background: "#f0f7f0", border: "1px solid #a5d6a7" }}
+        >
+          <p
+            className="text-[10px] font-black uppercase tracking-widest mb-2"
+            style={{ color: "#2e7d32" }}
+          >
+            {t("বর্তমান ঠিকানা", "Current Address")}
+          </p>
+          <p className="text-[13px] font-semibold text-slate-700">
+            {[saved.street, saved.thana, saved.district].filter(Boolean).join(", ")}
+          </p>
+          {/* ✅ phone — customer.phone (top-level) দেখাও */}
+          {(customer?.phone || saved.phone) && (
+            <p className="text-[11.5px] text-slate-500 mt-1">
+              📞 {customer?.phone || saved.phone}
+            </p>
+          )}
+        </div>
+      )}
+
+      {msg.text && <InlineAlert type={msg.type} msg={msg.text} />}
+
+      <form onSubmit={submit} className="space-y-3" noValidate>
+        <FieldWrap label={t("পুরো ঠিকানা", "Full Address")}>
+          <InputField
+            icon={MapPin}
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            placeholder={t("বাড়ি/রাস্তা নম্বর, এলাকা", "House/Road, Area")}
+            autoComplete="off"
+          />
         </FieldWrap>
-        <FieldWrap label={t("নতুন পাসওয়ার্ড","New Password")}>
-          <InputField icon={Lock} type={showNew?"text":"password"} value={newPass} onChange={e=>setNewPass(e.target.value)} placeholder={t("কমপক্ষে ৬ অক্ষর","At least 6 characters")}
-            autoComplete="new-password" rightEl={<EyeToggle show={showNew} onToggle={()=>setShowNew(s=>!s)}/>}/>
-        </FieldWrap>
-        <FieldWrap label={t("পাসওয়ার্ড নিশ্চিত","Confirm Password")}>
-          <InputField icon={Lock} type="password" value={confPass} onChange={e=>setConfPass(e.target.value)} placeholder="••••••••" autoComplete="new-password"/>
-        </FieldWrap>
+
+        {/* District dropdown */}
+        <div>
+          <label className="block text-[11.5px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-1.5">
+            {t("জেলা", "District")}
+          </label>
+          <div className="relative">
+            <select
+              value={district}
+              onChange={(e) => { setDistrict(e.target.value); setUpazila(""); }}
+              className="w-full text-[13.5px] font-medium rounded-2xl outline-none appearance-none cursor-pointer"
+              style={{
+                padding:    "11px 36px 11px 14px",
+                color:      district ? "#1e293b" : "#94a3b8",
+                border:     "1.5px solid rgba(148,163,184,0.3)",
+                background: "rgba(248,250,252,0.8)",
+              }}
+            >
+              <option value="">{t("জেলা বেছে নিন", "Select district")}</option>
+              {districts.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+            <ChevronDown
+              size={14}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+            />
+          </div>
+        </div>
+
+        {/* Upazila dropdown */}
+        <div>
+          <label className="block text-[11.5px] font-bold text-slate-400 uppercase tracking-[0.08em] mb-1.5">
+            {t("উপজেলা / থানা", "Upazila")}
+          </label>
+          <div className="relative">
+            <select
+              value={upazila}
+              onChange={(e) => setUpazila(e.target.value)}
+              disabled={!district}
+              className="w-full text-[13.5px] font-medium rounded-2xl outline-none appearance-none cursor-pointer disabled:opacity-40"
+              style={{
+                padding:    "11px 36px 11px 14px",
+                color:      upazila ? "#1e293b" : "#94a3b8",
+                border:     "1.5px solid rgba(148,163,184,0.3)",
+                background: "rgba(248,250,252,0.8)",
+              }}
+            >
+              <option value="">
+                {district
+                  ? t("উপজেলা বেছে নিন", "Select upazila")
+                  : t("আগে জেলা বেছে নিন", "Select district first")}
+              </option>
+              {upazilas.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+            <ChevronDown
+              size={14}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+            />
+          </div>
+        </div>
+
+        {/* phone field — শুধু তখনই দেখাবে যখন account এ phone নেই */}
+        {!hasPhone && (
+          <FieldWrap label={t("ডেলিভারি ফোন", "Delivery Phone")}>
+            <InputField
+              icon={Phone}
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="01XXXXXXXXX"
+              autoComplete="off"
+            />
+          </FieldWrap>
+        )}
+
         <SubmitBtn loading={loading}>
-          {loading?<><Loader2 size={14} className="animate-spin"/>{t("আপডেট হচ্ছে…","Updating…")}</>:t("পাসওয়ার্ড আপডেট করুন","Update Password")}
+          {loading ? (
+            <><Loader2 size={14} className="animate-spin" />{t("সেভ হচ্ছে…", "Saving…")}</>
+          ) : (
+            t("ঠিকানা সেভ করুন", "Save Address")
+          )}
         </SubmitBtn>
       </form>
     </div>
   );
 }
+
 
 const MOBILE_FAQ_SECTIONS = [
   { tag:"০১", titleBn:"অর্ডার সংক্রান্ত", titleEn:"Order Questions",

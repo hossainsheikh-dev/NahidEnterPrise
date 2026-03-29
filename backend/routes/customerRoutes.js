@@ -68,4 +68,81 @@ router.get("/auth/facebook/callback",
   }
 );
 
+
+// phone update করার আগে duplicate check
+router.put("/update-phone", protect, async (req, res) => {
+  try {
+    const { phone } = req.body;
+    
+    if (!phone) return res.status(400).json({ message: "ফোন নম্বর দিন" });
+
+    // ✅ অন্য কেউ এই phone ব্যবহার করছে কিনা চেক করো
+    const existing = await Customer.findOne({
+      phone,
+      _id: { $ne: req.customer._id } // নিজেকে বাদ দাও
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "এই ফোন নম্বরটি ইতিমধ্যে অন্য অ্যাকাউন্টে ব্যবহৃত হচ্ছে"
+      });
+    }
+
+    const customer = await Customer.findByIdAndUpdate(
+      req.customer._id,
+      { phone },
+      { new: true }
+    ).select("-password");
+
+    res.json({ success: true, customer });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "এই ফোন নম্বরটি ইতিমধ্যে ব্যবহৃত হচ্ছে"
+      });
+    }
+    res.status(500).json({ message: "সার্ভার সমস্যা" });
+  }
+});
+
+
+router.put("/address", protect, async (req, res) => {
+  try {
+    const { street, thana, district, phone } = req.body;
+
+    // ✅ phone থাকলে duplicate check করো
+    if (phone) {
+      const existing = await Customer.findOne({
+        phone,
+        _id: { $ne: req.customer._id }
+      });
+      if (existing) {
+        return res.status(400).json({
+          message: "এই ফোন নম্বরটি অন্য অ্যাকাউন্টে ব্যবহৃত হচ্ছে"
+        });
+      }
+    }
+
+    const updateFields = { "address.street": street, "address.thana": thana, "address.district": district };
+    if (phone) {
+      updateFields.phone = phone; // ✅ top-level phone আপডেট করো
+      updateFields["address.phone"] = phone;
+    }
+
+    const customer = await Customer.findByIdAndUpdate(
+      req.customer._id,
+      { $set: updateFields },
+      { new: true }
+    ).select("-password");
+
+    res.json({ success: true, address: customer.address, customer });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "এই ফোন নম্বরটি ইতিমধ্যে ব্যবহৃত হচ্ছে" });
+    }
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 module.exports = router;

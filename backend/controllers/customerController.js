@@ -6,42 +6,36 @@ const emailTemplate = require("../utils/emailTemplate");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  auth: { 
-          user: process.env.GMAIL_USER, 
-          pass: process.env.GMAIL_PASS },
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
 });
 
 const otpStore = new Map();
 
+// ─── helper ──────────────────────────────────────────────
+const normalizePhone = (p) =>
+  p ? p.trim().replace(/^\+880/, "0").replace(/^880/, "0") : "";
 
-
-//verify email
 async function checkEmailExists(email) {
-  
   const domain = email.split("@")[1];
   if (!domain) return false;
 
   return new Promise((resolve) => {
-    const net  = require("net");
-    const dns  = require("dns");
+    const net = require("net");
+    const dns = require("dns");
 
     dns.resolveMx(domain, (err, addresses) => {
-      if (err || !addresses || addresses.length === 0) {
-        return resolve(false);
-      }
+      if (err || !addresses || addresses.length === 0) return resolve(false);
 
-      //sort by priority
       const mx = addresses.sort((a, b) => a.priority - b.priority)[0].exchange;
-
       const socket = net.createConnection(25, mx);
-      let buffer   = "";
-      let step     = 0;
-      let result   = false;
+      let buffer = "";
+      let step   = 0;
+      let result = false;
 
-      const timeout = setTimeout(() => {
-        socket.destroy();
-        resolve(true);
-      }, 6000);
+      const timeout = setTimeout(() => { socket.destroy(); resolve(true); }, 6000);
 
       socket.on("data", (data) => {
         buffer += data.toString();
@@ -50,7 +44,6 @@ async function checkEmailExists(email) {
 
         lines.forEach((line) => {
           const code = parseInt(line.substring(0, 3));
-
           if (step === 0 && code === 220) {
             socket.write(`HELO ${process.env.SMTP_HELO_DOMAIN || "nahidenterprise.com"}\r\n`);
             step = 1;
@@ -61,11 +54,7 @@ async function checkEmailExists(email) {
             socket.write(`RCPT TO:<${email}>\r\n`);
             step = 3;
           } else if (step === 3) {
-            if (code === 250 || code === 251) {
-              result = true; //email exists
-            } else {
-              result = false; // doesn't exist
-            }
+            result = code === 250 || code === 251;
             socket.write("QUIT\r\n");
             clearTimeout(timeout);
             socket.destroy();
@@ -74,48 +63,31 @@ async function checkEmailExists(email) {
         });
       });
 
-      socket.on("error", () => {
-        clearTimeout(timeout);
-        //connection error
-        resolve(true);
-      });
-
-      socket.on("close", () => {
-        clearTimeout(timeout);
-        resolve(result);
-      });
+      socket.on("error", () => { clearTimeout(timeout); resolve(true); });
+      socket.on("close", () => { clearTimeout(timeout); resolve(result); });
     });
   });
 }
 
-
-
-/* route: verify email existence
-   post  /api/customer/verify-email */
-
+// ─── verify email existence ───────────────────────────────
 exports.verifyEmailExists = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email required" });
 
-    //basic emailformat check first
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email))
       return res.status(400).json({ exists: false, message: "Invalid email format" });
-    }
 
     const exists = await checkEmailExists(email);
     res.json({ exists });
   } catch (err) {
     console.log("verifyEmailExists error:", err.message);
-    // On any error, allow registration to continue
     res.json({ exists: true });
   }
 };
 
-
-
-//register
+// ─── register ─────────────────────────────────────────────
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -127,27 +99,29 @@ exports.register = async (req, res) => {
     const exists = await Customer.findOne({ email });
     if (exists) return res.status(400).json({ message: "Email already registered" });
 
-    const normalizePhone = (p) => p ? p.trim().replace(/^\+880/, "0").replace(/^880/, "0") : "";
     const normalizedPhone = normalizePhone(phone);
 
-    //phone duplicate check
+    // ✅ phone duplicate check
     if (normalizedPhone) {
       const phoneExists = await Customer.findOne({ phone: normalizedPhone });
-      if (phoneExists) return res.status(400).json({ message: "এই ফোন নম্বর দিয়ে আগেই একটি অ্যাকাউন্ট আছে" });
+      if (phoneExists)
+        return res.status(400).json({ message: "এই ফোন নম্বর দিয়ে আগেই একটি অ্যাকাউন্ট আছে" });
     }
 
     const customer = await Customer.create({
-      name, email, password,
-      phone: normalizedPhone,
+      name,
+      email,
+      password,
+      phone: normalizedPhone || undefined,
       provider: "local",
     });
-    const token = generateToken(customer._id, "customer");
 
+    const token = generateToken(customer._id, "customer");
     res.status(201).json({
       _id:       customer._id,
       name:      customer.name,
       email:     customer.email,
-      phone:     customer.phone,
+      phone:     customer.phone || "",
       avatar:    customer.avatar,
       provider:  customer.provider,
       address:   customer.address,
@@ -156,13 +130,13 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.log("register error:", err.message);
+    if (err.code === 11000)
+      return res.status(400).json({ message: "এই ফোন নম্বর বা ইমেইল ইতিমধ্যে ব্যবহৃত হচ্ছে" });
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-
-
-//login
+// ─── login ────────────────────────────────────────────────
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -182,12 +156,11 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid email or password" });
 
     const token = generateToken(customer._id, "customer");
-
     res.json({
       _id:       customer._id,
       name:      customer.name,
       email:     customer.email,
-      phone:     customer.phone,
+      phone:     customer.phone || "",
       avatar:    customer.avatar,
       provider:  customer.provider,
       address:   customer.address,
@@ -200,9 +173,7 @@ exports.login = async (req, res) => {
   }
 };
 
-
-
-//get propfile
+// ─── get profile ──────────────────────────────────────────
 exports.getProfile = async (req, res) => {
   try {
     const customer = await Customer.findById(req.customer._id).select("-password");
@@ -213,9 +184,7 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-
-
-//update profile
+// ─── update profile ───────────────────────────────────────
 exports.updateProfile = async (req, res) => {
   try {
     const { name, phone, avatar } = req.body;
@@ -223,54 +192,111 @@ exports.updateProfile = async (req, res) => {
     if (!customer) return res.status(404).json({ message: "Customer not found" });
 
     if (name) customer.name = name;
-    if (phone !== undefined) customer.phone = phone.trim().replace(/^\+880/, "0").replace(/^880/, "0");
+
+    if (phone !== undefined) {
+      const normalizedPhone = normalizePhone(phone);
+
+      // ✅ phone unique check — নিজেকে বাদ দিয়ে
+      if (normalizedPhone) {
+        const existing = await Customer.findOne({
+          phone: normalizedPhone,
+          _id: { $ne: customer._id },
+        });
+        if (existing)
+          return res.status(400).json({
+            message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে",
+          });
+      }
+
+      customer.phone = normalizedPhone || undefined;
+    }
+
     if (avatar !== undefined) customer.avatar = avatar;
     await customer.save();
 
     const token = generateToken(customer._id, "customer");
     res.json({
-      _id: customer._id, name: customer.name, email: customer.email,
-      phone: customer.phone, avatar: customer.avatar, token,
+      _id:      customer._id,
+      name:     customer.name,
+      email:    customer.email,
+      phone:    customer.phone || "",
+      avatar:   customer.avatar,
+      address:  customer.address,
+      provider: customer.provider,
+      token,
     });
   } catch (err) {
+    if (err.code === 11000)
+      return res.status(400).json({ message: "এই ফোন নম্বরটি ইতিমধ্যে ব্যবহৃত হচ্ছে" });
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-
-
-//update adreess
+// ─── update address ───────────────────────────────────────
 exports.updateAddress = async (req, res) => {
   try {
     const { label, street, thana, district, phone, note } = req.body;
 
+    // ✅ phone unique check — নিজেকে বাদ দিয়ে
+    if (phone && phone.trim()) {
+      const normalizedPhone = normalizePhone(phone);
+      const existing = await Customer.findOne({
+        phone: normalizedPhone,
+        _id: { $ne: req.customer._id },
+      });
+      if (existing)
+        return res.status(400).json({
+          message: "এই ফোন নম্বরটি অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে",
+        });
+    }
+
+    const normalizedPhone = normalizePhone(phone);
+
+    // ✅ top-level phone ও আপডেট করো — UI তে দেখানোর জন্য
+    const setFields = {
+      "address.label":    label    ?? "",
+      "address.street":   street   ?? "",
+      "address.thana":    thana    ?? "",
+      "address.district": district ?? "",
+      "address.phone":    normalizedPhone,
+      "address.note":     note     ?? "",
+    };
+    if (normalizedPhone) {
+      setFields.phone = normalizedPhone;
+    }
+
     const updated = await Customer.findByIdAndUpdate(
       req.customer._id,
-      {
-        $set: {
-          "address.label":    label    ?? "",
-          "address.street":   street   ?? "",
-          "address.thana":    thana    ?? "",
-          "address.district": district ?? "",
-          "address.phone":    phone    ?? "",
-          "address.note":     note     ?? "",
-        },
-      },
+      { $set: setFields },
       { new: true, runValidators: false }
-    );
+    ).select("-password");
 
     if (!updated) return res.status(404).json({ message: "Customer not found" });
 
-    res.json({ message: "Address updated", address: updated.address });
+    // ✅ পুরো customer পাঠাও যাতে frontend localStorage আপডেট করতে পারে
+    res.json({
+      message: "Address updated",
+      address: updated.address,
+      customer: {
+        _id:       updated._id,
+        name:      updated.name,
+        email:     updated.email,
+        phone:     updated.phone || "",
+        avatar:    updated.avatar,
+        provider:  updated.provider,
+        address:   updated.address,
+        createdAt: updated.createdAt,
+      },
+    });
   } catch (err) {
     console.error("updateAddress error:", err.message);
+    if (err.code === 11000)
+      return res.status(400).json({ message: "এই ফোন নম্বরটি ইতিমধ্যে ব্যবহৃত হচ্ছে" });
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-
-
-//change password
+// ─── change password ──────────────────────────────────────
 exports.changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -283,7 +309,8 @@ exports.changePassword = async (req, res) => {
     if (!customer) return res.status(404).json({ message: "Not found" });
 
     const isMatch = await customer.matchPassword(currentPassword);
-    if (!isMatch) return res.status(400).json({ message: "Current password is incorrect" });
+    if (!isMatch)
+      return res.status(400).json({ message: "Current password is incorrect" });
 
     customer.password = newPassword;
     await customer.save();
@@ -293,14 +320,13 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-
-
-//forget password and send otp
+// ─── forgot password — send otp ───────────────────────────
 exports.sendForgotOtp = async (req, res) => {
   try {
     const { email } = req.body;
     const customer = await Customer.findOne({ email });
-    if (!customer) return res.status(404).json({ message: "No account found with this email" });
+    if (!customer)
+      return res.status(404).json({ message: "No account found with this email" });
     if (customer.provider !== "local")
       return res.status(400).json({ message: `This account uses ${customer.provider} login` });
 
@@ -321,9 +347,7 @@ exports.sendForgotOtp = async (req, res) => {
   }
 };
 
-
-
-//forget password and verify otp
+// ─── forgot password — verify otp ────────────────────────
 exports.verifyForgotOtp = async (req, res) => {
   const { email, otp } = req.body;
   const record = otpStore.get(`forgot_${email}`);
@@ -334,10 +358,7 @@ exports.verifyForgotOtp = async (req, res) => {
   res.json({ message: "OTP verified" });
 };
 
-
-
-
-//reset password
+// ─── reset password ───────────────────────────────────────
 exports.resetPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
@@ -359,9 +380,7 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
-
-//wishlist toggle
+// ─── wishlist toggle ──────────────────────────────────────
 exports.toggleWishlist = async (req, res) => {
   try {
     const customer = await Customer.findById(req.customer._id);
@@ -376,8 +395,7 @@ exports.toggleWishlist = async (req, res) => {
   }
 };
 
-
-//get whishlist
+// ─── get wishlist ─────────────────────────────────────────
 exports.getWishlist = async (req, res) => {
   try {
     const customer = await Customer.findById(req.customer._id).populate("wishlist");
