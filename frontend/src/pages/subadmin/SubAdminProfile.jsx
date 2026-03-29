@@ -31,7 +31,7 @@ const inputBase = (err) => ({
   border: `1.5px solid ${err ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
   borderRadius:13, padding:"11px 14px",
   fontSize:13.5, color:"#1e293b",
-  fontFamily:"'DM Sans',sans-serif",
+  fontFamily:"'Plus Jakarta Sans',sans-serif",
   transition:"all .18s ease",
 });
 
@@ -60,22 +60,17 @@ export default function SubAdminProfile() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState("");
 
-  /* name-only edit */
   const [editing,  setEditing]  = useState(false);
   const [saving,   setSaving]   = useState(false);
   const [nameForm, setNameForm] = useState({ name:"" });
   const [nameErr,  setNameErr]  = useState({});
 
-
-  /* email/phone change request */
   const [reqOpen,   setReqOpen]   = useState(false);
   const [reqForm,   setReqForm]   = useState({ newEmail:"", newPhone:"" });
   const [reqErr,    setReqErr]    = useState({});
   const [reqSaving, setReqSaving] = useState(false);
   const [reqDone,   setReqDone]   = useState(false);
 
-
-  /* password change */
   const [pwOpen,   setPwOpen]   = useState(false);
   const [pwForm,   setPwForm]   = useState({ current:"", newPw:"", confirm:"" });
   const [pwErr,    setPwErr]    = useState({});
@@ -83,8 +78,6 @@ export default function SubAdminProfile() {
   const [pwDone,   setPwDone]   = useState(false);
   const [showPw,   setShowPw]   = useState({ current:false, newPw:false, confirm:false });
 
-
-  /* fetch */
   useEffect(() => {
     (async () => {
       try {
@@ -107,9 +100,6 @@ export default function SubAdminProfile() {
   const fmt = (iso) =>
     iso ? new Date(iso).toLocaleDateString("en-BD",{ day:"numeric", month:"long", year:"numeric" }) : "—";
 
-
-
-  /* ── Save name ── */
   const handleSaveName = async () => {
     if (!nameForm.name.trim()) { setNameErr({ name: t("নাম আবশ্যক","Name is required") }); return; }
     setNameErr({}); setSaving(true);
@@ -130,10 +120,6 @@ export default function SubAdminProfile() {
     finally { setSaving(false); }
   };
 
-
-
-
-  /* ── Send email/phone change request ── */
   const handleSendRequest = async () => {
     const errs = {};
     if (!reqForm.newEmail.trim()) errs.newEmail = t("ইমেইল আবশ্যক","Email is required");
@@ -153,9 +139,6 @@ export default function SubAdminProfile() {
     finally { setReqSaving(false); }
   };
 
-
-
-  /* ── Change password ── */
   const handleChangePassword = async () => {
     const errs = {};
     if (!pwForm.current.trim())  errs.current = t("বর্তমান পাসওয়ার্ড দিন","Enter current password");
@@ -180,9 +163,6 @@ export default function SubAdminProfile() {
 
   const toggleShow = (field) => setShowPw(p => ({ ...p, [field]: !p[field] }));
 
-
-  
-  /* ── Loading / Error ── */
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-3">
       <Loader2 size={26} className="animate-spin" style={{ color:"#c4cdd8" }} />
@@ -202,9 +182,8 @@ export default function SubAdminProfile() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .pf-wrap, .pf-wrap * { box-sizing:border-box; font-family:'DM Sans',sans-serif; }
-        .pf-syne { font-family:'Syne',sans-serif !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        .pf-wrap, .pf-wrap * { box-sizing:border-box; font-family:'Plus Jakarta Sans',sans-serif; }
         .pf-pw-toggle { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#94a3b8; display:flex; align-items:center; }
         .pf-pw-toggle:hover { color:#6366f1; }
       `}</style>
@@ -213,7 +192,7 @@ export default function SubAdminProfile() {
 
         {/* ── Title ── */}
         <div className="text-center mb-8">
-          <h1 className="pf-syne font-black tracking-[-0.03em] text-[20px] sm:text-[24px] md:text-[28px]" style={{ color:"#1e293b" }}>
+          <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.03em" }}>
             {t("আমার প্রোফাইল","My Profile")}
           </h1>
           <p className="text-[12.5px] sm:text-sm mt-1" style={{ color:"#94a3b8" }}>
@@ -229,10 +208,10 @@ export default function SubAdminProfile() {
               style={{ ...cardStyle, padding:"32px 24px", textAlign:"center", position:"relative", overflow:"hidden" }}>
               <div style={{ position:"absolute", top:-40, right:-40, width:180, height:180, borderRadius:"50%", background:"radial-gradient(circle,rgba(99,102,241,0.08) 0%,transparent 70%)", pointerEvents:"none" }} />
               <motion.div whileHover={{ scale:1.06 }} transition={{ type:"spring", stiffness:360, damping:20 }}
-                style={{ width:80, height:80, borderRadius:22, background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 8px 28px rgba(99,102,241,0.38),inset 0 1px 0 rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px", fontFamily:"'Syne',sans-serif", fontSize:26, fontWeight:800, color:"#fff" }}>
+                style={{ width:80, height:80, borderRadius:22, background:"linear-gradient(135deg,#818cf8,#6366f1)", boxShadow:"0 8px 28px rgba(99,102,241,0.38),inset 0 1px 0 rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:26, fontWeight:800, color:"#fff" }}>
                 {getInitials(profile.name)}
               </motion.div>
-              <p className="pf-syne font-black text-[20px] tracking-[-0.03em]" style={{ color:"#1e293b", marginBottom:8 }}>{profile.name}</p>
+              <p style={{ fontSize:20, fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.03em", marginBottom:8 }}>{profile.name}</p>
               <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"5px 14px", borderRadius:99, fontSize:11.5, fontWeight:700, letterSpacing:".04em", textTransform:"uppercase", background:statusCfg.bg, color:statusCfg.color, border:`1px solid ${statusCfg.border}` }}>
                 <StatusIcon size={11} strokeWidth={2.5} />
                 {t(profile.status==="approved"?"অনুমোদিত":profile.status==="pending"?"অপেক্ষায়":"প্রত্যাখ্যাত", statusCfg.label)}
@@ -242,7 +221,7 @@ export default function SubAdminProfile() {
             {/* ── Account details card ── */}
             <motion.div variants={stagger.item} style={cardStyle}>
               <div style={cardHeader}>
-                <p className="pf-syne font-black text-[13.5px] tracking-[-0.02em]" style={{ color:"#1e293b" }}>
+                <p style={{ fontSize:14, fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.02em" }}>
                   {t("অ্যাকাউন্টের তথ্য","Account Details")}
                 </p>
                 {!editing ? (
@@ -292,7 +271,7 @@ export default function SubAdminProfile() {
                   </div>
                 </div>
 
-                {/* Email — view only, change via request */}
+                {/* Email */}
                 <div style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 20px", borderBottom:"1px solid rgba(99,102,241,0.06)" }}>
                   {rowIcon("rgba(14,165,233,0.09)","rgba(14,165,233,0.18)","#0284c7",Mail)}
                   <div style={{ flex:1, minWidth:0 }}>
@@ -302,7 +281,7 @@ export default function SubAdminProfile() {
                   </div>
                 </div>
 
-                {/* Phone — view only, change via request */}
+                {/* Phone */}
                 <div style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 20px", borderBottom:"1px solid rgba(99,102,241,0.06)" }}>
                   {rowIcon("rgba(16,185,129,0.09)","rgba(16,185,129,0.18)","#059669",Phone)}
                   <div style={{ flex:1, minWidth:0 }}>
@@ -329,7 +308,7 @@ export default function SubAdminProfile() {
             <motion.div variants={stagger.item} style={cardStyle}>
               <div style={cardHeader}>
                 <div>
-                  <p className="pf-syne font-black text-[13.5px] tracking-[-0.02em]" style={{ color:"#1e293b" }}>
+                  <p style={{ fontSize:14, fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.02em" }}>
                     {t("ইমেইল / ফোন পরিবর্তন","Change Email / Phone")}
                   </p>
                   <p style={{ fontSize:11.5, color:"#94a3b8", marginTop:2 }}>
@@ -349,7 +328,6 @@ export default function SubAdminProfile() {
                     style={{ overflow:"hidden" }}>
                     <div style={{ padding:"16px 20px", display:"flex", flexDirection:"column", gap:14 }}>
 
-                      {/* success */}
                       <AnimatePresence>
                         {reqDone && (
                           <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
@@ -360,7 +338,6 @@ export default function SubAdminProfile() {
                         )}
                       </AnimatePresence>
 
-                      {/* notice */}
                       <div style={{ display:"flex", alignItems:"flex-start", gap:9, padding:"11px 14px", borderRadius:12, background:"rgba(245,158,11,0.07)", border:"1px solid rgba(245,158,11,0.2)" }}>
                         <AlertCircle size={14} style={{ color:"#d97706", flexShrink:0, marginTop:1 }} />
                         <p style={{ fontSize:12.5, color:"#92400e", lineHeight:1.55 }}>
@@ -368,7 +345,6 @@ export default function SubAdminProfile() {
                         </p>
                       </div>
 
-                      {/* new email */}
                       <div>
                         <label style={{ fontSize:11.5, fontWeight:700, color:"#64748b", letterSpacing:".06em", textTransform:"uppercase", display:"block", marginBottom:7 }}>
                           {t("নতুন ইমেইল","New Email")} <span style={{ color:"#f43f5e" }}>*</span>
@@ -381,7 +357,6 @@ export default function SubAdminProfile() {
                         {reqErr.newEmail && <p style={{ fontSize:12, color:"#f43f5e", marginTop:5, fontWeight:500 }}>{reqErr.newEmail}</p>}
                       </div>
 
-                      {/* new phone */}
                       <div>
                         <label style={{ fontSize:11.5, fontWeight:700, color:"#64748b", letterSpacing:".06em", textTransform:"uppercase", display:"block", marginBottom:7 }}>
                           {t("নতুন ফোন নম্বর","New Phone Number")}
@@ -410,7 +385,7 @@ export default function SubAdminProfile() {
             <motion.div variants={stagger.item} style={cardStyle}>
               <div style={cardHeader}>
                 <div>
-                  <p className="pf-syne font-black text-[13.5px] tracking-[-0.02em]" style={{ color:"#1e293b" }}>
+                  <p style={{ fontSize:14, fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.02em" }}>
                     {t("পাসওয়ার্ড পরিবর্তন","Change Password")}
                   </p>
                   <p style={{ fontSize:11.5, color:"#94a3b8", marginTop:2 }}>
@@ -440,7 +415,6 @@ export default function SubAdminProfile() {
                         )}
                       </AnimatePresence>
 
-                      {/* current password */}
                       {[
                         { key:"current",  label:t("বর্তমান পাসওয়ার্ড","Current Password"),  placeholder:"••••••••" },
                         { key:"newPw",    label:t("নতুন পাসওয়ার্ড","New Password"),          placeholder:t("কমপক্ষে ৬ অক্ষর","At least 6 characters") },
@@ -484,7 +458,7 @@ export default function SubAdminProfile() {
             {/* ── Dates card ── */}
             <motion.div variants={stagger.item} style={cardStyle}>
               <div style={{ ...cardHeader, justifyContent:"flex-start" }}>
-                <p className="pf-syne font-black text-[13.5px] tracking-[-0.02em]" style={{ color:"#1e293b" }}>
+                <p style={{ fontSize:14, fontWeight:900, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-0.02em" }}>
                   {t("তারিখ","Dates")}
                 </p>
               </div>
