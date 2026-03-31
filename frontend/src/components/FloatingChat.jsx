@@ -57,7 +57,7 @@ export default function FloatingChat({ me, other }) {
   const [newMsgBelow, setNewMsgBelow]       = useState(0);
   const [copiedId, setCopiedId]             = useState(null);
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
-  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text }
+  const [msgMenu, setMsgMenu]               = useState(null);
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [fabPos, setFabPos]       = useState({ bottom: 24, right: 24 });
@@ -80,7 +80,7 @@ export default function FloatingChat({ me, other }) {
   const {
     isOnline, getMessages, isTyping, getUnread,
     loadHistory, sendMessage, sendTyping, markSeen, deleteMessage,
-    deleteForMe, // ← NEW: delete for me only (local)
+    deleteForMe,
   } = useChatSocket({
     myId: me.id, myName: me.name, myRole: "subadmin", tokenKey: "subAdminToken",
   });
@@ -160,9 +160,7 @@ export default function FloatingChat({ me, other }) {
     ]);
   }, [other, subAdmins]);
 
-  // ── CHANGE 1: badge shows total unread count (not just user count) ──────────
-  const unreadUsersCount  = peerIds.filter(id => getUnread(id) > 0).length;
-  const totalUnreadCount  = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
+  const totalUnreadCount = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
 
   const rawContacts = [
     ...(other ? [{ ...other, _id: other.id, isAdmin: true }] : []),
@@ -202,9 +200,12 @@ export default function FloatingChat({ me, other }) {
             const lastMsg = allMsgs[allMsgs.length - 1];
             if (lastMsg && lastMsg.senderId?.toString() !== me.id?.toString()) {
               const person = rawContacts.find(c => (c.id || c._id)?.toString() === pidStr);
-              clearTimeout(notifTimerRef.current);
-              setNotifToast({ id: pidStr, name: person?.name || "Someone", text: lastMsg.text });
-              notifTimerRef.current = setTimeout(() => setNotifToast(null), 4500);
+              // FIX: popup শুধু messenger বন্ধ থাকলে দেখাবে
+              if (!open) {
+                clearTimeout(notifTimerRef.current);
+                setNotifToast({ id: pidStr, name: person?.name || "Someone", text: lastMsg.text });
+                notifTimerRef.current = setTimeout(() => setNotifToast(null), 4500);
+              }
             }
           }
         }
@@ -340,12 +341,12 @@ export default function FloatingChat({ me, other }) {
     });
   }, []);
 
-  // ── Message long-press / right-click menu ──────────────────────────────────
+  // FIX: deleted মেসেজেও menu খুলবে (unsent মেসেজ delete for me করা যাবে)
   const handleMsgPress = useCallback((e, msg, isMine) => {
     e.preventDefault();
     const msgId = msg._id || msg._tempId;
-    if (!msgId || msg.deleted) return;
-    setMsgMenu({ msgId, isMine, text: msg.text });
+    if (!msgId) return;
+    setMsgMenu({ msgId, isMine, text: msg.text, isDeleted: !!msg.deleted });
   }, []);
 
   const handleDeleteMsg = useCallback(() => {
@@ -354,7 +355,6 @@ export default function FloatingChat({ me, other }) {
     setMsgMenu(null);
   }, [msgMenu, deleteMessage, activeOther]);
 
-  // ── CHANGE 2: Delete for me handler ────────────────────────────────────────
   const handleDeleteForMe = useCallback(() => {
     if (!msgMenu) return;
     deleteForMe(msgMenu.msgId);
@@ -399,7 +399,6 @@ export default function FloatingChat({ me, other }) {
     boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
-  // ── CHANGE 3: Badge uses totalUnreadCount (e.g. 5 msgs from 3 people → "5") ─
   const Badge = ({ count }) => count > 0 ? (
     <motion.span
       initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -629,14 +628,16 @@ export default function FloatingChat({ me, other }) {
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                {/* FIX: unread থাকলে name bold */}
                                 <span style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: "#1e293b" }}>{person.name}</span>
                                 {lastMsg && (
-                                  <span style={{ fontSize: 10, color: unread > 0 ? "#6366f1" : "#94a3b8", fontWeight: unread > 0 ? 600 : 400 }}>
+                                  <span style={{ fontSize: 10, color: unread > 0 ? "#6366f1" : "#94a3b8", fontWeight: unread > 0 ? 700 : 400 }}>
                                     {fmtTime(lastMsg.createdAt)}
                                   </span>
                                 )}
                               </div>
-                              <p style={{ fontSize: 11.5, color: unread > 0 ? "#475569" : "#94a3b8", fontWeight: unread > 0 ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {/* FIX: unread থাকলে preview text bold */}
+                              <p style={{ fontSize: 11.5, color: unread > 0 ? "#1e293b" : "#94a3b8", fontWeight: unread > 0 ? 700 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {lastMsg
                                   ? lastMsg.deleted
                                     ? "Message was unsent"
@@ -724,7 +725,7 @@ export default function FloatingChat({ me, other }) {
                               className="fc-sa-msg-bubble"
                               onContextMenu={(e) => handleMsgPress(e, msg, isMine)}
                               onDoubleClick={() => !msg.deleted && copyMessage(msg.text, msgId)}
-                              title={msg.deleted ? "" : "Double-click to copy • Right-click for options"}
+                              title={msg.deleted ? "Right-click for options" : "Double-click to copy • Right-click for options"}
                               style={{
                                 position: "relative", maxWidth: "78%", padding: "8px 12px",
                                 borderRadius: msgRadius(isMine, isFirst, isLast),
@@ -737,14 +738,12 @@ export default function FloatingChat({ me, other }) {
                                 wordBreak: "break-word", cursor: "default", userSelect: "text",
                               }}>
 
-                              {/* Message text or deleted state */}
                               {msg.deleted ? (
                                 <span style={{ fontStyle: "italic", opacity: 0.55 }}>
                                   {isMine ? "You unsent a message" : "Message was unsent"}
                                 </span>
                               ) : msg.text}
 
-                              {/* Copy feedback */}
                               <AnimatePresence>
                                 {copiedId === msgId && (
                                   <motion.div
@@ -760,7 +759,7 @@ export default function FloatingChat({ me, other }) {
 
                             {isLast && (
                               <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3, marginLeft: 4, marginRight: 4 }}>
-                                <span style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(msg.createdAt)}</span>
+                                 <span style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(msg.createdAt)}</span>
                                 {isMine && !msg.deleted && (msg.seen
                                   ? <CheckCheck size={11} style={{ color: "#6366f1" }} />
                                   : <Check size={11} style={{ color: "#c4cdd8" }} />)}
@@ -819,24 +818,27 @@ export default function FloatingChat({ me, other }) {
                               border: "1px solid rgba(99,102,241,0.12)",
                               overflow: "hidden", zIndex: 30, minWidth: 180,
                             }}>
-                            {msgMenu.isMine && (
+                            {/* FIX: unsent মেসেজে "Unsend for everyone" লুকানো, শুধু mine & not deleted হলে দেখাবে */}
+                            {msgMenu.isMine && !msgMenu.isDeleted && (
                               <button
                                 onClick={handleDeleteMsg}
                                 style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
                                 🗑 Unsend for everyone
                               </button>
                             )}
-                            {/* ── CHANGE 3: Delete for me button ── */}
                             <button
                               onClick={handleDeleteForMe}
                               style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#6366f1", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
                               🙈 Delete for me
                             </button>
-                            <button
-                              onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
-                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
-                              📋 Copy
-                            </button>
+                            {/* FIX: deleted মেসেজে Copy অপশন লুকানো */}
+                            {!msgMenu.isDeleted && (
+                              <button
+                                onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
+                                style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
+                                📋 Copy
+                              </button>
+                            )}
                             <button
                               onClick={() => setMsgMenu(null)}
                               style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderTop: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#94a3b8", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
@@ -877,7 +879,7 @@ export default function FloatingChat({ me, other }) {
           )}
         </AnimatePresence>
 
-        {/* ── FAB ── badge now shows totalUnreadCount ────────────────────────── */}
+        {/* ── FAB ─────────────────────────────────────────────────────────────── */}
         {isDesktop ? (
           <motion.button
             whileHover={{ scale: 1.08 }}
