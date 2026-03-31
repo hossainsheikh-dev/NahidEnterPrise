@@ -85,25 +85,36 @@ export default function SubAdminOrderBell() {
         }
         .ob-bell { animation: ob-bell 0.7s ease-in-out; }
 
-        /* desktop: right-aligned under button */
+        /* ডেস্কটপ/ল্যাপটপ: ডান কর্নারে, ছোট */
         .ob-dropdown {
           position: absolute;
           right: 0;
-          top: 3rem;
-          width: 20rem;
+          top: 2.75rem;
+          width: 17rem;
           z-index: 9999;
         }
 
-        /* mobile: fixed, perfectly centered horizontally */
+        /* ট্যাবলেট: ১/৩ স্ক্রিন প্রস্থ */
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .ob-dropdown {
+            position: absolute;
+            right: 0;
+            top: 2.75rem;
+            width: 33vw;
+            min-width: 240px;
+            max-width: 300px;
+          }
+        }
+
+        /* মোবাইল: ৩/৪ স্ক্রিন প্রস্থ, ডান কর্নারে fixed */
         @media (max-width: 640px) {
           .ob-dropdown {
             position: fixed;
-            top: 4.5rem;
-            left: 50%;
-            right: auto;
-            transform: translateX(-50%);
-            width: calc(100vw - 32px);
-            max-width: 22rem;
+            top: 4.25rem;
+            right: 12px;
+            left: auto;
+            width: 75vw;
+            max-width: 320px;
           }
         }
       `}</style>
@@ -165,7 +176,7 @@ export default function SubAdminOrderBell() {
                 style={{ background:"linear-gradient(90deg,transparent,#6366f1,#8b5cf6,transparent)" }}/>
 
               {/* header */}
-              <div className="flex items-center justify-between px-4 py-3.5"
+              <div className="flex items-center justify-between px-3 py-2.5"
                 style={{ borderBottom:"1px solid rgba(99,102,241,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center"
@@ -193,10 +204,10 @@ export default function SubAdminOrderBell() {
 
               {/* body */}
               {total === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                <div className="px-4 py-6 text-center">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2.5"
                     style={{ background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.18)" }}>
-                    <CheckCircle size={20} style={{ color:"#10b981" }}/>
+                    <CheckCircle size={18} style={{ color:"#10b981" }}/>
                   </div>
                   <p className="text-sm font-semibold" style={{ color:"#1e293b" }}>
                     {t("সব ঠিক আছে","All caught up")}
@@ -212,11 +223,11 @@ export default function SubAdminOrderBell() {
                       <motion.div
                         initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
                         exit={{ opacity:0, x:-8 }} transition={{ delay:0.04 }}
-                        className="flex items-start gap-3 px-4 py-4"
+                        className="flex items-start gap-3 px-3 py-3"
                         style={{ borderBottom: count > 0 ? "1px solid rgba(99,102,241,0.06)" : "none", background:"rgba(16,185,129,0.03)" }}>
-                        <div className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.22)" }}>
-                          <ShieldCheck size={18} style={{ color:"#10b981" }}/>
+                          <ShieldCheck size={16} style={{ color:"#10b981" }}/>
                           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white"
                             style={{ background:"#10b981" }}>
                             <motion.span className="absolute inset-0 rounded-full"
@@ -226,10 +237,10 @@ export default function SubAdminOrderBell() {
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold" style={{ color:"#1e293b" }}>
+                          <p className="text-xs font-bold leading-snug" style={{ color:"#1e293b" }}>
                             🎉 {t("অ্যাকাউন্ট অনুমোদিত!","Account Approved!")}
                           </p>
-                          <p className="text-xs mt-0.5" style={{ color:"#94a3b8" }}>
+                          <p className="text-[11px] mt-0.5" style={{ color:"#94a3b8" }}>
                             {t("অ্যাডমিন আপনার অ্যাকাউন্ট পরিবর্তন ও অনুমোদন করেছেন। স্বাগতম!","Admin has approved your account. Welcome!")}
                           </p>
                         </div>
@@ -249,13 +260,13 @@ export default function SubAdminOrderBell() {
                       initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
                       transition={{ delay:0.05 }}
                       onClick={() => { navigate("/subadmin/orders"); setOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-4 text-left transition-all group"
+                      className="w-full flex items-center gap-3 px-3 py-3 text-left transition-all group"
                       style={{ background:"transparent" }}
                       onMouseEnter={e => e.currentTarget.style.background="rgba(99,102,241,0.04)"}
                       onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                      <div className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background:"rgba(99,102,241,0.10)", border:"1px solid rgba(99,102,241,0.20)" }}>
-                        <ShoppingCart size={18} style={{ color:"#6366f1" }}/>
+                        <ShoppingCart size={16} style={{ color:"#6366f1" }}/>
                         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white"
                           style={{ background:"#6366f1" }}>
                           <motion.span className="absolute inset-0 rounded-full"
@@ -265,15 +276,15 @@ export default function SubAdminOrderBell() {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold" style={{ color:"#1e293b" }}>
+                        <p className="text-xs font-bold leading-snug" style={{ color:"#1e293b" }}>
                           <span style={{ color:"#6366f1" }}>{count}</span>
                           {" "}{t("টি নতুন অর্ডার অপেক্ষমাণ","new orders pending")}
                         </p>
-                        <p className="text-xs mt-0.5" style={{ color:"#94a3b8" }}>
+                        <p className="text-[11px] mt-0.5" style={{ color:"#94a3b8" }}>
                           {t("অর্ডার পরিচালনা করতে ক্লিক করুন","Click to manage orders")}
                         </p>
                       </div>
-                      <ChevronRight size={14} style={{ color:"#c4cdd8" }}
+                      <ChevronRight size={13} style={{ color:"#c4cdd8" }}
                         className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform"/>
                     </motion.button>
                   )}
@@ -281,7 +292,7 @@ export default function SubAdminOrderBell() {
               )}
 
               {/* footer */}
-              <div className="px-4 py-2.5 flex items-center justify-between"
+              <div className="px-3 py-2 flex items-center justify-between"
                 style={{ borderTop:"1px solid rgba(99,102,241,0.07)" }}>
                 <span className="text-[10px] font-medium" style={{ color:"#c4cdd8" }}>
                   {t("প্রতি ৩০ সেকেন্ডে আপডেট","Updates every 30s")}

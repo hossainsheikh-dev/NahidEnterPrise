@@ -107,25 +107,36 @@ export default function SubAdminBell() {
         }
         .bell-ring { animation: bell-ring 0.7s ease-in-out; }
 
-        /* desktop: right-aligned under button */
+        /* ডেস্কটপ/ল্যাপটপ: ডান কর্নারে, ছোট */
         .bell-dropdown {
           position: absolute;
           right: 0;
-          top: 3rem;
-          width: 20rem;
+          top: 2.75rem;
+          width: 17rem;
           z-index: 9999;
         }
 
-        /* mobile: fixed, perfectly centered horizontally */
+        /* ট্যাবলেট: ১/৩ স্ক্রিন প্রস্থ */
+        @media (min-width: 641px) and (max-width: 1024px) {
+          .bell-dropdown {
+            position: absolute;
+            right: 0;
+            top: 2.75rem;
+            width: 33vw;
+            min-width: 240px;
+            max-width: 300px;
+          }
+        }
+
+        /* মোবাইল: ৩/৪ স্ক্রিন প্রস্থ, ডান কর্নারে fixed */
         @media (max-width: 640px) {
           .bell-dropdown {
             position: fixed;
-            top: 4.5rem;
-            left: 50%;
-            right: auto;
-            transform: translateX(-50%);
-            width: calc(100vw - 32px);
-            max-width: 22rem;
+            top: 4.25rem;
+            right: 12px;
+            left: auto;
+            width: 75vw;
+            max-width: 320px;
           }
         }
       `}</style>
@@ -175,7 +186,7 @@ export default function SubAdminBell() {
               <div className="h-px w-full" style={{ background:"linear-gradient(90deg,transparent,rgba(196,181,253,0.7),transparent)" }}/>
 
               {/* header */}
-              <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center justify-between px-3 py-2.5" style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background:"rgba(196,181,253,0.15)" }}>
                     <Bell size={12} style={{ color:"#c4b5fd" }}/>
@@ -200,10 +211,10 @@ export default function SubAdminBell() {
 
               {/* body */}
               {total === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                <div className="px-4 py-6 text-center">
+                  <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2.5"
                     style={{ background:"rgba(52,211,153,0.12)", border:"1px solid rgba(52,211,153,0.25)" }}>
-                    <CheckCircle size={20} style={{ color:"#6ee7b7" }}/>
+                    <CheckCircle size={18} style={{ color:"#6ee7b7" }}/>
                   </div>
                   <p className="text-sm font-semibold" style={{ color:"#cbd5e1" }}>{t("সব ঠিক আছে","All caught up")}</p>
                   <p className="text-xs mt-1" style={{ color:"#64748b" }}>{t("কোনো নতুন নটিফিকেশন নেই","No new notifications")}</p>
@@ -217,13 +228,13 @@ export default function SubAdminBell() {
                         initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
                         transition={{ delay: idx * 0.06 }}
                         onClick={() => { navigate(item.route); setOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-4 text-left transition-all group"
+                        className="w-full flex items-center gap-3 px-3 py-3 text-left transition-all group"
                         style={{ background:"transparent", borderBottom: idx < items.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
                         onMouseEnter={e => e.currentTarget.style.background="rgba(196,181,253,0.07)"}
                         onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                        <div className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ background:item.bg, border:`1px solid ${item.border}` }}>
-                          <Icon size={18} style={{ color:item.color }}/>
+                          <Icon size={16} style={{ color:item.color }}/>
                           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
                             style={{ background:item.dot, borderColor:item.dotBorder }}>
                             <motion.span className="absolute inset-0 rounded-full"
@@ -233,10 +244,10 @@ export default function SubAdminBell() {
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold" style={{ color:"#f1f5f9" }}>{item.label}</p>
-                          <p className="text-xs mt-0.5" style={{ color:"#94a3b8" }}>{item.sub}</p>
+                          <p className="text-xs font-bold leading-snug" style={{ color:"#f1f5f9" }}>{item.label}</p>
+                          <p className="text-[11px] mt-0.5" style={{ color:"#94a3b8" }}>{item.sub}</p>
                         </div>
-                        <ChevronRight size={14} style={{ color:"#64748b" }}
+                        <ChevronRight size={13} style={{ color:"#64748b" }}
                           className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform"/>
                       </motion.button>
                     );
@@ -245,7 +256,7 @@ export default function SubAdminBell() {
               )}
 
               {/* footer */}
-              <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+              <div className="px-3 py-2 flex items-center justify-between" style={{ borderTop:"1px solid rgba(255,255,255,0.07)" }}>
                 <span className="text-[10px] font-medium" style={{ color:"#64748b" }}>
                   {t("প্রতি ৩০ সেকেন্ডে আপডেট","Updates every 30s")}
                 </span>
