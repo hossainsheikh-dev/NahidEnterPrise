@@ -293,10 +293,21 @@ export default function AdminSubAdminLogs() {
         .sal-drop-item.active { background:rgba(167,139,250,0.08); color:#a78bfa; font-weight:600; }
         .sal-btn { display:inline-flex; align-items:center; gap:5px; padding:9px 15px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; border:1px solid transparent; font-family:'DM Sans',sans-serif; }
         .sal-btn:hover { transform:translateY(-1px); }
+
+        /* ── Desktop table columns ── */
         .sal-col { display:grid; align-items:center; padding:11px 20px; grid-template-columns:28px 1fr 120px 100px 56px; gap:8px; background:#0f1929; border-bottom:1px solid rgba(255,255,255,0.07); position:sticky; top:0; z-index:10; }
         .sal-row { display:grid; align-items:center; padding:14px 20px; grid-template-columns:28px 1fr 120px 100px 56px; gap:8px; border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s; }
         .sal-row:last-child { border-bottom:none; }
         .sal-row:hover { background:rgba(255,255,255,0.025); }
+
+        /* ── Mobile table columns ── */
+        @media (max-width: 640px) {
+          .sal-col { grid-template-columns:22px 1fr 80px 36px; padding:9px 12px; gap:6px; }
+          .sal-col .col-bywhen { display:none; }
+          .sal-row { grid-template-columns:22px 1fr 80px 36px; padding:11px 12px; gap:6px; }
+          .sal-row .cell-bywhen { display:none; }
+        }
+
         .sal-icon-btn { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.15s; border:none; }
         .sal-icon-btn:hover { transform:translateY(-1px); }
         .sal-page-btn { display:flex; align-items:center; justify-content:center; padding:7px 14px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#64748b; font-family:'DM Sans',sans-serif; }
@@ -347,9 +358,10 @@ export default function AdminSubAdminLogs() {
               </button>
             </div>
 
-            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+            {/* ── Stats: মোবাইলে ২ কলাম গ্রিড, বাকিতে flex ── */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
               {stats.map(({ labelBn, labelEn, count, color }) => (
-                <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-3 sm:p-4"
+                <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3 sm:p-4"
                   style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
                   <div className="text-xl font-bold" style={{ color, lineHeight:1 }}>{count}</div>
                   <div className="text-[10px] font-medium mt-1" style={{ color:"#475569" }}>{t(labelBn, labelEn)}</div>
@@ -396,10 +408,14 @@ export default function AdminSubAdminLogs() {
 
         {/* ══ TABLE ══ */}
         <div className="rounded-2xl overflow-hidden" style={{ background:"#0d1426", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 8px 32px rgba(0,0,0,0.3)" }}>
+
+          {/* Header row */}
           <div className="sal-col">
-            {["#", t("সাবএডমিন","SubAdmin"), t("কার্যক্রম","Action"), t("কে / কখন","By / When"), ""].map((h,i) => (
-              <div key={i} className="text-[10px] font-semibold uppercase tracking-wider" style={{ color:"#2d3f55" }}>{h}</div>
-            ))}
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color:"#2d3f55" }}>#</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color:"#2d3f55" }}>{t("সাবএডমিন","SubAdmin")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color:"#2d3f55" }}>{t("কার্যক্রম","Action")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider col-bywhen" style={{ color:"#2d3f55" }}>{t("কে / কখন","By / When")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color:"#2d3f55" }}></div>
           </div>
 
           <div className="overflow-y-auto" style={{ maxHeight:"60vh" }}>
@@ -435,7 +451,8 @@ export default function AdminSubAdminLogs() {
                       <span className="hidden sm:inline">{t(ac.labelBn, ac.labelEn)}</span>
                     </span>
                   </div>
-                  <div className="min-w-0">
+                  {/* "কে / কখন" — hidden on mobile via CSS */}
+                  <div className="min-w-0 cell-bywhen">
                     <p className="truncate text-xs font-medium" style={{ color:"#94a3b8" }}>{log.performedByName || "—"}</p>
                     <p className="text-[10px] mt-0.5" style={{ color:"#334155" }}>{fmtShort(log.createdAt)}</p>
                   </div>
