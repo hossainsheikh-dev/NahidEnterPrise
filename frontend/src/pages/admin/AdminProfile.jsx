@@ -162,8 +162,8 @@ function InfoRow({ icon: Icon, label, value, accent, last }) {
       <div className="flex-1 min-w-0">
         <p className="text-[9px] font-bold uppercase tracking-[0.18em] mb-0.5"
           style={{ color:"#475569" }}>{label}</p>
-        <p className="text-sm font-semibold truncate"
-          style={{ color: value ? "#e2e8f0" : "#334155" }}>
+        <p className="text-sm font-semibold"
+          style={{ color: value ? "#e2e8f0" : "#334155", wordBreak:"break-all" }}>
           {value || "Not set"}
         </p>
       </div>
