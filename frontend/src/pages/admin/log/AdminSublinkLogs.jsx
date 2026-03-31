@@ -373,6 +373,13 @@ export default function AdminSublinkLogs() {
         .ll-row:last-child { border-bottom: none; }
         .ll-row:hover { background: rgba(255,255,255,0.025); }
 
+        @media (max-width: 640px) {
+          .ll-col-header { grid-template-columns: 22px 1fr 80px 36px; padding: 9px 12px; gap: 6px; }
+          .ll-col-header .col-by { display: none; }
+          .ll-row { grid-template-columns: 22px 1fr 80px 36px; padding: 11px 12px; gap: 6px; }
+          .ll-row .cell-by { display: none; }
+        }
+
         .ll-icon-btn {
           width: 28px; height: 28px; border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
@@ -449,17 +456,17 @@ export default function AdminSublinkLogs() {
             </div>
 
             {/* stat cards */}
-            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+            <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
               {[
                 { labelBn: "মোট লগ", labelEn: "Total",   count: total,                                       color: "#c9a84c" },
                 { labelBn: "তৈরি",   labelEn: "Created", count: logs.filter(l=>l.action==="created").length, color: "#34d399" },
                 { labelBn: "আপডেট",  labelEn: "Updated", count: logs.filter(l=>l.action==="updated").length, color: "#818cf8" },
                 { labelBn: "মুছেছে", labelEn: "Deleted", count: logs.filter(l=>l.action==="deleted").length, color: "#f87171" },
               ].map(({ labelBn, labelEn, count, color }) => (
-                <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-4"
+                <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3 sm:p-4"
                   style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="text-2xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
-                  <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
+                  <div className="text-xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
+                  <div className="text-[10px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
                 </div>
               ))}
             </div>
@@ -520,9 +527,11 @@ export default function AdminSublinkLogs() {
           style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
 
           <div className="ll-col-header">
-            {["#", t("সাবলিংক","Sublink"), t("কার্যক্রম","Action"), t("কে করেছে","By"), ""].map((h, i) => (
-              <div key={i} className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{h}</div>
-            ))}
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>#</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{t("সাবলিংক","Sublink")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{t("কার্যক্রম","Action")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider col-by" style={{ color: "#2d3f55" }}>{t("কে করেছে","By")}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}></div>
           </div>
 
           <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
@@ -583,7 +592,7 @@ export default function AdminSublinkLogs() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0 cell-by">
                       <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: rc.bg }}>
                         <RoleIcon size={10} style={{ color: rc.color }}/>
                       </div>
