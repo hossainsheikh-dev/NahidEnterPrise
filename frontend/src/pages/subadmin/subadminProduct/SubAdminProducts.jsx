@@ -57,6 +57,17 @@ const FEATURE_ROWS = [
 
 const emptyFeatures = () => Array.from({ length: 10 }, () => ({ key: "", value: "" }));
 
+/* ── simple window-width hook ── */
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const fn = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return width;
+}
+
 /* ─────────────────────────────────────
    SHARED STYLE HELPERS
 ───────────────────────────────────── */
@@ -85,7 +96,7 @@ const inputStyle = (hasError = false) => ({
   border: `1.5px solid ${hasError ? "rgba(244,63,94,0.35)" : "rgba(99,102,241,0.14)"}`,
   borderRadius: 13, padding: "12px 16px",
   fontSize: 13.5, color: "#1e293b",
-  fontFamily: "'DM Sans',sans-serif",
+  fontFamily: "'Plus Jakarta Sans',sans-serif",
   transition: "all .18s ease",
 });
 
@@ -158,22 +169,20 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
                 padding: "24px",
               }}
             >
-              <h3 className="text-[15px] font-black tracking-[-0.02em]"
-                style={{ color: "#0f172a", fontFamily: "'Syne',sans-serif" }}>
+              <h3 style={{ fontSize: 15, fontWeight: 900, color: "#0f172a", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.02em" }}>
                 {title}
               </h3>
-              <p className="text-[13px] mt-2 leading-relaxed" style={{ color: "#64748b" }}>{message}</p>
-              <div className="flex gap-3 mt-6">
+              <p style={{ fontSize: 13, marginTop: 8, color: "#64748b", lineHeight: 1.6 }}>{message}</p>
+              <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
                 <button onClick={onClose}
-                  className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-all"
-                  style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.13)", color: "#475569" }}
+                  style={{ flex: 1, padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.13)", color: "#475569", cursor: "pointer" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.10)"}
                   onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}>
                   {cancelText}
                 </button>
                 <button onClick={onConfirm}
-                  className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white transition-all"
                   style={{
+                    flex: 1, padding: "10px 0", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
                     background: danger ? "linear-gradient(135deg,#f43f5e,#e11d48)" : "linear-gradient(135deg,#6366f1,#4f46e5)",
                     boxShadow: danger ? "0 4px 14px rgba(244,63,94,0.3)" : "0 4px 14px rgba(99,102,241,0.3)",
                     border: "none",
@@ -190,14 +199,22 @@ function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText,
 }
 
 /* ─────────────────────────────────────
-   PRODUCT SHOW
+   PRODUCT SHOW  ← UPDATED
 ───────────────────────────────────── */
 function ProductShow({
   products, loading, search, setSearch, sort, setSort,
   dropdownOpen, setDropdownOpen, dropdownRef,
   setView, handleDelete, handleEdit, parentLinks, allSublinks,
 }) {
-  const { t } = useSubLang();
+  const { t }   = useSubLang();
+  const screenW = useWindowWidth();
+
+  /* pagination */
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
+
+  const isMobile = screenW < 640;
+
   const [filterParent,    setFilterParent]    = useState("");
   const [filterSublink,   setFilterSublink]   = useState("");
   const [parentDropdown,  setParentDropdown]  = useState(false);
@@ -226,10 +243,16 @@ function ProductShow({
     return true;
   });
 
+  /* reset page on filter/search change */
+  useEffect(() => { setPage(1); }, [displayedProducts.length]);
+
+  const totalPages = Math.ceil(displayedProducts.length / PER_PAGE);
+  const paginated  = displayedProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   const clearFilters = () => { setFilterParent(""); setFilterSublink(""); };
 
   /* shared dropdown styles */
-  const tblDropBtn = (selected = false) => ({
+  const tblDropBtn = {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     width: "100%", background: "#fff",
     border: "1px solid rgba(99,102,241,0.15)",
@@ -237,7 +260,7 @@ function ProductShow({
     fontSize: 13, fontWeight: 500, color: "#374151",
     cursor: "pointer", transition: "all .15s ease",
     boxShadow: "0 1px 4px rgba(99,102,241,0.05)",
-  });
+  };
 
   const tblDropPanel = {
     position: "absolute", right: 0, top: "calc(100% + 6px)",
@@ -256,80 +279,88 @@ function ProductShow({
     transition: "background .12s",
   });
 
+  /* stock badge — just number on mobile */
   const stockBadge = (stock) => {
     if (stock === 0) return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#e11d48",
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: "#e11d48",
         background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.15)",
-        padding: "2px 8px", borderRadius: 99 }}>
-        {t("শেষ", "Out")}
+        padding: "2px 7px", borderRadius: 99,
+      }}>
+        {isMobile ? "0" : t("শেষ", "Out")}
       </span>
     );
     if (stock <= 5) return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#d97706",
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: "#d97706",
         background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)",
-        padding: "2px 8px", borderRadius: 99 }}>
-        {stock} {t("বাকি", "left")}
+        padding: "2px 7px", borderRadius: 99,
+      }}>
+        {stock}
       </span>
     );
     return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#059669",
+      <span style={{
+        fontSize: 11, fontWeight: 700, color: "#059669",
         background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)",
-        padding: "2px 8px", borderRadius: 99 }}>
+        padding: "2px 7px", borderRadius: 99,
+      }}>
         {stock}
       </span>
     );
   };
 
+  /* grid layout: mobile = 4 cols (serial, img, name, actions), desktop = 6 cols */
+  const gridCols = isMobile
+    ? "24px 40px 1fr 68px"
+    : "28px 44px 1fr 80px 90px 80px";
+
   return (
-    <div className="mt-6 sm:mt-8 space-y-5">
+    <div style={{ marginTop: 24 }}>
       <AnimatePresence mode="wait">
         <motion.div key="home"
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-          className="space-y-5">
+          exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
 
           {/* ── TOP BAR ── */}
-          <div
-            className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
-            style={{
-              background: "linear-gradient(160deg,#ffffff,#fafbff)",
-              border: "1px solid rgba(99,102,241,0.10)",
-              borderRadius: 18, padding: "14px 16px",
-              boxShadow: "0 4px 20px rgba(99,102,241,0.06), 0 1px 0 rgba(99,102,241,0.05)",
-            }}
-          >
+          <div style={{
+            display: "flex", flexWrap: "wrap", alignItems: "center",
+            justifyContent: "space-between", gap: 12,
+            background: "linear-gradient(160deg,#ffffff,#fafbff)",
+            border: "1px solid rgba(99,102,241,0.10)",
+            borderRadius: 18, padding: "14px 16px", marginBottom: 16,
+            boxShadow: "0 4px 20px rgba(99,102,241,0.06)",
+          }}>
             {/* Search */}
-            <div
-              className="flex items-center gap-2.5 w-full lg:w-80"
-              style={{
-                background: "rgba(99,102,241,0.05)",
-                border: "1px solid rgba(99,102,241,0.12)",
-                borderRadius: 11, padding: "8px 13px", transition: "all .15s",
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.35)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.09)"; e.currentTarget.style.background = "#fff"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.12)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(99,102,241,0.05)"; }}
-            >
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              flex: "1 1 220px", maxWidth: 340,
+              background: "rgba(99,102,241,0.05)",
+              border: "1px solid rgba(99,102,241,0.12)",
+              borderRadius: 11, padding: "8px 13px",
+            }}>
               <Search size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
               <input
                 type="text"
                 placeholder={t("পণ্য খুঁজুন...", "Search product...")}
                 value={search} onChange={(e) => setSearch(e.target.value)}
-                style={{ background: "transparent", outline: "none", border: "none", fontSize: 13, color: "#374151", width: "100%", fontFamily: "'DM Sans',sans-serif" }}
+                style={{ background: "transparent", outline: "none", border: "none", fontSize: 13, color: "#374151", width: "100%", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               />
               {search && (
-                <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1 }}>
+                <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}>
                   <X size={12} />
                 </button>
               )}
             </div>
 
             {/* Add button */}
-            <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: isMobile ? "1 1 200px" : "0 0 auto" }}>
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setView("add")}
-                className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2"
                 style={{
+                  flex: isMobile ? 1 : "0 0 auto",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11,
                   padding: "9px 18px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
                   boxShadow: "0 4px 16px rgba(99,102,241,0.32), inset 0 1px 0 rgba(255,255,255,0.15)",
@@ -349,244 +380,322 @@ function ProductShow({
             overflow: "hidden",
           }}>
 
-            {/* Table header */}
-            <div
-              className="flex flex-col gap-3 px-4 sm:px-5 py-4"
-              style={{ borderBottom: "1px solid rgba(99,102,241,0.08)", background: "rgba(99,102,241,0.025)" }}
-            >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <h2
-                  className="text-center md:text-left text-[13.5px] sm:text-sm md:text-base font-black tracking-[-0.02em] shrink-0"
-                  style={{ color: "#1e293b", fontFamily: "'Syne',sans-serif" }}
-                >
-                  {t("পণ্য তালিকা", "Products List")}
-                  {displayedProducts.length !== products.length && (
-                    <span className="ml-2 text-[11px] font-medium" style={{ color: "#94a3b8" }}>
-                      ({displayedProducts.length} {t("এর মধ্যে", "of")} {products.length})
+            {/* Card header with filters */}
+            <div style={{
+              display: "flex", flexWrap: "wrap", alignItems: "center",
+              justifyContent: "space-between", gap: 12,
+              padding: "14px 20px",
+              borderBottom: "1px solid rgba(99,102,241,0.08)",
+              background: "rgba(99,102,241,0.025)",
+            }}>
+              <h2 style={{ fontSize: 14, fontWeight: 900, color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.02em" }}>
+                {t("পণ্য তালিকা", "Products List")}
+                {displayedProducts.length !== products.length ? (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
+                    ({displayedProducts.length} {t("এর মধ্যে", "of")} {products.length})
+                  </span>
+                ) : (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
+                    ({products.length})
+                  </span>
+                )}
+              </h2>
+
+              {/* Filters row */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                flexWrap: "wrap",
+                width: isMobile ? "100%" : "auto",
+              }}>
+
+                {/* Parent filter */}
+                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 160px", width: isMobile ? undefined : 160 }} ref={parentRef}>
+                  <button type="button" onClick={() => setParentDropdown(!parentDropdown)} style={tblDropBtn}>
+                    <span style={{ color: filterParent ? "#374151" : "#a8b4c8", fontWeight: filterParent ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
                     </span>
-                  )}
-                </h2>
+                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                  </button>
+                  <AnimatePresence>
+                    {parentDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
+                        style={{ ...tblDropPanel, maxHeight: 200, overflowY: "auto" }}>
+                        {parentLinks.map((p) => (
+                          <div key={p._id}
+                            onClick={() => { setFilterParent(p._id); setFilterSublink(""); setParentDropdown(false); }}
+                            style={tblDropItem(filterParent === p._id)}
+                            onMouseEnter={e => filterParent !== p._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                            onMouseLeave={e => filterParent !== p._id && (e.currentTarget.style.background = "transparent")}>
+                            {p.name}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-
-                  {/* Parent filter */}
-                  <div className="relative w-full sm:w-44" ref={parentRef}>
-                    <button type="button" onClick={() => setParentDropdown(!parentDropdown)}
-                      style={tblDropBtn(!!filterParent)}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}
-                    >
-                      <span style={{ color: filterParent ? "#374151" : "#a8b4c8", fontWeight: filterParent ? 500 : 400, fontSize: 13 }}>
-                        {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
+                {/* Sublink filter */}
+                {filterParent && (
+                  <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 160px", width: isMobile ? undefined : 160 }} ref={sublinkRef}>
+                    <button type="button" onClick={() => setSublinkDropdown(!sublinkDropdown)} style={tblDropBtn}>
+                      <span style={{ color: filterSublink ? "#374151" : "#a8b4c8", fontWeight: filterSublink ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {selectedSublinkName || t("সাবলিংক ফিল্টার", "Filter by Sublink")}
                       </span>
                       <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
                     </button>
                     <AnimatePresence>
-                      {parentDropdown && (
+                      {sublinkDropdown && (
                         <motion.div
                           initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
                           style={{ ...tblDropPanel, maxHeight: 200, overflowY: "auto" }}>
-                          {parentLinks.map((p) => (
-                            <div key={p._id}
-                              onClick={() => { setFilterParent(p._id); setFilterSublink(""); setParentDropdown(false); }}
-                              style={tblDropItem(filterParent === p._id)}
-                              onMouseEnter={e => filterParent !== p._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
-                              onMouseLeave={e => filterParent !== p._id && (e.currentTarget.style.background = "transparent")}>
-                              {p.name}
+                          {filteredSublinks.length > 0 ? filteredSublinks.map((s) => (
+                            <div key={s._id}
+                              onClick={() => { setFilterSublink(s._id); setSublinkDropdown(false); }}
+                              style={tblDropItem(filterSublink === s._id)}
+                              onMouseEnter={e => filterSublink !== s._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                              onMouseLeave={e => filterSublink !== s._id && (e.currentTarget.style.background = "transparent")}>
+                              {s.name}
                             </div>
-                          ))}
+                          )) : (
+                            <div style={{ padding: "12px 14px", fontSize: 13, color: "#94a3b8" }}>
+                              {t("কোনো সাবলিংক নেই", "No sublinks found.")}
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
+                )}
 
-                  {/* Sublink filter */}
-                  {filterParent && (
-                    <div className="relative w-full sm:w-44" ref={sublinkRef}>
-                      <button type="button" onClick={() => setSublinkDropdown(!sublinkDropdown)}
-                        style={tblDropBtn(!!filterSublink)}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}
-                      >
-                        <span style={{ color: filterSublink ? "#374151" : "#a8b4c8", fontWeight: filterSublink ? 500 : 400, fontSize: 13 }}>
-                          {selectedSublinkName || t("সাবলিংক ফিল্টার", "Filter by Sublink")}
-                        </span>
-                        <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
-                      </button>
-                      <AnimatePresence>
-                        {sublinkDropdown && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
-                            style={{ ...tblDropPanel, maxHeight: 200, overflowY: "auto" }}>
-                            {filteredSublinks.length > 0 ? filteredSublinks.map((s) => (
-                              <div key={s._id}
-                                onClick={() => { setFilterSublink(s._id); setSublinkDropdown(false); }}
-                                style={tblDropItem(filterSublink === s._id)}
-                                onMouseEnter={e => filterSublink !== s._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
-                                onMouseLeave={e => filterSublink !== s._id && (e.currentTarget.style.background = "transparent")}>
-                                {s.name}
-                              </div>
-                            )) : (
-                              <div style={{ padding: "12px 14px", fontSize: 13, color: "#94a3b8" }}>
-                                {t("কোনো সাবলিংক নেই", "No sublinks found.")}
-                              </div>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  )}
+                {/* Clear filter */}
+                {(filterParent || filterSublink) && !isMobile && (
+                  <button onClick={clearFilters}
+                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                    <X size={12} /> {t("ক্লিয়ার", "Clear")}
+                  </button>
+                )}
 
-                  {(filterParent || filterSublink) && (
-                    <button onClick={clearFilters}
-                      className="flex items-center justify-center gap-1 w-full sm:w-auto"
-                      style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none" }}>
-                      <X size={12} /> {t("ক্লিয়ার", "Clear")}
-                    </button>
-                  )}
-
-                  {/* Sort */}
-                  <div className="relative w-full sm:w-48" ref={dropdownRef}>
-                    <button onClick={() => setDropdownOpen(!dropdownOpen)}
-                      style={tblDropBtn(false)}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.3)"}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.15)"}>
-                      <span style={{ fontSize: 13 }}>
-                        {SORT_OPTIONS.find((o) => o.value === sort) &&
-                          t(SORT_OPTIONS.find((o) => o.value === sort).labelBn,
-                            SORT_OPTIONS.find((o) => o.value === sort).labelEn)}
-                      </span>
-                      <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
-                    </button>
-                    <AnimatePresence>
-                      {dropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
-                          style={tblDropPanel}>
-                          {SORT_OPTIONS.map((option) => (
-                            <div key={option.value}
-                              onClick={() => { setSort(option.value); setDropdownOpen(false); }}
-                              style={tblDropItem(sort === option.value)}
-                              onMouseEnter={e => sort !== option.value && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
-                              onMouseLeave={e => sort !== option.value && (e.currentTarget.style.background = "transparent")}>
-                              {t(option.labelBn, option.labelEn)}
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                {/* Sort */}
+                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 168px", width: isMobile ? undefined : 168 }} ref={dropdownRef}>
+                  <button onClick={() => setDropdownOpen(!dropdownOpen)} style={tblDropBtn}>
+                    <span style={{ fontSize: 13 }}>
+                      {SORT_OPTIONS.find((o) => o.value === sort) &&
+                        t(SORT_OPTIONS.find((o) => o.value === sort).labelBn,
+                          SORT_OPTIONS.find((o) => o.value === sort).labelEn)}
+                    </span>
+                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                  </button>
+                  <AnimatePresence>
+                    {dropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
+                        style={tblDropPanel}>
+                        {SORT_OPTIONS.map((option) => (
+                          <div key={option.value}
+                            onClick={() => { setSort(option.value); setDropdownOpen(false); }}
+                            style={tblDropItem(sort === option.value)}
+                            onMouseEnter={e => sort !== option.value && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
+                            onMouseLeave={e => sort !== option.value && (e.currentTarget.style.background = "transparent")}>
+                            {t(option.labelBn, option.labelEn)}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
+                {/* Clear filter mobile — full width below dropdowns */}
+                {(filterParent || filterSublink) && isMobile && (
+                  <button onClick={clearFilters}
+                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4, width: "100%", justifyContent: "center", padding: "4px 0" }}>
+                    <X size={12} /> {t("ফিল্টার ক্লিয়ার", "Clear Filter")}
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Column headers */}
-            <div
-              className="grid grid-cols-7 items-center px-3 sm:px-5 py-3"
-              style={{
-                fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
-                letterSpacing: ".06em", textTransform: "uppercase",
-                borderBottom: "1px solid rgba(99,102,241,0.08)",
-                background: "rgba(99,102,241,0.02)",
-              }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: gridCols,
+              alignItems: "center",
+              padding: "10px 16px",
+              fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
+              letterSpacing: ".06em", textTransform: "uppercase",
+              borderBottom: "1px solid rgba(99,102,241,0.08)",
+              background: "rgba(99,102,241,0.02)",
+            }}>
               <div>#</div>
-              <div>{t("ছবি", "Image")}</div>
-              <div className="col-span-2">{t("নাম", "Name")}</div>
-              <div>{t("স্টক", "Stock")}</div>
-              <div>{t("স্ট্যাটাস", "Status")}</div>
-              <div style={{ textAlign: "right" }}>{t("কার্যক্রম", "Actions")}</div>
+              <div>{t("ছবি", "Img")}</div>
+              <div>{t("নাম", "Name")}</div>
+              {!isMobile && <div>{t("স্টক", "Stock")}</div>}
+              {!isMobile && <div>{t("স্ট্যাটাস", "Status")}</div>}
+              <div style={{ textAlign: "right" }}>{isMobile ? t("কাজ", "Act.") : t("কার্যক্রম", "Actions")}</div>
             </div>
 
             {/* Rows */}
-            <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+            <div>
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12 }}>
                   <Loader2 size={26} style={{ color: "#c4cdd8" }} className="animate-spin" />
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("পণ্য লোড হচ্ছে…", "Loading products…")}</p>
                 </div>
               ) : displayedProducts.length === 0 ? (
-                <div className="py-14 text-center">
-                  <div className="mx-auto mb-4 w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                <div style={{ padding: "56px 0", textAlign: "center" }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
                     <Package size={22} style={{ color: "#c4cdd8" }} />
                   </div>
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো পণ্য পাওয়া যায়নি।", "No products found.")}</p>
                 </div>
-              ) : (
-                displayedProducts.map((product, index) => (
-                  <motion.div key={product._id}
-                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.025 }}
-                    className="grid grid-cols-7 items-center px-3 sm:px-5 py-3.5"
-                    style={{ borderBottom: "1px solid rgba(99,102,241,0.06)", transition: "background .12s ease" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.025)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+              ) : paginated.map((product, index) => (
+                <motion.div key={product._id}
+                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.025 }}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: gridCols,
+                    alignItems: "center",
+                    padding: isMobile ? "10px 16px" : "12px 16px",
+                    borderBottom: "1px solid rgba(99,102,241,0.06)",
+                    transition: "background .12s ease",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.025)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
 
-                    <div className="flex items-center gap-1.5" style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>
-                      {index + 1}
-                      {product.isFeatured && (
-                        <Star size={10} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
-                      )}
-                    </div>
+                  {/* # */}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8", display: "flex", alignItems: "center", gap: 3 }}>
+                    {(page - 1) * PER_PAGE + index + 1}
+                    {product.isFeatured && !isMobile && (
+                      <Star size={9} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
+                    )}
+                  </div>
 
-                    <div>
-                      {product.images?.[0] ? (
-                        <img src={product.images[0].url} alt={product.name}
-                          style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 9,
-                            border: "1px solid rgba(99,102,241,0.10)", background: "#fff", padding: 2 }} />
-                      ) : (
-                        <div style={{ width: 36, height: 36, borderRadius: 9,
-                          background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.10)" }} />
-                      )}
-                    </div>
+                  {/* Image */}
+                  <div>
+                    {product.images?.[0] ? (
+                      <img src={product.images[0].url} alt={product.name}
+                        style={{
+                          width: isMobile ? 34 : 38, height: isMobile ? 34 : 38,
+                          objectFit: "contain", borderRadius: 9,
+                          border: "1px solid rgba(99,102,241,0.10)", background: "#fff", padding: 2,
+                        }} />
+                    ) : (
+                      <div style={{
+                        width: isMobile ? 34 : 38, height: isMobile ? 34 : 38, borderRadius: 9,
+                        background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.10)",
+                      }} />
+                    )}
+                  </div>
 
-                    <div className="col-span-2 min-w-0 pr-1">
-                      <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>
-                        {product.name}
-                      </p>
-                      <p className="sm:hidden" style={{ fontSize: 10, marginTop: 2, fontWeight: 700,
-                        color: product.isActive ? "#059669" : "#e11d48" }}>
-                        {product.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
-                      </p>
-                    </div>
+                  {/* Name + mobile sub-info */}
+                  <div style={{ minWidth: 0, paddingRight: 8 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {product.name}
+                    </p>
+                    {/* on mobile show stock + status under name */}
+                    {isMobile && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                        {stockBadge(product.stock ?? 0)}
+                        <span style={{
+                          fontSize: 10, fontWeight: 700,
+                          color: product.isActive ? "#059669" : "#e11d48",
+                        }}>
+                          {product.isActive ? "●" : "●"}
+                          <span style={{ marginLeft: 2 }}>
+                            {product.isActive ? t("সক্রিয়", "Active") : t("বন্ধ", "Off")}
+                          </span>
+                        </span>
+                        {product.isFeatured && (
+                          <Star size={9} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
+                        )}
+                      </div>
+                    )}
+                  </div>
 
+                  {/* Stock — desktop only */}
+                  {!isMobile && (
                     <div>{stockBadge(product.stock ?? 0)}</div>
+                  )}
 
-                    <div className="hidden sm:flex items-center gap-1.5">
+                  {/* Status — desktop only */}
+                  {!isMobile && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                       <span style={{
-                        width: 6, height: 6, borderRadius: "50%", display: "inline-block",
+                        width: 6, height: 6, borderRadius: "50%", display: "inline-block", flexShrink: 0,
                         background: product.isActive ? "#10b981" : "#f43f5e",
                       }} />
                       <span style={{ fontSize: 11, fontWeight: 700, color: product.isActive ? "#059669" : "#e11d48" }}>
                         {product.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
                       </span>
                     </div>
+                  )}
 
-                    <div className="flex justify-end items-center gap-2 sm:gap-2.5">
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleEdit(product)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                        style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.14)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.07)"}>
-                        <Pencil size={12} />
-                      </motion.button>
-                      <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                        onClick={() => handleDelete(product)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
-                        style={{ background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.13)", color: "#f43f5e" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "rgba(244,63,94,0.14)"}
-                        onMouseLeave={e => e.currentTarget.style.background = "rgba(244,63,94,0.07)"}>
-                        <Trash2 size={12} />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))
-              )}
+                  {/* Actions */}
+                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: isMobile ? 6 : 8 }}>
+                    <motion.button
+                      whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => handleEdit(product)}
+                      style={{
+                        width: isMobile ? 30 : 30, height: isMobile ? 30 : 30,
+                        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.13)",
+                        color: "#6366f1", cursor: "pointer",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.14)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.07)"}>
+                      <Pencil size={13} />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDelete(product)}
+                      style={{
+                        width: isMobile ? 30 : 30, height: isMobile ? 30 : 30,
+                        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                        background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.13)",
+                        color: "#f43f5e", cursor: "pointer",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(244,63,94,0.14)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "rgba(244,63,94,0.07)"}>
+                      <Trash2 size={13} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
+
+            {/* ── PAGINATION ── same style as SubAdminSublinks */}
+            {totalPages > 1 && (
+              <div style={{
+                display: "flex", justifyContent: "center", alignItems: "center",
+                gap: 6, padding: "14px 20px",
+                borderTop: "1px solid rgba(99,102,241,0.08)",
+                background: "rgba(99,102,241,0.01)",
+              }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <motion.button
+                    key={p}
+                    whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      border: "1px solid",
+                      borderColor: page === p ? "#6366f1" : "rgba(99,102,241,0.15)",
+                      background: page === p ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "transparent",
+                      color: page === p ? "#fff" : "#6366f1",
+                      boxShadow: page === p ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    {p}
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -710,7 +819,7 @@ function ProductAdd({
 
               {/* Title */}
               <div className="text-center" style={{ marginBottom: 28 }}>
-                <h2 style={{ fontFamily: "'Syne',sans-serif", fontSize: 20, fontWeight: 800, color: "#1e293b", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
+                <h2 style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 20, fontWeight: 800, color: "#1e293b", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
                   {editId ? t("পণ্য আপডেট", "Update Product") : t("নতুন পণ্য", "New Product")}
                 </h2>
                 <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>
@@ -747,10 +856,7 @@ function ProductAdd({
                   <textarea
                     placeholder={t(`বিবরণ লিখুন (কমপক্ষে ${MIN_DESCRIPTION_WORDS} শব্দ)`, `Write description (minimum ${MIN_DESCRIPTION_WORDS} words)`)}
                     value={description} onChange={(e) => setDescription(e.target.value)} rows={4} required
-                    style={{
-                      ...inputStyle(description && !wordCountOk),
-                      resize: "none", lineHeight: 1.6,
-                    }}
+                    style={{ ...inputStyle(description && !wordCountOk), resize: "none", lineHeight: 1.6 }}
                     onFocus={onFocusInput}
                     onBlur={e => onBlurInput(e, description && !wordCountOk)} />
                   <div className="flex items-center justify-between px-1 mt-1.5">
@@ -782,17 +888,11 @@ function ProductAdd({
                 </div>
 
                 {/* Discount */}
-                <div style={{
-                  background: "rgba(99,102,241,0.03)", borderRadius: 16,
-                  border: "1.5px solid rgba(99,102,241,0.10)", padding: "16px 18px",
-                }}>
+                <div style={{ background: "rgba(99,102,241,0.03)", borderRadius: 16, border: "1.5px solid rgba(99,102,241,0.10)", padding: "16px 18px" }}>
                   {fieldLabel(t("ছাড়", "Discount"))}
                   <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div style={{ position: "relative" }} ref={discountRef}>
-                      <PremiumDropBtn
-                        onClick={() => setDiscountDropdown(!discountDropdown)}
-                        selected={discountType !== "none"}
-                        isOpen={discountDropdown}>
+                      <PremiumDropBtn onClick={() => setDiscountDropdown(!discountDropdown)} selected={discountType !== "none"} isOpen={discountDropdown}>
                         <span style={{ color: "#374151", fontWeight: 500 }}>
                           {currentDiscountOption && t(currentDiscountOption.labelBn, currentDiscountOption.labelEn)}
                         </span>
@@ -818,7 +918,6 @@ function ProductAdd({
                         )}
                       </AnimatePresence>
                     </div>
-
                     {discountType !== "none" && (
                       <div>
                         <input type="number"
@@ -843,9 +942,7 @@ function ProductAdd({
                 <div>
                   {fieldLabel(t("লিংক", "Link"), true)}
                   <div style={{ position: "relative" }} ref={parentRef}>
-                    <PremiumDropBtn
-                      onClick={() => setParentDropdown(!parentDropdown)}
-                      selected={!!selectedParent} hasError={!selectedParent} isOpen={parentDropdown}>
+                    <PremiumDropBtn onClick={() => setParentDropdown(!parentDropdown)} selected={!!selectedParent} hasError={!selectedParent} isOpen={parentDropdown}>
                       <span style={{ fontWeight: selectedParent ? 500 : 400 }}>
                         {selectedParentName || t("লিংক নির্বাচন করুন", "Select Link")}
                       </span>
@@ -878,9 +975,7 @@ function ProductAdd({
                   <div>
                     {fieldLabel(t("সাবলিংক", "Sublink"))}
                     <div style={{ position: "relative" }} ref={sublinkRef}>
-                      <PremiumDropBtn
-                        onClick={() => setSublinkDropdown(!sublinkDropdown)}
-                        selected={!!sublink} isOpen={sublinkDropdown}>
+                      <PremiumDropBtn onClick={() => setSublinkDropdown(!sublinkDropdown)} selected={!!sublink} isOpen={sublinkDropdown}>
                         <span style={{ fontWeight: sublink ? 500 : 400 }}>
                           {selectedSublinkName || t("সাবলিংক নির্বাচন করুন (ঐচ্ছিক)", "Select Sublink (optional)")}
                         </span>
@@ -922,7 +1017,7 @@ function ProductAdd({
                   </div>
                 )}
 
-                {/* Status — toggle cards */}
+                {/* Status */}
                 <div>
                   {fieldLabel(t("স্ট্যাটাস", "Status"))}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -945,12 +1040,7 @@ function ProductAdd({
                             fontSize: 13.5, fontWeight: isSelected ? 700 : 500, transition: "all .18s ease",
                             boxShadow: isSelected ? `0 2px 12px ${dotColor}18` : "none",
                           }}>
-                          <span style={{
-                            width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                            background: isSelected ? dotColor : "#d1d9e0",
-                            boxShadow: isSelected ? `0 0 0 3px ${dotColor}22` : "none",
-                            transition: "all .18s",
-                          }} />
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", flexShrink: 0, background: isSelected ? dotColor : "#d1d9e0", boxShadow: isSelected ? `0 0 0 3px ${dotColor}22` : "none", transition: "all .18s" }} />
                           {t(option.labelBn, option.labelEn)}
                         </motion.button>
                       );
@@ -959,26 +1049,21 @@ function ProductAdd({
                 </div>
 
                 {/* Featured toggle */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                <div style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "14px 16px", borderRadius: 13,
                   background: isFeatured ? "rgba(245,158,11,0.06)" : "#f8f9ff",
                   border: `1.5px solid ${isFeatured ? "rgba(245,158,11,0.28)" : "rgba(99,102,241,0.10)"}`,
-                  transition: "all .18s", cursor: "pointer" }}
-                  onClick={() => setIsFeatured(!isFeatured)}>
+                  transition: "all .18s", cursor: "pointer",
+                }} onClick={() => setIsFeatured(!isFeatured)}>
                   <div className="flex items-center gap-2.5">
                     <Star size={16} style={{ color: isFeatured ? "#f59e0b" : "#d1d9e0", fill: isFeatured ? "#f59e0b" : "none", transition: "all .18s" }} />
                     <span style={{ fontSize: 13.5, fontWeight: 600, color: isFeatured ? "#d97706" : "#94a3b8" }}>
                       {t("ফিচার্ড পণ্য", "Featured Product")}
                     </span>
                   </div>
-                  <div style={{
-                    width: 40, height: 22, borderRadius: 99, padding: 3, transition: "all .2s",
-                    background: isFeatured ? "#f59e0b" : "rgba(99,102,241,0.12)",
-                    display: "flex", alignItems: "center", justifyContent: isFeatured ? "flex-end" : "flex-start",
-                  }}>
-                    <motion.div animate={{ x: isFeatured ? 0 : 0 }}
-                      style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }} />
+                  <div style={{ width: 40, height: 22, borderRadius: 99, padding: 3, transition: "all .2s", background: isFeatured ? "#f59e0b" : "rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: isFeatured ? "flex-end" : "flex-start" }}>
+                    <motion.div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }} />
                   </div>
                 </div>
 
@@ -1009,8 +1094,6 @@ function ProductAdd({
                       {t("অন্তত একটি ছবি আবশ্যক।", "At least one image is required.")}
                     </p>
                   )}
-
-                  {/* Existing images */}
                   {existingImages.length > 0 && (
                     <div style={{ marginTop: 12 }}>
                       <p style={{ fontSize: 11.5, color: "#94a3b8", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>
@@ -1024,8 +1107,6 @@ function ProductAdd({
                       </div>
                     </div>
                   )}
-
-                  {/* New images preview */}
                   {images.length > 0 && (
                     <div style={{ marginTop: 12 }}>
                       <p style={{ fontSize: 11.5, color: "#94a3b8", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em" }}>
@@ -1036,14 +1117,11 @@ function ProductAdd({
                           <div key={i} style={{ position: "relative" }}>
                             <img src={URL.createObjectURL(img)} alt="preview"
                               style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, border: "1px solid rgba(99,102,241,0.12)" }} />
-                            <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, textAlign: "center",
-                              fontSize: 9, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "0 0 10px 10px", padding: "2px 0" }}>
+                            <span style={{ position: "absolute", bottom: 0, left: 0, right: 0, textAlign: "center", fontSize: 9, background: "rgba(0,0,0,0.5)", color: "#fff", borderRadius: "0 0 10px 10px", padding: "2px 0" }}>
                               {(img.size / (1024 * 1024)).toFixed(1)}MB
                             </span>
                             <button type="button" onClick={() => removeNewImage(i)}
-                              style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18,
-                                background: "#f43f5e", color: "#fff", borderRadius: "50%", border: "none",
-                                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                              style={{ position: "absolute", top: -6, right: -6, width: 18, height: 18, background: "#f43f5e", color: "#fff", borderRadius: "50%", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                               <X size={10} />
                             </button>
                           </div>
@@ -1067,15 +1145,12 @@ function ProductAdd({
                     <AnimatePresence>
                       {features.some(f => f.value.trim()) && (
                         <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                          style={{ fontSize: 11, fontWeight: 700, color: "#059669",
-                            background: "rgba(16,185,129,0.09)", border: "1px solid rgba(16,185,129,0.2)",
-                            padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>
+                          style={{ fontSize: 11, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.09)", border: "1px solid rgba(16,185,129,0.2)", padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>
                           ✓ {features.filter(f => f.value.trim()).length} {t("পূরণ", "filled")}
                         </motion.span>
                       )}
                     </AnimatePresence>
                   </div>
-
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {FEATURE_ROWS.map((row, i) => {
                       const val      = features[i]?.value || "";
@@ -1086,18 +1161,10 @@ function ProductAdd({
                           transition={{ duration: 0.2 }}
                           style={{ border: "1.5px solid", borderRadius: 13, overflow: "hidden", background: "#fff" }}>
                           <div className="flex items-center">
-                            <div style={{
-                              display: "flex", alignItems: "center", gap: 10,
-                              padding: "11px 14px",
-                              borderRight: `1.5px solid ${isFilled ? "rgba(16,185,129,0.2)" : "rgba(99,102,241,0.08)"}`,
-                              minWidth: 148, flexShrink: 0,
-                              background: isFilled ? "rgba(16,185,129,0.04)" : "rgba(99,102,241,0.02)",
-                              transition: "all .2s",
-                            }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRight: `1.5px solid ${isFilled ? "rgba(16,185,129,0.2)" : "rgba(99,102,241,0.08)"}`, minWidth: 148, flexShrink: 0, background: isFilled ? "rgba(16,185,129,0.04)" : "rgba(99,102,241,0.02)", transition: "all .2s" }}>
                               <span style={{ fontSize: 20 }}>{row.icon}</span>
                               <div>
-                                <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", lineHeight: 1,
-                                  color: isFilled ? "#059669" : "#94a3b8", transition: "color .2s" }}>
+                                <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", lineHeight: 1, color: isFilled ? "#059669" : "#94a3b8", transition: "color .2s" }}>
                                   {row.keyPlaceholder}
                                 </p>
                                 <p style={{ fontSize: 9, color: "#c4cdd8", marginTop: 2, fontWeight: 500 }}>
@@ -1112,9 +1179,7 @@ function ProductAdd({
                                   updated[i] = { key: row.keyPlaceholder, value: e.target.value };
                                   setFeatures(updated);
                                 }}
-                                style={{ width: "100%", fontSize: 13, fontWeight: 600, color: "#1e293b",
-                                  background: "transparent", outline: "none", border: "none",
-                                  fontFamily: "'DM Sans',sans-serif" }}
+                                style={{ width: "100%", fontSize: 13, fontWeight: 600, color: "#1e293b", background: "transparent", outline: "none", border: "none", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
                               />
                             </div>
                             <div style={{ paddingRight: 14 }}>
@@ -1128,7 +1193,6 @@ function ProductAdd({
                       );
                     })}
                   </div>
-
                   <div className="flex items-center justify-between" style={{ marginTop: 10 }}>
                     <p style={{ fontSize: 12, color: "#94a3b8" }}>
                       💡 {t("খালি ক্ষেত্র সংরক্ষিত হবে না", "Blank fields will not be saved")}
@@ -1136,8 +1200,7 @@ function ProductAdd({
                     {features.some(f => f.value.trim()) && (
                       <motion.button type="button" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         onClick={() => setFeatures(features.map((f) => ({ ...f, value: "" })))}
-                        style={{ fontSize: 12, color: "#f43f5e", fontWeight: 600, background: "none", border: "none",
-                          cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                        style={{ fontSize: 12, color: "#f43f5e", fontWeight: 600, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                         <X size={12} /> {t("সব মুছুন", "Clear all")}
                       </motion.button>
                     )}
@@ -1153,23 +1216,14 @@ function ProductAdd({
                 <motion.button type="submit"
                   whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
                   className="w-full sm:w-1/2 inline-flex items-center justify-center gap-2"
-                  style={{
-                    background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 13,
-                    padding: "12px 20px", fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer",
-                    boxShadow: "0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.18)",
-                    letterSpacing: "-.01em",
-                  }}>
+                  style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 13, padding: "12px 20px", fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 6px 20px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.18)", letterSpacing: "-.01em" }}>
                   {editId ? t("আপডেট করুন", "Save Changes") : t("তৈরি করুন", "Create Product")}
                 </motion.button>
                 <motion.button type="button"
                   whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                   onClick={() => { setView("home"); resetForm(); }}
                   className="w-full sm:w-1/2 inline-flex items-center justify-center"
-                  style={{
-                    background: "rgba(99,102,241,0.05)", border: "1.5px solid rgba(99,102,241,0.13)",
-                    borderRadius: 13, padding: "12px 20px", fontSize: 13.5, fontWeight: 600, color: "#6366f1",
-                    cursor: "pointer", transition: "all .15s", letterSpacing: "-.01em",
-                  }}
+                  style={{ background: "rgba(99,102,241,0.05)", border: "1.5px solid rgba(99,102,241,0.13)", borderRadius: 13, padding: "12px 20px", fontSize: 13.5, fontWeight: 600, color: "#6366f1", cursor: "pointer", transition: "all .15s", letterSpacing: "-.01em" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.10)"}
                   onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.05)"}>
                   {t("বাতিল করুন", "Cancel")}
@@ -1318,9 +1372,8 @@ const SubAdminProducts = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .prod-wrap, .prod-wrap * { box-sizing: border-box; font-family: 'DM Sans', sans-serif; }
-        .prod-serif { font-family: 'Syne', sans-serif !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        .prod-wrap, .prod-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
       `}</style>
 
       <div className="prod-wrap px-2 sm:px-4 md:px-6 lg:px-8">
@@ -1328,37 +1381,33 @@ const SubAdminProducts = () => {
 
           {/* Page title */}
           <div className="space-y-3 sm:space-y-4">
-            <div className="text-center">
-              <h1 className="prod-serif text-[20px] sm:text-[24px] md:text-[28px] font-black tracking-[-0.03em]"
-                style={{ color: "#1e293b" }}>
+            <div style={{ textAlign: "center", marginBottom: 4 }}>
+              <h1 style={{ fontSize: "clamp(20px,4vw,28px)", fontWeight: 900, color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.03em" }}>
                 {t("পণ্য", "Products")}
               </h1>
-              <p className="text-[12.5px] sm:text-sm mt-1" style={{ color: "#94a3b8" }}>
+              <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 4 }}>
                 {t("আপনার পণ্য ম্যানেজ করুন।", "Manage your products.")}
               </p>
             </div>
 
             {/* Breadcrumb */}
-            <div className="flex justify-start">
-              <div className="flex flex-wrap items-center gap-1.5 text-[12px] sm:text-[13px]" style={{ color: "#94a3b8" }}>
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                 {view === "home" && (
-                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg"
-                    style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 8, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
                     <Package size={12} /> {t("পণ্য", "Products")}
                   </span>
                 )}
                 {view === "add" && (
                   <>
                     <button onClick={() => { setView("home"); resetForm(); }}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all"
-                      style={{ background: "transparent", border: "1px solid rgba(99,102,241,0.10)", color: "#94a3b8", fontWeight: 500, fontSize: 12, cursor: "pointer" }}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "4px 12px", borderRadius: 8, background: "transparent", border: "1px solid rgba(99,102,241,0.10)", color: "#94a3b8", fontWeight: 500, fontSize: 12, cursor: "pointer" }}
                       onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.color = "#6366f1"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#94a3b8"; }}>
                       <Package size={12} /> {t("পণ্য", "Products")}
                     </button>
                     <span style={{ color: "#e2e8f0" }}>/</span>
-                    <span className="px-3 py-1 rounded-lg"
-                      style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
+                    <span style={{ padding: "4px 12px", borderRadius: 8, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", fontWeight: 600, fontSize: 12 }}>
                       {editId ? t("আপডেট", "Update") : t("যোগ করুন", "Add")}
                     </span>
                   </>
