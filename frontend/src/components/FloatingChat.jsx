@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle, X, Send, Check, CheckCheck,
   ChevronDown, ChevronLeft, Loader2, Search,
-  Bell, BellOff, ArrowDown,
+  Bell, BellOff, ArrowDown, Trash2, EyeOff,
 } from "lucide-react";
 import { useChatSocket } from "../hooks/useChatSocket";
 
@@ -57,7 +57,7 @@ export default function FloatingChat({ me, other }) {
   const [newMsgBelow, setNewMsgBelow]       = useState(0);
   const [copiedId, setCopiedId]             = useState(null);
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
-  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text }
+  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text, x, y }
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [fabPos, setFabPos]       = useState({ bottom: 24, right: 24 });
@@ -79,7 +79,7 @@ export default function FloatingChat({ me, other }) {
 
   const {
     isOnline, getMessages, isTyping, getUnread,
-    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage,
+    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage, deleteForMe,
   } = useChatSocket({
     myId: me.id, myName: me.name, myRole: "subadmin", tokenKey: "subAdminToken",
   });
@@ -159,6 +159,8 @@ export default function FloatingChat({ me, other }) {
     ]);
   }, [other, subAdmins]);
 
+  // Total unread across ALL peers — persisted via localStorage in the hook
+  const totalUnreadCount = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
 
   const rawContacts = [
@@ -169,6 +171,10 @@ export default function FloatingChat({ me, other }) {
   const contactList = [...rawContacts].sort((a, b) => {
     const aId  = (a.id || a._id)?.toString();
     const bId  = (b.id || b._id)?.toString();
+    const aUnread = getUnread(aId);
+    const bUnread = getUnread(bId);
+    // Sort by unread first, then by last message time
+    if (bUnread !== aUnread) return bUnread - aUnread;
     const aMsg = getMessages(aId).slice(-1)[0];
     const bMsg = getMessages(bId).slice(-1)[0];
     if (!aMsg && !bMsg) return 0;
@@ -337,7 +343,7 @@ export default function FloatingChat({ me, other }) {
     });
   }, []);
 
-  // ── Message long-press / right-click menu ──────────────────────────────────
+  // Right-click / long-press menu
   const handleMsgPress = useCallback((e, msg, isMine) => {
     e.preventDefault();
     const msgId = msg._id || msg._tempId;
@@ -345,11 +351,19 @@ export default function FloatingChat({ me, other }) {
     setMsgMenu({ msgId, isMine, text: msg.text });
   }, []);
 
-  const handleDeleteMsg = useCallback(() => {
+  // Unsend (server soft-delete — both sides see "unsent")
+  const handleUnsend = useCallback(() => {
     if (!msgMenu || !activeOther) return;
     deleteMessage({ msgId: msgMenu.msgId, receiverId: activeOther.id });
     setMsgMenu(null);
   }, [msgMenu, deleteMessage, activeOther]);
+
+  // Delete for me only (local)
+  const handleDeleteForMe = useCallback(() => {
+    if (!msgMenu) return;
+    deleteForMe(msgMenu.msgId);
+    setMsgMenu(null);
+  }, [msgMenu, deleteForMe]);
 
   const fmtTime = (d) =>
     new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
@@ -389,20 +403,20 @@ export default function FloatingChat({ me, other }) {
     boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
-  // Badge with pulse animation when there are unread messages
+  // Badge shows TOTAL unread count, not just user count
   const Badge = ({ count }) => count > 0 ? (
     <motion.span
       initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
       style={{
-        position: "absolute", top: -4, right: -4, minWidth: 18, height: 18,
+        position: "absolute", top: -6, right: -6, minWidth: 20, height: 20,
         borderRadius: 99, background: "#f43f5e", color: "#fff",
         fontSize: 10, fontWeight: 900,
         display: "flex", alignItems: "center", justifyContent: "center",
         paddingInline: 4, border: "2px solid white",
         animation: "fc-sa-badge-pulse 1.5s ease-in-out infinite",
       }}>
-      {count > 9 ? "9+" : count}
+      {count > 99 ? "99+" : count}
     </motion.span>
   ) : null;
 
@@ -427,8 +441,14 @@ export default function FloatingChat({ me, other }) {
         .fc-sa-msg-bubble:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.18) !important; }
         @keyframes fc-sa-badge-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.5); }
-          50%       { box-shadow: 0 0 0 5px rgba(244,63,94,0); }
+          50%       { box-shadow: 0 0 0 6px rgba(244,63,94,0); }
         }
+        @keyframes fc-sa-unread-glow {
+          0%, 100% { background: rgba(99,102,241,0.06); }
+          50%       { background: rgba(99,102,241,0.12); }
+        }
+        .fc-sa-contact-unread { animation: fc-sa-unread-glow 2s ease-in-out infinite; }
+        .fc-sa-menu-btn:hover { background: rgba(99,102,241,0.06) !important; }
       `}</style>
 
       <div className="fc-sa">
@@ -513,7 +533,14 @@ export default function FloatingChat({ me, other }) {
                 {screen === "list" ? (
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", margin: 0 }}>Messages</p>
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", margin: 0 }}>{contactList.length} Contacts</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", margin: 0 }}>
+                      {contactList.length} Contacts
+                      {totalUnreadCount > 0 && (
+                        <span style={{ marginLeft: 6, background: "rgba(255,255,255,0.25)", borderRadius: 99, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>
+                          {totalUnreadCount} unread
+                        </span>
+                      )}
+                    </p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
@@ -582,33 +609,47 @@ export default function FloatingChat({ me, other }) {
                     <div className="fc-sa-scroll" style={{ flex: 1, overflowY: "auto" }}>
                       {loadingSA ? (
                         <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
-                          <Loader2 size={20} className="animate-spin" style={{ color: "#6366f1" }} />
+                          <Loader2 size={20} style={{ color: "#6366f1" }} />
                         </div>
                       ) : filteredContacts.length === 0 ? (
                         <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", padding: 32 }}>
                           {searchQuery ? "No results found" : "No contacts yet"}
                         </p>
                       ) : filteredContacts.map((person) => {
-                        const pid    = person.id || person._id;
+                        const pid    = (person.id || person._id)?.toString();
                         const unread = getUnread(pid);
                         const online = isOnline(pid);
                         const lastMsg = getMessages(pid).slice(-1)[0];
+                        const hasUnread = unread > 0;
 
                         return (
                           <motion.button
                             key={pid}
-                            whileHover={{ backgroundColor: "rgba(99,102,241,0.05)" }}
+                            className={hasUnread ? "fc-sa-contact-unread" : ""}
+                            whileHover={{ backgroundColor: hasUnread ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.05)" }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => openChat({ id: pid, name: person.name, model: person.model || (person.isAdmin ? "User" : "SubAdmin") })}
-                            style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: unread > 0 ? "rgba(99,102,241,0.03)" : "transparent", border: "none", borderLeft: unread > 0 ? "2px solid rgba(99,102,241,0.4)" : "2px solid transparent", cursor: "pointer", textAlign: "left", transition: "background 0.15s" }}>
+                            style={{
+                              width: "100%", display: "flex", alignItems: "center", gap: 12,
+                              padding: "10px 14px",
+                              background: hasUnread ? "rgba(99,102,241,0.06)" : "transparent",
+                              border: "none",
+                              borderLeft: hasUnread ? "3px solid #6366f1" : "3px solid transparent",
+                              cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                            }}>
+
+                            {/* Avatar with unread ring */}
                             <div style={{ position: "relative", flexShrink: 0 }}>
                               <div style={{
                                 width: 42, height: 42, borderRadius: 14,
                                 background: person.isAdmin ? "rgba(99,102,241,0.1)" : "rgba(139,92,246,0.1)",
-                                border: `1.5px solid ${person.isAdmin ? "rgba(99,102,241,0.22)" : "rgba(139,92,246,0.22)"}`,
+                                border: hasUnread
+                                  ? "2px solid #6366f1"
+                                  : `1.5px solid ${person.isAdmin ? "rgba(99,102,241,0.22)" : "rgba(139,92,246,0.22)"}`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 fontSize: 15, fontWeight: 800,
                                 color: person.isAdmin ? "#6366f1" : "#8b5cf6",
+                                boxShadow: hasUnread ? "0 0 0 3px rgba(99,102,241,0.15)" : "none",
                               }}>
                                 {person.name?.[0]?.toUpperCase()}
                               </div>
@@ -619,29 +660,42 @@ export default function FloatingChat({ me, other }) {
 
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: "#1e293b" }}>{person.name}</span>
+                                <span style={{ fontSize: 13, fontWeight: hasUnread ? 800 : 600, color: hasUnread ? "#1e293b" : "#334155" }}>
+                                  {person.name}
+                                </span>
                                 {lastMsg && (
-                                  <span style={{ fontSize: 10, color: unread > 0 ? "#6366f1" : "#94a3b8", fontWeight: unread > 0 ? 600 : 400 }}>
+                                  <span style={{ fontSize: 10, color: hasUnread ? "#6366f1" : "#94a3b8", fontWeight: hasUnread ? 700 : 400 }}>
                                     {fmtTime(lastMsg.createdAt)}
                                   </span>
                                 )}
                               </div>
-                              <p style={{ fontSize: 11.5, color: unread > 0 ? "#475569" : "#94a3b8", fontWeight: unread > 0 ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <p style={{
+                                fontSize: 11.5,
+                                color: hasUnread ? "#3730a3" : "#94a3b8",
+                                fontWeight: hasUnread ? 600 : 400,
+                                margin: "2px 0 0",
+                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              }}>
                                 {lastMsg
                                   ? lastMsg.deleted
-                                    ? "Message was unsent"
-                                    : lastMsg.text
+                                    ? "🚫 Message was unsent"
+                                    : lastMsg.senderId?.toString() === me.id?.toString()
+                                      ? `You: ${lastMsg.text}`
+                                      : lastMsg.text
                                   : (person.isAdmin ? "Admin" : person.email || "SubAdmin")}
                               </p>
                             </div>
 
-                            {unread > 0 && (
-                              <motion.span
-                                initial={{ scale: 0 }} animate={{ scale: 1 }}
-                                style={{ minWidth: 20, height: 20, borderRadius: 99, background: "#6366f1", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 5, flexShrink: 0 }}>
-                                {unread > 9 ? "9+" : unread}
-                              </motion.span>
-                            )}
+                            {/* Unread badge with count */}
+                            <AnimatePresence>
+                              {hasUnread && (
+                                <motion.span
+                                  initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                                  style={{ minWidth: 22, height: 22, borderRadius: 99, background: "linear-gradient(135deg,#6366f1,#4f46e5)", color: "#fff", fontSize: 11, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 6, flexShrink: 0, boxShadow: "0 2px 8px rgba(99,102,241,0.4)" }}>
+                                  {unread > 9 ? "9+" : unread}
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
                           </motion.button>
                         );
                       })}
@@ -667,7 +721,7 @@ export default function FloatingChat({ me, other }) {
 
                       {!histLoaded[activeOther?.id] ? (
                         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Loader2 size={20} className="animate-spin" style={{ color: "#6366f1" }} />
+                          <Loader2 size={20} style={{ color: "#6366f1" }} />
                         </div>
                       ) : msgs.length === 0 ? (
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
@@ -682,26 +736,26 @@ export default function FloatingChat({ me, other }) {
                         if (item.type === "date") return (
                           <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 6px" }}>
                             <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.08)" }} />
-                            <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                              {item.label}
-                            </span>
+                            <span style={{ fontSize: 10, color: "#94a3b8", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>{item.label}</span>
                             <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.08)" }} />
                           </div>
                         );
 
                         if (item.type === "unread") return (
                           <div key="unread-divider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 6px" }}>
-                            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.2)" }} />
-                            <span style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, letterSpacing: "0.03em" }}>
-                              ↓ Unread Messages
+                            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.25)" }} />
+                            <span style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, letterSpacing: "0.03em", background: "rgba(99,102,241,0.08)", padding: "2px 10px", borderRadius: 99 }}>
+                              ↓ New Messages
                             </span>
-                            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.2)" }} />
+                            <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.25)" }} />
                           </div>
                         );
 
                         const { msg, isFirst, isLast } = item;
                         const isMine = msg.senderId?.toString() === me.id?.toString();
                         const msgId  = msg._id || msg._tempId;
+                        // Unseen incoming messages get a subtle highlight
+                        const isUnseen = !isMine && !msg.seen && !msg.deleted;
 
                         return (
                           <motion.div
@@ -718,23 +772,33 @@ export default function FloatingChat({ me, other }) {
                               style={{
                                 position: "relative", maxWidth: "78%", padding: "8px 12px",
                                 borderRadius: msgRadius(isMine, isFirst, isLast),
-                                background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#ffffff",
+                                background: isMine
+                                  ? "linear-gradient(135deg,#6366f1,#4f46e5)"
+                                  : isUnseen
+                                    ? "#eef2ff"   // unread incoming = light indigo tint
+                                    : "#ffffff",
                                 color: isMine ? "#fff" : "#1e293b",
                                 fontSize: msg.deleted ? 12 : 13.5,
                                 lineHeight: 1.45, fontWeight: 500,
-                                boxShadow: isMine ? "0 2px 8px rgba(99,102,241,0.25)" : "0 1px 4px rgba(0,0,0,0.06)",
-                                border: !isMine ? "1px solid rgba(99,102,241,0.08)" : "none",
+                                boxShadow: isMine
+                                  ? "0 2px 8px rgba(99,102,241,0.25)"
+                                  : isUnseen
+                                    ? "0 1px 6px rgba(99,102,241,0.15)"
+                                    : "0 1px 4px rgba(0,0,0,0.06)",
+                                border: !isMine
+                                  ? isUnseen
+                                    ? "1px solid rgba(99,102,241,0.2)"
+                                    : "1px solid rgba(99,102,241,0.08)"
+                                  : "none",
                                 wordBreak: "break-word", cursor: "default", userSelect: "text",
                               }}>
 
-                              {/* Message text or deleted state */}
                               {msg.deleted ? (
                                 <span style={{ fontStyle: "italic", opacity: 0.55 }}>
-                                  {isMine ? "You unsent a message" : "Message was unsent"}
+                                  {isMine ? "You unsent a message" : "🚫 Message was unsent"}
                                 </span>
                               ) : msg.text}
 
-                              {/* Copy feedback */}
                               <AnimatePresence>
                                 {copiedId === msgId && (
                                   <motion.div
@@ -754,6 +818,10 @@ export default function FloatingChat({ me, other }) {
                                 {isMine && !msg.deleted && (msg.seen
                                   ? <CheckCheck size={11} style={{ color: "#6366f1" }} />
                                   : <Check size={11} style={{ color: "#c4cdd8" }} />)}
+                                {/* Unseen dot for incoming */}
+                                {!isMine && isUnseen && (
+                                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", display: "inline-block", marginLeft: 2 }} />
+                                )}
                               </div>
                             )}
                           </motion.div>
@@ -807,23 +875,39 @@ export default function FloatingChat({ me, other }) {
                               borderRadius: 14,
                               boxShadow: "0 8px 32px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,0.06)",
                               border: "1px solid rgba(99,102,241,0.12)",
-                              overflow: "hidden", zIndex: 30, minWidth: 155,
+                              overflow: "hidden", zIndex: 30, minWidth: 185,
                             }}>
+
+                            {/* Copy — available for all */}
+                            <button
+                              className="fc-sa-menu-btn"
+                              onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
+                              style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.07)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "'DM Sans', sans-serif" }}>
+                              <span style={{ fontSize: 15 }}>📋</span> Copy text
+                            </button>
+
+                            {/* Delete for me — available for all messages */}
+                            <button
+                              className="fc-sa-menu-btn"
+                              onClick={handleDeleteForMe}
+                              style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: msgMenu.isMine ? "1px solid rgba(99,102,241,0.07)" : "none", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#6366f1", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "'DM Sans', sans-serif" }}>
+                              <EyeOff size={14} /> Delete for me
+                            </button>
+
+                            {/* Unsend — only sender's own messages */}
                             {msgMenu.isMine && (
                               <button
-                                onClick={handleDeleteMsg}
-                                style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
-                                🗑 Unsend Message
+                                className="fc-sa-menu-btn"
+                                onClick={handleUnsend}
+                                style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.07)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "'DM Sans', sans-serif" }}>
+                                <Trash2 size={14} /> Unsend for everyone
                               </button>
                             )}
+
                             <button
-                              onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
-                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
-                              📋 Copy
-                            </button>
-                            <button
+                              className="fc-sa-menu-btn"
                               onClick={() => setMsgMenu(null)}
-                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderTop: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#94a3b8", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                              style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, fontWeight: 500, color: "#94a3b8", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
                               Cancel
                             </button>
                           </motion.div>
@@ -861,13 +945,13 @@ export default function FloatingChat({ me, other }) {
           )}
         </AnimatePresence>
 
-        {/* ── FAB ───────────────────────────────────────────────────────────── */}
+        {/* ── FAB — badge shows total unread count ──────────────────────────── */}
         {isDesktop ? (
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.93 }}
             onClick={() => setOpen(o => !o)}
-            style={{ ...fabBase, cursor: "pointer" }}>
+            style={{ ...fabBase, cursor: "pointer", position: "relative" }}>
             <AnimatePresence mode="wait">
               {open
                 ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
@@ -875,7 +959,7 @@ export default function FloatingChat({ me, other }) {
               }
             </AnimatePresence>
             <AnimatePresence>
-              {!open && <Badge count={unreadUsersCount} />}
+              {!open && <Badge count={totalUnreadCount} />}
             </AnimatePresence>
           </motion.button>
         ) : (
@@ -893,9 +977,9 @@ export default function FloatingChat({ me, other }) {
                 onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
                 onTouchStart={(e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
                 onClick={() => { if (!hasDragged.current) setOpen(true); }}
-                style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab" }}>
+                style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab", position: "relative" }}>
                 <MessageCircle size={22} />
-                <AnimatePresence><Badge count={unreadUsersCount} /></AnimatePresence>
+                <AnimatePresence><Badge count={totalUnreadCount} /></AnimatePresence>
               </motion.button>
             )}
           </AnimatePresence>
