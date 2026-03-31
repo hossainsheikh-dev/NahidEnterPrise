@@ -120,6 +120,24 @@ export default function SubAdminBell() {
           75%      { transform: rotate(3deg); }
         }
         .bell-ring { animation: bell-ring 0.7s ease-in-out; }
+
+        .bell-dropdown {
+          position: absolute;
+          right: 0;
+          top: 3rem;
+          width: 20rem;
+        }
+        @media (max-width: 640px) {
+          .bell-dropdown {
+            position: fixed;
+            left: 50%;
+            right: auto;
+            top: 4rem;
+            transform: translateX(-50%);
+            width: calc(100vw - 24px);
+            max-width: 20rem;
+          }
+        }
       `}</style>
 
       <div className="bell-wrap relative" ref={ref}>
@@ -161,7 +179,7 @@ export default function SubAdminBell() {
               animate={{ opacity:1, y:0, scale:1 }}
               exit={{ opacity:0, y:8, scale:0.95 }}
               transition={{ type:"spring", stiffness:300, damping:28 }}
-              className="absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50"
+              className="bell-dropdown rounded-2xl overflow-hidden z-50"
               style={{ background:"#0f172a", border:"1px solid rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,181,253,0.08)" }}>
 
               {/* top accent */}
