@@ -33,45 +33,89 @@ function LinkShow({
   sort, setSort, sortOpen, setSortOpen, sortRef,
   setView, handleDelete, handleEdit, onRefresh, t,
 }) {
+  const [page, setPage] = useState(1);
+  const limit = 15;
+
+  useEffect(() => { setPage(1); }, [search, sort]);
+
+  const pages    = Math.max(1, Math.ceil(links.length / limit));
+  const displayed = links.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="mt-6 space-y-5">
       <AnimatePresence mode="wait">
         <motion.div key="home" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="space-y-5">
 
-          {/* TOP BAR */}
-          <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
-            style={{ background: "rgba(13,20,38,0.92)", backdropFilter: "blur(16px)", padding: "14px 16px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="relative flex-1 lg:max-w-xs">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#475569" }}/>
-              <input type="text"
-                placeholder={t("লিংক খুঁজুন...","Search link...")}
-                value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "9px 12px 9px 36px", fontSize: "13px", color: "#e2e8f0", outline: "none", fontFamily: "inherit" }}
-                onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
-                onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-              />
-              {search && (
-                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}>
-                  <X size={13}/>
-                </button>
-              )}
+          {/* ══ HEADER CARD ══ */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="relative rounded-2xl overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg,#0d1426 0%,#111827 50%,#0f172a 100%)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
+            }}>
+
+            <div className="absolute top-0 left-0 right-0 h-px"
+              style={{ background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.6) 30%,rgba(139,92,246,0.6) 70%,transparent)" }}/>
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}/>
+            <div className="absolute pointer-events-none" style={{
+              top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%",
+              background: "radial-gradient(circle,rgba(201,168,76,0.07) 0%,transparent 70%)",
+            }}/>
+
+            <div className="relative p-6 sm:p-7">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border: "1px solid rgba(201,168,76,0.2)" }}>
+                    <Link2 size={20} style={{ color: "#c9a84c" }}/>
+                  </div>
+                  <div>
+                    <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: "20px", color: "#f1f5f9", letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+                      {t("প্যারেন্ট নেভিগেশন লিংক","Parent Navigation Links")}
+                    </h1>
+                    <p className="text-xs mt-1" style={{ color: "#475569" }}>
+                      {t("শুধুমাত্র প্রধান মেনু নেভিগেশন পরিচালনা করুন।","Manage only main menu navigation.")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button onClick={onRefresh} disabled={loading}
+                    className="inline-flex items-center gap-1.5"
+                    style={{ padding: "9px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", cursor: "pointer", fontFamily: "inherit" }}>
+                    <RefreshCw size={13} className={loading ? "animate-spin" : ""}/>
+                    <span className="hidden sm:inline">{t("রিফ্রেশ","Refresh")}</span>
+                  </button>
+                  <button onClick={() => setView("add")}
+                    className="inline-flex items-center gap-1.5"
+                    style={{ padding: "9px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, background: "linear-gradient(135deg,#c9a84c,#e8c876)", color: "#0a0f1e", cursor: "pointer", boxShadow: "0 4px 16px rgba(201,168,76,0.25)", border: "none", fontFamily: "inherit" }}>
+                    <Plus size={15}/> {t("লিংক যোগ করুন","Add Link")}
+                  </button>
+                </div>
+              </div>
+
+              {/* stat cards — 2 col mobile, row sm+ */}
+              <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
+                {[
+                  { labelBn: "মোট",      labelEn: "Total",    count: links.length,                          color: "#c9a84c" },
+                  { labelBn: "সক্রিয়",   labelEn: "Active",   count: links.filter(l=>l.isActive).length,   color: "#34d399" },
+                  { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: links.filter(l=>!l.isActive).length,  color: "#f87171" },
+                ].map(({ labelBn, labelEn, count, color }) => (
+                  <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="text-xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
+                    <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={onRefresh} disabled={loading}
-                className="inline-flex items-center gap-1.5"
-                style={{ padding: "9px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", cursor: "pointer", fontFamily: "inherit" }}>
-                <RefreshCw size={13} className={loading ? "animate-spin" : ""}/>
-                <span className="hidden sm:inline">{t("রিফ্রেশ","Refresh")}</span>
-              </button>
-              <button onClick={() => setView("add")}
-                className="inline-flex items-center gap-1.5"
-                style={{ padding: "9px 16px", borderRadius: "10px", fontSize: "13px", fontWeight: 600, background: "linear-gradient(135deg,#c9a84c,#e8c876)", color: "#0a0f1e", cursor: "pointer", boxShadow: "0 4px 16px rgba(201,168,76,0.25)", border: "none", fontFamily: "inherit" }}>
-                <Plus size={15}/> {t("লিংক যোগ করুন","Add Link")}
-              </button>
-            </div>
-          </div>
+          </motion.div>
 
           {/* TABLE */}
           <div className="rounded-2xl overflow-hidden"
@@ -80,10 +124,23 @@ function LinkShow({
             {/* table header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4"
               style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "#0f1929" }}>
-              <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#e2e8f0" }}>
-                {t("প্যারেন্ট লিংক তালিকা","Parent Links List")}
-                <span style={{ marginLeft: "8px", fontSize: "12px", fontWeight: 400, color: "#334155" }}>({links.length})</span>
-              </h2>
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 sm:w-64">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#475569" }}/>
+                  <input type="text"
+                    placeholder={t("লিংক খুঁজুন...","Search link...")}
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "9px 12px 9px 36px", fontSize: "13px", color: "#e2e8f0", outline: "none", fontFamily: "inherit" }}
+                    onFocus={e => e.target.style.borderColor = "rgba(201,168,76,0.35)"}
+                    onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
+                  />
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}>
+                      <X size={13}/>
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="relative sm:w-52" ref={sortRef}>
                 <button onClick={() => setSortOpen(!sortOpen)}
                   className="flex items-center justify-between gap-2 w-full"
@@ -119,7 +176,7 @@ function LinkShow({
             </div>
 
             {/* rows */}
-            <div style={{ overflowY: "auto", maxHeight: "60vh" }}>
+            <div>
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <div style={{ width: "44px", height: "44px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.15)" }}>
@@ -127,7 +184,7 @@ function LinkShow({
                   </div>
                   <p style={{ fontSize: "12px", color: "#475569" }}>{t("লোড হচ্ছে…","Loading…")}</p>
                 </div>
-              ) : links.length === 0 ? (
+              ) : displayed.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <div style={{ width: "48px", height: "48px", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
                     <Link2 size={20} style={{ color: "#1e293b" }}/>
@@ -135,16 +192,18 @@ function LinkShow({
                   <p style={{ fontSize: "13px", color: "#475569" }}>{t("কোনো লিংক পাওয়া যায়নি।","No parent links found.")}</p>
                 </div>
               ) : (
-                links.map((link, index) => (
+                displayed.map((link, index) => (
                   <motion.div key={link._id}
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.03 }}
-                    className="grid items-center px-5"
+                    className="grid items-center"
                     style={{ gridTemplateColumns: "40px 1fr 90px 72px", padding: "14px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)", transition: "background 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <div style={{ fontSize: "12px", fontWeight: 500, color: "#2d3f55" }}>{index + 1}</div>
-                    <div style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: "12px" }}>{link.name}</div>
+                    <div style={{ fontSize: "12px", fontWeight: 500, color: "#2d3f55" }}>
+                      {(page - 1) * limit + index + 1}
+                    </div>
+                    <div style={{ fontSize: "13px", fontWeight: 500, color: "#e2e8f0", paddingRight: "12px", wordBreak: "break-word" }}>{link.name}</div>
                     <div>
                       <span style={{ display: "inline-flex", alignItems: "center", padding: "3px 10px", borderRadius: "8px", fontSize: "10px", fontWeight: 700, background: link.isActive ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)", color: link.isActive ? "#34d399" : "#f87171", border: `1px solid ${link.isActive ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}` }}>
                         {link.isActive ? t("সক্রিয়","Active") : t("নিষ্ক্রিয়","Inactive")}
@@ -169,6 +228,46 @@ function LinkShow({
               )}
             </div>
           </div>
+
+          {/* ══ PAGINATION ══ */}
+          {pages > 1 && (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <p className="text-xs font-medium" style={{ color: "#475569" }}>
+                {t("পেজ","Page")} <span style={{ color: "#94a3b8" }}>{page}</span> {t("এর মধ্যে","of")} <span style={{ color: "#94a3b8" }}>{pages}</span>
+                {" · "}<span style={{ color: "#64748b" }}>{links.length} {t("মোট","total")}</span>
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  style={{ display: "flex", alignItems: "center", padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600, cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.35 : 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b", fontFamily: "inherit" }}>
+                  ← {t("আগে","Prev")}
+                </button>
+                {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                  const p = page <= 3 ? i + 1 : page - 2 + i;
+                  if (p > pages) return null;
+                  return (
+                    <button key={p} onClick={() => setPage(p)}
+                      style={{
+                        width: "32px", height: "32px", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.15s", fontFamily: "inherit",
+                        background: page === p ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
+                        color: page === p ? "#0a0f1e" : "#64748b",
+                        boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                      }}>
+                      {p}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}
+                  style={{ display: "flex", alignItems: "center", padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600, cursor: page === pages ? "not-allowed" : "pointer", opacity: page === pages ? 0.35 : 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b", fontFamily: "inherit" }}>
+                  {t("পরে","Next")} →
+                </button>
+              </div>
+            </div>
+          )}
+
         </motion.div>
       </AnimatePresence>
     </div>
@@ -200,7 +299,6 @@ function LinkAdd({ name, setName, isActive, setIsActive, handleSubmit, setView, 
             onSubmit={handleSubmit}
             style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "20px", padding: "28px", boxShadow: "0 16px 48px rgba(0,0,0,0.4)", display: "flex", flexDirection: "column", gap: "16px" }}>
 
-            {/* prismatic line */}
             <div style={{ height: "1px", background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.5) 40%,rgba(139,92,246,0.5) 70%,transparent)", marginBottom: "2px" }}/>
 
             <div className="text-center">
@@ -209,7 +307,6 @@ function LinkAdd({ name, setName, isActive, setIsActive, handleSubmit, setView, 
               </h2>
             </div>
 
-            {/* name */}
             <div className="flex flex-col gap-1.5">
               <input type="text"
                 placeholder={t("লিংকের নাম","Link Name")}
@@ -221,7 +318,6 @@ function LinkAdd({ name, setName, isActive, setIsActive, handleSubmit, setView, 
               {nameError && <p style={{ fontSize: "12px", color: "#f87171", paddingLeft: "4px" }}>{nameError}</p>}
             </div>
 
-            {/* status */}
             <div className="relative" ref={statusRef}>
               <button type="button" onClick={() => setStatusDropdown(!statusDropdown)}
                 className="flex items-center justify-between gap-2 w-full"
@@ -249,7 +345,6 @@ function LinkAdd({ name, setName, isActive, setIsActive, handleSubmit, setView, 
               </AnimatePresence>
             </div>
 
-            {/* buttons */}
             <div className="flex gap-3 mt-1">
               <button type="submit"
                 style={{ flex: 1, padding: "12px", borderRadius: "12px", fontSize: "13px", fontWeight: 600, background: "linear-gradient(135deg,#c9a84c,#e8c876)", color: "#0a0f1e", border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(201,168,76,0.25)", fontFamily: "inherit" }}>

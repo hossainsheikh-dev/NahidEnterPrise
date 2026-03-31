@@ -17,6 +17,10 @@ const SublinkShow = ({
   const [parentDropdown,  setParentDropdown]  = useState(false);
   const parentRef = useRef(null);
 
+  // pagination
+  const [page, setPage] = useState(1);
+  const limit = 15;
+
   useEffect(() => {
     const handler = (e) => {
       if (!parentRef.current?.contains(e.target)) setParentDropdown(false);
@@ -25,12 +29,18 @@ const SublinkShow = ({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // reset page on filter/search change
+  useEffect(() => { setPage(1); }, [search, sort, filterParent]);
+
   const selectedParentName = parents.find(p => p._id === filterParent)?.name;
 
-  const displayed = sublinks.filter(s => {
+  const filtered = sublinks.filter(s => {
     if (!filterParent) return true;
     return (s.parent?._id || s.parent) === filterParent;
   });
+
+  const pages = Math.max(1, Math.ceil(filtered.length / limit));
+  const displayed = filtered.slice((page - 1) * limit, page * limit);
 
   return (
     <>
@@ -96,6 +106,14 @@ const SublinkShow = ({
         .ss-row:last-child { border-bottom: none; }
         .ss-row:hover { background: rgba(255,255,255,0.025); }
 
+        /* ── Mobile: hide parent column ── */
+        @media (max-width: 640px) {
+          .ss-col-header { grid-template-columns: 22px 1fr 80px 36px; padding: 9px 12px; gap: 6px; }
+          .ss-col-header .col-parent { display: none; }
+          .ss-row { grid-template-columns: 22px 1fr 80px 36px; padding: 11px 12px; gap: 6px; }
+          .ss-row .cell-parent { display: none; }
+        }
+
         .ss-icon-btn {
           width: 28px; height: 28px; border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
@@ -103,6 +121,23 @@ const SublinkShow = ({
           font-family: 'DM Sans', sans-serif;
         }
         .ss-icon-btn:hover { transform: translateY(-1px); }
+
+        .ss-page-btn {
+          display: flex; align-items: center; justify-content: center;
+          padding: 7px 14px; border-radius: 10px; font-size: 12px; font-weight: 600;
+          cursor: pointer; transition: all 0.15s;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+          color: #64748b; font-family: 'DM Sans', sans-serif;
+        }
+        .ss-page-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.15); color: #94a3b8; }
+        .ss-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .ss-page-num {
+          width: 32px; height: 32px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
       `}</style>
 
       <div className="ss-wrap">
@@ -170,15 +205,15 @@ const SublinkShow = ({
                   </div>
                 </div>
 
-                {/* stat cards */}
-                <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+                {/* stat cards — 2 col on mobile, 4 on sm+ */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
                   {[
-                    { labelBn: "মোট",     labelEn: "Total",    count: sublinks.length,                          color: "#c9a84c" },
-                    { labelBn: "সক্রিয়",  labelEn: "Active",   count: sublinks.filter(s=>s.isActive).length,   color: "#34d399" },
-                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: sublinks.filter(s=>!s.isActive).length, color: "#f87171" },
-                    { labelBn: "প্যারেন্ট", labelEn: "Parents", count: parents.length,                          color: "#a78bfa" },
+                    { labelBn: "মোট",      labelEn: "Total",    count: sublinks.length,                          color: "#c9a84c" },
+                    { labelBn: "সক্রিয়",   labelEn: "Active",   count: sublinks.filter(s=>s.isActive).length,   color: "#34d399" },
+                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: sublinks.filter(s=>!s.isActive).length,  color: "#f87171" },
+                    { labelBn: "প্যারেন্ট", labelEn: "Parents",  count: parents.length,                          color: "#a78bfa" },
                   ].map(({ labelBn, labelEn, count, color }) => (
-                    <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-3"
+                    <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3"
                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <div className="text-xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
                       <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
@@ -274,12 +309,14 @@ const SublinkShow = ({
               style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
 
               <div className="ss-col-header">
-                {["#", t("নাম","Name"), t("প্যারেন্ট","Parent"), t("স্ট্যাটাস","Status"), ""].map((h, i) => (
-                  <div key={i} className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{h}</div>
-                ))}
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>#</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{t("নাম","Name")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider col-parent" style={{ color: "#2d3f55" }}>{t("প্যারেন্ট","Parent")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{t("স্ট্যাটাস","Status")}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}></div>
               </div>
 
-              <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+              <div>
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
@@ -304,16 +341,18 @@ const SublinkShow = ({
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.03 }}>
 
-                      <div className="text-xs font-medium" style={{ color: "#2d3f55" }}>{index + 1}</div>
-
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium" style={{ color: "#e2e8f0" }}>{sublink.name}</div>
+                      <div className="text-xs font-medium" style={{ color: "#2d3f55" }}>
+                        {(page - 1) * limit + index + 1}
                       </div>
 
                       <div className="min-w-0">
+                        <div className="text-sm font-medium" style={{ color: "#e2e8f0", wordBreak: "break-word" }}>{sublink.name}</div>
+                      </div>
+
+                      <div className="min-w-0 cell-parent">
                         {sublink.parent?.name ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold truncate"
-                            style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.15)" }}>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold"
+                            style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa", border: "1px solid rgba(167,139,250,0.15)", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                             {sublink.parent.name}
                           </span>
                         ) : (
@@ -349,6 +388,39 @@ const SublinkShow = ({
                 )}
               </div>
             </div>
+
+            {/* ══ PAGINATION ══ */}
+            {pages > 1 && (
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <p className="text-xs font-medium" style={{ color: "#475569" }}>
+                  {t("পেজ","Page")} <span style={{ color: "#94a3b8" }}>{page}</span> {t("এর মধ্যে","of")} <span style={{ color: "#94a3b8" }}>{pages}</span>
+                  {" · "}<span style={{ color: "#64748b" }}>{filtered.length} {t("মোট","total")}</span>
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button className="ss-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                    ← {t("আগে","Prev")}
+                  </button>
+                  {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p > pages) return null;
+                    return (
+                      <button key={p} className="ss-page-num" onClick={() => setPage(p)}
+                        style={{
+                          background: page === p ? "linear-gradient(135deg,#a78bfa,#c4b5fd)" : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
+                          color: page === p ? "#fff" : "#64748b",
+                          boxShadow: page === p ? "0 4px 12px rgba(167,139,250,0.3)" : "none",
+                        }}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button className="ss-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>
+                    {t("পরে","Next")} →
+                  </button>
+                </div>
+              </div>
+            )}
 
           </motion.div>
         </AnimatePresence>

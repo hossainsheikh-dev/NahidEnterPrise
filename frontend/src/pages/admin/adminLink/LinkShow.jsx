@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, Plus, Pencil, Trash2,
@@ -12,6 +13,14 @@ const LinkShow = ({
   setView, handleDelete, handleEdit,
   onRefresh, t,
 }) => {
+  const [page, setPage] = useState(1);
+  const limit = 15;
+
+  useEffect(() => { setPage(1); }, [search, sort]);
+
+  const pages = Math.max(1, Math.ceil(links.length / limit));
+  const displayed = links.slice((page - 1) * limit, page * limit);
+
   return (
     <>
       <style>{`
@@ -81,6 +90,23 @@ const LinkShow = ({
           font-family: 'DM Sans', sans-serif;
         }
         .ls-icon-btn:hover { transform: translateY(-1px); }
+
+        .ls-page-btn {
+          display: flex; align-items: center; justify-content: center;
+          padding: 7px 14px; border-radius: 10px; font-size: 12px; font-weight: 600;
+          cursor: pointer; transition: all 0.15s;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+          color: #64748b; font-family: 'DM Sans', sans-serif;
+        }
+        .ls-page-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.15); color: #94a3b8; }
+        .ls-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .ls-page-num {
+          width: 32px; height: 32px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
       `}</style>
 
       <div className="ls-wrap">
@@ -144,14 +170,14 @@ const LinkShow = ({
                   </div>
                 </div>
 
-                {/* stat */}
-                <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+                {/* stat cards — 2 col on mobile, row on sm+ */}
+                <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
                   {[
-                    { labelBn: "মোট",    labelEn: "Total",    count: links.length,                            color: "#c9a84c" },
-                    { labelBn: "সক্রিয়", labelEn: "Active",   count: links.filter(l=>l.isActive).length,     color: "#34d399" },
-                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive",count: links.filter(l=>!l.isActive).length,   color: "#f87171" },
+                    { labelBn: "মোট",      labelEn: "Total",    count: links.length,                          color: "#c9a84c" },
+                    { labelBn: "সক্রিয়",   labelEn: "Active",   count: links.filter(l=>l.isActive).length,   color: "#34d399" },
+                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: links.filter(l=>!l.isActive).length,  color: "#f87171" },
                   ].map(({ labelBn, labelEn, count, color }) => (
-                    <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-3"
+                    <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3"
                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <div className="text-xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
                       <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
@@ -211,7 +237,7 @@ const LinkShow = ({
                 ))}
               </div>
 
-              <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+              <div>
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
@@ -220,7 +246,7 @@ const LinkShow = ({
                     </div>
                     <p className="text-xs font-medium" style={{ color: "#475569" }}>{t("লোড হচ্ছে…","Loading…")}</p>
                   </div>
-                ) : links.length === 0 ? (
+                ) : displayed.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -231,15 +257,19 @@ const LinkShow = ({
                     </p>
                   </div>
                 ) : (
-                  links.map((link, index) => (
+                  displayed.map((link, index) => (
                     <motion.div key={link._id} className="ls-row"
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.03 }}>
 
-                      <div className="text-xs font-medium" style={{ color: "#2d3f55" }}>{index + 1}</div>
+                      <div className="text-xs font-medium" style={{ color: "#2d3f55" }}>
+                        {(page - 1) * limit + index + 1}
+                      </div>
 
-                      <div className="truncate text-sm font-medium" style={{ color: "#e2e8f0" }}>
-                        {link.name}
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium" style={{ color: "#e2e8f0", wordBreak: "break-word" }}>
+                          {link.name}
+                        </div>
                       </div>
 
                       <div>
@@ -270,6 +300,39 @@ const LinkShow = ({
                 )}
               </div>
             </div>
+
+            {/* ══ PAGINATION ══ */}
+            {pages > 1 && (
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <p className="text-xs font-medium" style={{ color: "#475569" }}>
+                  {t("পেজ","Page")} <span style={{ color: "#94a3b8" }}>{page}</span> {t("এর মধ্যে","of")} <span style={{ color: "#94a3b8" }}>{pages}</span>
+                  {" · "}<span style={{ color: "#64748b" }}>{links.length} {t("মোট","total")}</span>
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button className="ls-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                    ← {t("আগে","Prev")}
+                  </button>
+                  {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p > pages) return null;
+                    return (
+                      <button key={p} className="ls-page-num" onClick={() => setPage(p)}
+                        style={{
+                          background: page === p ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
+                          color: page === p ? "#0a0f1e" : "#64748b",
+                          boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                        }}>
+                        {p}
+                      </button>
+                    );
+                  })}
+                  <button className="ls-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>
+                    {t("পরে","Next")} →
+                  </button>
+                </div>
+              </div>
+            )}
 
           </motion.div>
         </AnimatePresence>
