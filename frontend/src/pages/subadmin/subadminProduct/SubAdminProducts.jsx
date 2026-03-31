@@ -251,7 +251,7 @@ function ProductShow({
 
   const clearFilters = () => { setFilterParent(""); setFilterSublink(""); };
 
-  /* shared dropdown styles */
+  /* dropdown styles */
   const tblDropBtn = {
     display: "flex", alignItems: "center", justifyContent: "space-between",
     width: "100%", background: "#fff",
@@ -279,41 +279,31 @@ function ProductShow({
     transition: "background .12s",
   });
 
-  /* stock badge — just number on mobile */
+  /* stock — always just a number badge */
   const stockBadge = (stock) => {
     if (stock === 0) return (
-      <span style={{
-        fontSize: 11, fontWeight: 700, color: "#e11d48",
-        background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.15)",
-        padding: "2px 7px", borderRadius: 99,
-      }}>
-        {isMobile ? "0" : t("শেষ", "Out")}
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#e11d48", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.15)", padding: "2px 8px", borderRadius: 99 }}>
+        0
       </span>
     );
     if (stock <= 5) return (
-      <span style={{
-        fontSize: 11, fontWeight: 700, color: "#d97706",
-        background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)",
-        padding: "2px 7px", borderRadius: 99,
-      }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#d97706", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)", padding: "2px 8px", borderRadius: 99 }}>
         {stock}
       </span>
     );
     return (
-      <span style={{
-        fontSize: 11, fontWeight: 700, color: "#059669",
-        background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)",
-        padding: "2px 7px", borderRadius: 99,
-      }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#059669", background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)", padding: "2px 8px", borderRadius: 99 }}>
         {stock}
       </span>
     );
   };
 
-  /* grid layout: mobile = 4 cols (serial, img, name, actions), desktop = 6 cols */
-  const gridCols = isMobile
-    ? "24px 40px 1fr 68px"
-    : "28px 44px 1fr 80px 90px 80px";
+  /*
+    Table columns — same 5 cols on ALL screen sizes:
+    #  |  Image  |  Name  |  Stock  |  Actions
+    Only the proportions flex with the container.
+  */
+  const gridCols = "28px 46px 1fr 54px 72px";
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -334,7 +324,7 @@ function ProductShow({
             {/* Search */}
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
-              flex: "1 1 220px", maxWidth: 340,
+              flex: "1 1 200px", maxWidth: 340,
               background: "rgba(99,102,241,0.05)",
               border: "1px solid rgba(99,102,241,0.12)",
               borderRadius: 11, padding: "8px 13px",
@@ -354,21 +344,19 @@ function ProductShow({
             </div>
 
             {/* Add button */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: isMobile ? "1 1 200px" : "0 0 auto" }}>
-              <motion.button
-                whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
-                onClick={() => setView("add")}
-                style={{
-                  flex: isMobile ? 1 : "0 0 auto",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11,
-                  padding: "9px 18px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(99,102,241,0.32), inset 0 1px 0 rgba(255,255,255,0.15)",
-                }}>
-                <Plus size={14} strokeWidth={2.5} />
-                {t("পণ্য যোগ করুন", "Add Product")}
-              </motion.button>
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
+              onClick={() => setView("add")}
+              style={{
+                flex: isMobile ? "1 1 100%" : "0 0 auto",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11,
+                padding: "9px 18px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(99,102,241,0.32), inset 0 1px 0 rgba(255,255,255,0.15)",
+              }}>
+              <Plus size={14} strokeWidth={2.5} />
+              {t("পণ্য যোগ করুন", "Add Product")}
+            </motion.button>
           </div>
 
           {/* ── TABLE CARD ── */}
@@ -380,51 +368,40 @@ function ProductShow({
             overflow: "hidden",
           }}>
 
-            {/* Card header with filters */}
+            {/* Card header — title + filters */}
             <div style={{
               display: "flex", flexWrap: "wrap", alignItems: "center",
-              justifyContent: "space-between", gap: 12,
-              padding: "14px 20px",
+              justifyContent: "space-between", gap: 10,
+              padding: "14px 16px",
               borderBottom: "1px solid rgba(99,102,241,0.08)",
               background: "rgba(99,102,241,0.025)",
             }}>
-              <h2 style={{ fontSize: 14, fontWeight: 900, color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontSize: 14, fontWeight: 900, color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.02em", flexShrink: 0 }}>
                 {t("পণ্য তালিকা", "Products List")}
-                {displayedProducts.length !== products.length ? (
-                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
-                    ({displayedProducts.length} {t("এর মধ্যে", "of")} {products.length})
-                  </span>
-                ) : (
-                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
-                    ({products.length})
-                  </span>
-                )}
+                <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
+                  ({displayedProducts.length !== products.length
+                    ? `${displayedProducts.length} of ${products.length}`
+                    : products.length})
+                </span>
               </h2>
 
-              {/* Filters row */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8,
-                flexWrap: "wrap",
-                width: isMobile ? "100%" : "auto",
-              }}>
+              {/* Filters */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", width: isMobile ? "100%" : "auto" }}>
 
                 {/* Parent filter */}
-                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 160px", width: isMobile ? undefined : 160 }} ref={parentRef}>
+                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 152px" }} ref={parentRef}>
                   <button type="button" onClick={() => setParentDropdown(!parentDropdown)} style={tblDropBtn}>
-                    <span style={{ color: filterParent ? "#374151" : "#a8b4c8", fontWeight: filterParent ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {selectedParentName || t("লিংক ফিল্টার", "Filter by Link")}
+                    <span style={{ color: filterParent ? "#374151" : "#a8b4c8", fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {selectedParentName || t("লিংক", "Link")}
                     </span>
-                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                    <ChevronDown size={13} style={{ color: "#a8b4c8", flexShrink: 0 }} />
                   </button>
                   <AnimatePresence>
                     {parentDropdown && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
+                      <motion.div initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
                         style={{ ...tblDropPanel, maxHeight: 200, overflowY: "auto" }}>
                         {parentLinks.map((p) => (
-                          <div key={p._id}
-                            onClick={() => { setFilterParent(p._id); setFilterSublink(""); setParentDropdown(false); }}
+                          <div key={p._id} onClick={() => { setFilterParent(p._id); setFilterSublink(""); setParentDropdown(false); }}
                             style={tblDropItem(filterParent === p._id)}
                             onMouseEnter={e => filterParent !== p._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
                             onMouseLeave={e => filterParent !== p._id && (e.currentTarget.style.background = "transparent")}>
@@ -438,22 +415,19 @@ function ProductShow({
 
                 {/* Sublink filter */}
                 {filterParent && (
-                  <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 160px", width: isMobile ? undefined : 160 }} ref={sublinkRef}>
+                  <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 152px" }} ref={sublinkRef}>
                     <button type="button" onClick={() => setSublinkDropdown(!sublinkDropdown)} style={tblDropBtn}>
-                      <span style={{ color: filterSublink ? "#374151" : "#a8b4c8", fontWeight: filterSublink ? 500 : 400, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {selectedSublinkName || t("সাবলিংক ফিল্টার", "Filter by Sublink")}
+                      <span style={{ color: filterSublink ? "#374151" : "#a8b4c8", fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {selectedSublinkName || t("সাবলিংক", "Sublink")}
                       </span>
-                      <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                      <ChevronDown size={13} style={{ color: "#a8b4c8", flexShrink: 0 }} />
                     </button>
                     <AnimatePresence>
                       {sublinkDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
+                        <motion.div initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
                           style={{ ...tblDropPanel, maxHeight: 200, overflowY: "auto" }}>
                           {filteredSublinks.length > 0 ? filteredSublinks.map((s) => (
-                            <div key={s._id}
-                              onClick={() => { setFilterSublink(s._id); setSublinkDropdown(false); }}
+                            <div key={s._id} onClick={() => { setFilterSublink(s._id); setSublinkDropdown(false); }}
                               style={tblDropItem(filterSublink === s._id)}
                               onMouseEnter={e => filterSublink !== s._id && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
                               onMouseLeave={e => filterSublink !== s._id && (e.currentTarget.style.background = "transparent")}>
@@ -461,7 +435,7 @@ function ProductShow({
                             </div>
                           )) : (
                             <div style={{ padding: "12px 14px", fontSize: 13, color: "#94a3b8" }}>
-                              {t("কোনো সাবলিংক নেই", "No sublinks found.")}
+                              {t("কোনো সাবলিংক নেই", "No sublinks.")}
                             </div>
                           )}
                         </motion.div>
@@ -470,33 +444,22 @@ function ProductShow({
                   </div>
                 )}
 
-                {/* Clear filter */}
-                {(filterParent || filterSublink) && !isMobile && (
-                  <button onClick={clearFilters}
-                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}>
-                    <X size={12} /> {t("ক্লিয়ার", "Clear")}
-                  </button>
-                )}
-
                 {/* Sort */}
-                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 168px", width: isMobile ? undefined : 168 }} ref={dropdownRef}>
+                <div style={{ position: "relative", flex: isMobile ? 1 : "0 0 152px" }} ref={dropdownRef}>
                   <button onClick={() => setDropdownOpen(!dropdownOpen)} style={tblDropBtn}>
-                    <span style={{ fontSize: 13 }}>
+                    <span style={{ fontSize: 12.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {SORT_OPTIONS.find((o) => o.value === sort) &&
                         t(SORT_OPTIONS.find((o) => o.value === sort).labelBn,
                           SORT_OPTIONS.find((o) => o.value === sort).labelEn)}
                     </span>
-                    <ChevronDown size={14} style={{ color: "#a8b4c8", flexShrink: 0 }} />
+                    <ChevronDown size={13} style={{ color: "#a8b4c8", flexShrink: 0 }} />
                   </button>
                   <AnimatePresence>
                     {dropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
-                        style={tblDropPanel}>
+                      <motion.div initial={{ opacity: 0, y: -6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.97 }} transition={{ duration: 0.18 }}
+                        style={{ ...tblDropPanel, maxHeight: 260, overflowY: "auto" }}>
                         {SORT_OPTIONS.map((option) => (
-                          <div key={option.value}
-                            onClick={() => { setSort(option.value); setDropdownOpen(false); }}
+                          <div key={option.value} onClick={() => { setSort(option.value); setDropdownOpen(false); }}
                             style={tblDropItem(sort === option.value)}
                             onMouseEnter={e => sort !== option.value && (e.currentTarget.style.background = "rgba(99,102,241,0.04)")}
                             onMouseLeave={e => sort !== option.value && (e.currentTarget.style.background = "transparent")}>
@@ -508,36 +471,33 @@ function ProductShow({
                   </AnimatePresence>
                 </div>
 
-                {/* Clear filter mobile — full width below dropdowns */}
-                {(filterParent || filterSublink) && isMobile && (
+                {/* Clear filters */}
+                {(filterParent || filterSublink) && (
                   <button onClick={clearFilters}
-                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4, width: "100%", justifyContent: "center", padding: "4px 0" }}>
-                    <X size={12} /> {t("ফিল্টার ক্লিয়ার", "Clear Filter")}
+                    style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+                    <X size={12} /> {t("ক্লিয়ার", "Clear")}
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Column headers */}
+            {/* ── Column headers ── */}
             <div style={{
-              display: "grid",
-              gridTemplateColumns: gridCols,
-              alignItems: "center",
-              padding: "10px 16px",
-              fontSize: 10.5, fontWeight: 700, color: "#94a3b8",
-              letterSpacing: ".06em", textTransform: "uppercase",
+              display: "grid", gridTemplateColumns: gridCols,
+              alignItems: "center", padding: "9px 14px",
+              fontSize: 10, fontWeight: 700, color: "#94a3b8",
+              letterSpacing: ".07em", textTransform: "uppercase",
               borderBottom: "1px solid rgba(99,102,241,0.08)",
               background: "rgba(99,102,241,0.02)",
             }}>
               <div>#</div>
               <div>{t("ছবি", "Img")}</div>
               <div>{t("নাম", "Name")}</div>
-              {!isMobile && <div>{t("স্টক", "Stock")}</div>}
-              {!isMobile && <div>{t("স্ট্যাটাস", "Status")}</div>}
-              <div style={{ textAlign: "right" }}>{isMobile ? t("কাজ", "Act.") : t("কার্যক্রম", "Actions")}</div>
+              <div style={{ textAlign: "center" }}>{t("স্টক", "Stock")}</div>
+              <div style={{ textAlign: "right" }}>{t("কাজ", "Act.")}</div>
             </div>
 
-            {/* Rows */}
+            {/* ── Rows ── */}
             <div>
               {loading ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12 }}>
@@ -556,10 +516,9 @@ function ProductShow({
                   initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.025 }}
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: gridCols,
+                    display: "grid", gridTemplateColumns: gridCols,
                     alignItems: "center",
-                    padding: isMobile ? "10px 16px" : "12px 16px",
+                    padding: "10px 14px",
                     borderBottom: "1px solid rgba(99,102,241,0.06)",
                     transition: "background .12s ease",
                   }}
@@ -567,107 +526,79 @@ function ProductShow({
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
 
                   {/* # */}
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8", display: "flex", alignItems: "center", gap: 3 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: "#c4cdd8" }}>
                     {(page - 1) * PER_PAGE + index + 1}
-                    {product.isFeatured && !isMobile && (
-                      <Star size={9} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
-                    )}
                   </div>
 
                   {/* Image */}
                   <div>
                     {product.images?.[0] ? (
                       <img src={product.images[0].url} alt={product.name}
-                        style={{
-                          width: isMobile ? 34 : 38, height: isMobile ? 34 : 38,
-                          objectFit: "contain", borderRadius: 9,
-                          border: "1px solid rgba(99,102,241,0.10)", background: "#fff", padding: 2,
-                        }} />
+                        style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 9, border: "1px solid rgba(99,102,241,0.10)", background: "#fff", padding: 2, display: "block" }} />
                     ) : (
-                      <div style={{
-                        width: isMobile ? 34 : 38, height: isMobile ? 34 : 38, borderRadius: 9,
-                        background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.10)",
-                      }} />
+                      <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.10)" }} />
                     )}
                   </div>
 
-                  {/* Name + mobile sub-info */}
-                  <div style={{ minWidth: 0, paddingRight: 8 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {product.name}
-                    </p>
-                    {/* on mobile show stock + status under name */}
-                    {isMobile && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
-                        {stockBadge(product.stock ?? 0)}
-                        <span style={{
-                          fontSize: 10, fontWeight: 700,
-                          color: product.isActive ? "#059669" : "#e11d48",
-                        }}>
-                          {product.isActive ? "●" : "●"}
-                          <span style={{ marginLeft: 2 }}>
-                            {product.isActive ? t("সক্রিয়", "Active") : t("বন্ধ", "Off")}
-                          </span>
-                        </span>
-                        {product.isFeatured && (
-                          <Star size={9} style={{ color: "#f59e0b", fill: "#f59e0b", flexShrink: 0 }} />
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Stock — desktop only */}
-                  {!isMobile && (
-                    <div>{stockBadge(product.stock ?? 0)}</div>
-                  )}
-
-                  {/* Status — desktop only */}
-                  {!isMobile && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      <span style={{
-                        width: 6, height: 6, borderRadius: "50%", display: "inline-block", flexShrink: 0,
-                        background: product.isActive ? "#10b981" : "#f43f5e",
-                      }} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: product.isActive ? "#059669" : "#e11d48" }}>
-                        {product.isActive ? t("সক্রিয়", "Active") : t("নিষ্ক্রিয়", "Inactive")}
+                  {/* Product Name — wraps naturally, sky-blue accent on second+ lines */}
+                  <div style={{ minWidth: 0, paddingRight: 6 }}>
+                    <p style={{
+                      fontSize: 12.5, fontWeight: 700, color: "#1e293b",
+                      lineHeight: 1.45,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      wordBreak: "break-word",
+                    }}>
+                      {/* First word normal, rest sky-blue on overflow — achieved via title + color combo */}
+                      <span style={{ color: "#1e293b" }}>
+                        {product.name.split(" ")[0]}
                       </span>
-                    </div>
-                  )}
+                      {product.name.split(" ").length > 1 && (
+                        <span style={{ color: "#0ea5e9" }}>
+                          {" " + product.name.split(" ").slice(1).join(" ")}
+                        </span>
+                      )}
+                    </p>
+                    {product.isFeatured && (
+                      <Star size={9} style={{ color: "#f59e0b", fill: "#f59e0b", marginTop: 2 }} />
+                    )}
+                  </div>
 
-                  {/* Actions */}
-                  <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: isMobile ? 6 : 8 }}>
-                    <motion.button
-                      whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
+                  {/* Stock — number only, centred */}
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    {stockBadge(product.stock ?? 0)}
+                  </div>
+
+                  {/* Actions — edit + delete stacked on mobile, side by side on desktop */}
+                  <div style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    justifyContent: "flex-end",
+                    alignItems: "flex-end",
+                    gap: 5,
+                  }}>
+                    <motion.button whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
                       onClick={() => handleEdit(product)}
-                      style={{
-                        width: isMobile ? 30 : 30, height: isMobile ? 30 : 30,
-                        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.13)",
-                        color: "#6366f1", cursor: "pointer",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.14)"}
+                      style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.13)", color: "#6366f1", cursor: "pointer", flexShrink: 0 }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.16)"}
                       onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.07)"}>
-                      <Pencil size={13} />
+                      <Pencil size={12} />
                     </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
+                    <motion.button whileHover={{ scale: 1.12 }} whileTap={{ scale: 0.9 }}
                       onClick={() => handleDelete(product)}
-                      style={{
-                        width: isMobile ? 30 : 30, height: isMobile ? 30 : 30,
-                        borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                        background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.13)",
-                        color: "#f43f5e", cursor: "pointer",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = "rgba(244,63,94,0.14)"}
+                      style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(244,63,94,0.07)", border: "1px solid rgba(244,63,94,0.13)", color: "#f43f5e", cursor: "pointer", flexShrink: 0 }}
+                      onMouseEnter={e => e.currentTarget.style.background = "rgba(244,63,94,0.16)"}
                       onMouseLeave={e => e.currentTarget.style.background = "rgba(244,63,94,0.07)"}>
-                      <Trash2 size={13} />
+                      <Trash2 size={12} />
                     </motion.button>
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            {/* ── PAGINATION ── same style as SubAdminSublinks */}
+            {/* ── PAGINATION ── */}
             {totalPages > 1 && (
               <div style={{
                 display: "flex", justifyContent: "center", alignItems: "center",
@@ -676,8 +607,7 @@ function ProductShow({
                 background: "rgba(99,102,241,0.01)",
               }}>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <motion.button
-                    key={p}
+                  <motion.button key={p}
                     whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                     onClick={() => setPage(p)}
                     style={{
@@ -689,8 +619,7 @@ function ProductShow({
                       color: page === p ? "#fff" : "#6366f1",
                       boxShadow: page === p ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
                       transition: "all .15s ease",
-                    }}
-                  >
+                    }}>
                     {p}
                   </motion.button>
                 ))}
