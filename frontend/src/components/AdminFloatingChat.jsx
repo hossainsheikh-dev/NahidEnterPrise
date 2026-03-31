@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle, X, Send, Check, CheckCheck,
   ChevronLeft, Loader2, Search, Bell, BellOff, ArrowDown,
-  Trash2, EyeOff,
 } from "lucide-react";
 import { useChatSocket } from "../hooks/useChatSocket";
 
@@ -57,7 +56,7 @@ export default function AdminFloatingChat({ me }) {
   const [newMsgBelow, setNewMsgBelow]       = useState(0);
   const [copiedId, setCopiedId]             = useState(null);
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
-  const [msgMenu, setMsgMenu]               = useState(null);
+  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text }
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [fabPos, setFabPos]       = useState({ bottom: 24, right: 24 });
@@ -79,7 +78,8 @@ export default function AdminFloatingChat({ me }) {
 
   const {
     isOnline, getMessages, isTyping, getUnread,
-    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage, deleteForMe,
+    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage,
+    deleteForMe, // ← NEW
   } = useChatSocket({ myId: me.id, myName: me.name, myRole: "admin", tokenKey: "token" });
 
   useEffect(() => {
@@ -149,14 +149,11 @@ export default function AdminFloatingChat({ me }) {
     setPeerIds(subAdmins.map(s => s._id));
   }, [subAdmins]);
 
-  // Total unread (persisted via localStorage)
-  const totalUnreadCount = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
+  // ── CHANGE 1: total count for badge ─────────────────────────────────────────
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
+  const totalUnreadCount = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
 
   const contactList = [...subAdmins].sort((a, b) => {
-    const aUnread = getUnread(a._id);
-    const bUnread = getUnread(b._id);
-    if (bUnread !== aUnread) return bUnread - aUnread;
     const aMsg = getMessages(a._id).slice(-1)[0];
     const bMsg = getMessages(b._id).slice(-1)[0];
     if (!aMsg && !bMsg) return 0;
@@ -325,6 +322,7 @@ export default function AdminFloatingChat({ me }) {
     });
   }, []);
 
+  // ── Message long-press / right-click menu ──────────────────────────────────
   const handleMsgPress = useCallback((e, msg, isMine) => {
     e.preventDefault();
     const msgId = msg._id || msg._tempId;
@@ -332,12 +330,13 @@ export default function AdminFloatingChat({ me }) {
     setMsgMenu({ msgId, isMine, text: msg.text });
   }, []);
 
-  const handleUnsend = useCallback(() => {
+  const handleDeleteMsg = useCallback(() => {
     if (!msgMenu || !activeOther) return;
     deleteMessage({ msgId: msgMenu.msgId, receiverId: activeOther.id });
     setMsgMenu(null);
   }, [msgMenu, deleteMessage, activeOther]);
 
+  // ── CHANGE 2: Delete for me handler ─────────────────────────────────────────
   const handleDeleteForMe = useCallback(() => {
     if (!msgMenu) return;
     deleteForMe(msgMenu.msgId);
@@ -382,13 +381,13 @@ export default function AdminFloatingChat({ me }) {
     boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
-  // Badge shows total count
+  // ── CHANGE 3: Badge uses totalUnreadCount ────────────────────────────────────
   const Badge = ({ count }) => count > 0 ? (
     <motion.span
       initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
       style={{
-        position: "absolute", top: -6, right: -6, minWidth: 20, height: 20,
+        position: "absolute", top: -4, right: -4, minWidth: 18, height: 18,
         borderRadius: 99, background: "#f43f5e", color: "#fff",
         fontSize: 10, fontWeight: 900,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -416,14 +415,8 @@ export default function AdminFloatingChat({ me }) {
         .afc-bubble:hover { filter: brightness(1.08); }
         @keyframes afc-badge-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.5); }
-          50%       { box-shadow: 0 0 0 6px rgba(244,63,94,0); }
+          50%       { box-shadow: 0 0 0 5px rgba(244,63,94,0); }
         }
-        @keyframes afc-unread-glow {
-          0%, 100% { background: rgba(99,102,241,0.07); }
-          50%       { background: rgba(99,102,241,0.13); }
-        }
-        .afc-contact-unread { animation: afc-unread-glow 2s ease-in-out infinite; }
-        .afc-menu-btn:hover { background: rgba(255,255,255,0.05) !important; }
       `}</style>
 
       {/* ── Notification Toast ─────────────────────────────────────────────── */}
@@ -490,38 +483,31 @@ export default function AdminFloatingChat({ me }) {
             style={{ ...panelStyle, overflow: "hidden", display: "flex", flexDirection: "column", background: "#0f172a", border: isDesktop ? "1px solid rgba(255,255,255,0.08)" : "none", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
 
             {/* ── Header ────────────────────────────────────────────────────── */}
-            <div style={{ background: "linear-gradient(135deg,#1e293b,#0f172a)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-3 flex items-center gap-2.5 flex-shrink-0 border-b border-white/10">
               {screen === "chat" && (
                 <button
                   onClick={() => setScreen("list")}
-                  style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#94a3b8" }}>
+                  className="bg-white/10 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-400 hover:text-slate-300 flex-shrink-0">
                   <ChevronLeft size={15} />
                 </button>
               )}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex-1 min-w-0">
                 {screen === "list" ? (
                   <>
-                    <p style={{ fontSize: 13.5, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>Messages</p>
-                    <p style={{ fontSize: 11, color: "#475569", margin: 0 }}>
-                      {subAdmins.length} SubAdmins
-                      {totalUnreadCount > 0 && (
-                        <span style={{ marginLeft: 6, background: "rgba(99,102,241,0.3)", borderRadius: 99, padding: "1px 7px", fontSize: 10, fontWeight: 700, color: "#818cf8" }}>
-                          {totalUnreadCount} unread
-                        </span>
-                      )}
-                    </p>
+                    <p className="text-[13.5px] font-bold text-slate-100 m-0">Messages</p>
+                    <p className="text-[11px] text-slate-500 m-0">{subAdmins.length} SubAdmins</p>
                   </>
                 ) : (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ position: "relative" }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#818cf8" }}>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <div className="w-[30px] h-[30px] rounded-lg bg-indigo-500/20 flex items-center justify-center text-xs font-extrabold text-indigo-400">
                         {activeOther?.name?.[0]?.toUpperCase()}
                       </div>
-                      <span className={isOnline(activeOther?.id) ? "afc-online" : ""} style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", border: "2px solid #0f172a", background: isOnline(activeOther?.id) ? "#22c55e" : "#334155" }} />
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${isOnline(activeOther?.id) ? "bg-green-500 afc-online" : "bg-slate-600"}`} />
                     </div>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>{activeOther?.name}</p>
-                      <p style={{ fontSize: 10, margin: 0, color: isTyping(activeOther?.id) ? "#818cf8" : isOnline(activeOther?.id) ? "#22c55e" : "#475569" }}>
+                      <p className="text-[13px] font-bold text-slate-100 m-0">{activeOther?.name}</p>
+                      <p className={`text-[10px] m-0 ${isTyping(activeOther?.id) ? "text-indigo-400" : isOnline(activeOther?.id) ? "text-green-500" : "text-slate-600"}`}>
                         {isTyping(activeOther?.id) ? "typing…" : isOnline(activeOther?.id) ? "Online" : "Offline"}
                       </p>
                     </div>
@@ -531,13 +517,15 @@ export default function AdminFloatingChat({ me }) {
 
               <button
                 onClick={() => setIsMuted(m => !m)}
-                style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: isMuted ? "#334155" : "#64748b" }}>
+                title={isMuted ? "Unmute" : "Mute"}
+                className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer"
+                style={{ color: isMuted ? "#475569" : "#94a3b8" }}>
                 {isMuted ? <BellOff size={13} /> : <Bell size={13} />}
               </button>
 
               <button
                 onClick={closeChat}
-                style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#475569" }}>
+                className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-400">
                 <X size={14} />
               </button>
             </div>
@@ -552,7 +540,8 @@ export default function AdminFloatingChat({ me }) {
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -16 }}
-                  style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#0f172a" }}>
+                  className="flex-1 flex flex-col overflow-hidden"
+                  style={{ background: "#0f172a" }}>
 
                   <div style={{ padding: "10px 12px 8px", flexShrink: 0 }}>
                     <div
@@ -567,83 +556,63 @@ export default function AdminFloatingChat({ me }) {
                         onChange={e => setSearchQuery(e.target.value)}
                       />
                       {searchQuery && (
-                        <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#334155", display: "flex" }}>
+                        <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", color: "#334155" }}>
                           <X size={12} />
                         </button>
                       )}
                     </div>
                   </div>
 
-                  <div className="afc-scroll" style={{ flex: 1, overflowY: "auto" }}>
+                  <div className="afc-scroll flex-1 overflow-y-auto">
                     {loadingSA ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
-                        <Loader2 size={20} style={{ color: "#6366f1" }} />
+                      <div className="flex justify-center p-8">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
                       </div>
                     ) : filteredContacts.length === 0 ? (
-                      <p style={{ textAlign: "center", fontSize: 13, color: "#334155", padding: 32 }}>
+                      <p className="text-center text-[13px] text-slate-600 p-8">
                         {searchQuery ? "No results found" : "No SubAdmins yet"}
                       </p>
                     ) : filteredContacts.map(sa => {
                       const unread  = getUnread(sa._id);
                       const online  = isOnline(sa._id);
                       const lastMsg = getMessages(sa._id).slice(-1)[0];
-                      const hasUnread = unread > 0;
                       return (
                         <motion.button
                           key={sa._id}
-                          className={hasUnread ? "afc-contact-unread" : ""}
-                          whileHover={{ backgroundColor: hasUnread ? "rgba(99,102,241,0.1)" : "rgba(255,255,255,0.04)" }}
+                          whileHover={{ backgroundColor: "rgba(255,255,255,0.04)" }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => openChat(sa)}
-                          style={{
-                            width: "100%", display: "flex", alignItems: "center", gap: 12,
-                            padding: "10px 14px",
-                            background: hasUnread ? "rgba(99,102,241,0.07)" : "transparent",
-                            border: "none",
-                            borderLeft: hasUnread ? "3px solid #6366f1" : "3px solid transparent",
-                            cursor: "pointer", textAlign: "left",
-                          }}>
-                          <div style={{ position: "relative", flexShrink: 0 }}>
-                            <div style={{
-                              width: 40, height: 40, borderRadius: 13,
-                              background: "rgba(99,102,241,0.15)",
-                              border: hasUnread ? "2px solid #6366f1" : "1px solid rgba(99,102,241,0.25)",
-                              display: "flex", alignItems: "center", justifyContent: "center",
-                              fontSize: 14, fontWeight: 800, color: "#818cf8",
-                              boxShadow: hasUnread ? "0 0 0 3px rgba(99,102,241,0.2)" : "none",
-                            }}>
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: unread > 0 ? "rgba(99,102,241,0.06)" : "transparent", border: "none", borderLeft: unread > 0 ? "2px solid rgba(99,102,241,0.5)" : "2px solid transparent", cursor: "pointer", textAlign: "left" }}>
+                          <div className="relative flex-shrink-0">
+                            <div className="w-[40px] h-[40px] rounded-[13px] bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-sm font-extrabold text-indigo-400">
                               {sa.name[0].toUpperCase()}
                             </div>
-                            <span className={online ? "afc-online" : ""} style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", border: "2px solid #0f172a", background: online ? "#22c55e" : "#334155" }} />
+                            <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${online ? "bg-green-500 afc-online" : "bg-slate-700"}`} />
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: 13, fontWeight: hasUnread ? 800 : 600, color: hasUnread ? "#f1f5f9" : "#cbd5e1" }}>{sa.name}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-center">
+                              <span style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: unread > 0 ? "#e2e8f0" : "#cbd5e1" }}>{sa.name}</span>
                               {lastMsg && (
-                                <span style={{ fontSize: 10, color: hasUnread ? "#818cf8" : "#334155", fontWeight: hasUnread ? 700 : 400 }}>
+                                <span style={{ fontSize: 10, color: unread > 0 ? "#6366f1" : "#334155", fontWeight: unread > 0 ? 600 : 400 }}>
                                   {fmtTime(lastMsg.createdAt)}
                                 </span>
                               )}
                             </div>
-                            <p style={{ fontSize: 11.5, color: hasUnread ? "#94a3b8" : "#334155", fontWeight: hasUnread ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            <p style={{ fontSize: 11.5, color: unread > 0 ? "#64748b" : "#334155", fontWeight: unread > 0 ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {lastMsg
                                 ? lastMsg.deleted
-                                  ? "🚫 Message was unsent"
-                                  : lastMsg.senderId?.toString() === me.id?.toString()
-                                    ? `You: ${lastMsg.text}`
-                                    : lastMsg.text
+                                  ? "Message was unsent"
+                                  : lastMsg.text
                                 : sa.email}
                             </p>
                           </div>
-                          <AnimatePresence>
-                            {hasUnread && (
-                              <motion.span
-                                initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                                style={{ minWidth: 22, height: 22, borderRadius: 99, background: "linear-gradient(135deg,#6366f1,#4f46e5)", color: "#fff", fontSize: 11, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 6, flexShrink: 0, boxShadow: "0 2px 8px rgba(99,102,241,0.4)" }}>
-                                {unread > 9 ? "9+" : unread}
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
+                          {unread > 0 && (
+                            <motion.span
+                              initial={{ scale: 0 }} animate={{ scale: 1 }}
+                              className="min-w-[20px] h-[20px] rounded-full bg-indigo-500 text-white text-[10px] font-black flex items-center justify-center px-1 flex-shrink-0">
+                              {unread > 9 ? "9+" : unread}
+                            </motion.span>
+                          )}
                         </motion.button>
                       );
                     })}
@@ -658,33 +627,36 @@ export default function AdminFloatingChat({ me }) {
                   initial={{ opacity: 0, x: 16 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 16 }}
-                  style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+                  className="flex-1 flex flex-col overflow-hidden"
+                  style={{ position: "relative" }}>
 
                   {/* Messages */}
                   <div
                     ref={chatScrollRef}
                     onScroll={handleScroll}
-                    className="afc-scroll"
-                    style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", background: "#0f172a", display: "flex", flexDirection: "column" }}>
+                    className="afc-scroll flex-1 overflow-y-auto flex flex-col gap-0"
+                    style={{ padding: "12px 12px 4px", background: "#0f172a" }}>
 
                     {!histLoaded[activeOther?.id] ? (
-                      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Loader2 size={20} style={{ color: "#6366f1" }} />
+                      <div className="flex-1 flex items-center justify-center">
+                        <Loader2 size={20} className="animate-spin text-indigo-500" />
                       </div>
                     ) : msgs.length === 0 ? (
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                      <div className="flex-1 flex flex-col items-center justify-center gap-3">
                         <div style={{ width: 56, height: 56, borderRadius: 18, background: "rgba(99,102,241,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <MessageCircle size={24} style={{ color: "#6366f1", opacity: 0.4 }} />
                         </div>
-                        <p style={{ fontSize: 12, color: "#334155", margin: 0 }}>No messages yet</p>
-                        <p style={{ fontSize: 11, color: "#1e293b", margin: 0 }}>Say hi to {activeOther?.name}! 👋</p>
+                        <p className="text-xs text-slate-600 m-0">No messages yet</p>
+                        <p className="text-[11px] text-slate-800 m-0">Say hi to {activeOther?.name}! 👋</p>
                       </div>
                     ) : renderedMsgs.map(item => {
 
                       if (item.type === "date") return (
                         <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 6px" }}>
                           <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
-                          <span style={{ fontSize: 10, color: "#334155", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>{item.label}</span>
+                          <span style={{ fontSize: 10, color: "#334155", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                            {item.label}
+                          </span>
                           <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
                         </div>
                       );
@@ -692,8 +664,8 @@ export default function AdminFloatingChat({ me }) {
                       if (item.type === "unread") return (
                         <div key="unread-divider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 6px" }}>
                           <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.3)" }} />
-                          <span style={{ fontSize: 10, color: "#818cf8", fontWeight: 700, background: "rgba(99,102,241,0.12)", padding: "2px 10px", borderRadius: 99 }}>
-                            ↓ New Messages
+                          <span style={{ fontSize: 10, color: "#6366f1", fontWeight: 700, letterSpacing: "0.03em" }}>
+                            ↓ Unread Messages
                           </span>
                           <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.3)" }} />
                         </div>
@@ -702,7 +674,6 @@ export default function AdminFloatingChat({ me }) {
                       const { msg, isFirst, isLast } = item;
                       const isMine = msg.senderId === me.id || msg.senderRole === "admin";
                       const msgId  = msg._id || msg._tempId;
-                      const isUnseen = !isMine && !msg.seen && !msg.deleted;
 
                       return (
                         <motion.div
@@ -710,7 +681,8 @@ export default function AdminFloatingChat({ me }) {
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.15 }}
-                          style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", marginBottom: isLast ? 4 : 1 }}>
+                          className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
+                          style={{ marginBottom: isLast ? 4 : 1 }}>
                           <div
                             className="afc-bubble"
                             onContextMenu={(e) => handleMsgPress(e, msg, isMine)}
@@ -719,21 +691,19 @@ export default function AdminFloatingChat({ me }) {
                             style={{
                               position: "relative", maxWidth: "78%", padding: "8px 12px",
                               borderRadius: msgRadius(isMine, isFirst, isLast),
-                              background: isMine
-                                ? "linear-gradient(135deg,#6366f1,#4f46e5)"
-                                : isUnseen
-                                  ? "rgba(99,102,241,0.18)"
-                                  : "#1e293b",
+                              background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#1e293b",
                               color: isMine ? "#fff" : "#e2e8f0",
                               fontSize: msg.deleted ? 12 : 13.5,
                               lineHeight: 1.45, fontWeight: 500,
-                              boxShadow: isMine ? "0 2px 10px rgba(99,102,241,0.35)" : isUnseen ? "0 0 0 1px rgba(99,102,241,0.3)" : "0 1px 4px rgba(0,0,0,0.3)",
-                              border: !isMine ? isUnseen ? "1px solid rgba(99,102,241,0.35)" : "1px solid rgba(255,255,255,0.07)" : "none",
+                              boxShadow: isMine ? "0 2px 10px rgba(99,102,241,0.35)" : "0 1px 4px rgba(0,0,0,0.3)",
+                              border: !isMine ? "1px solid rgba(255,255,255,0.07)" : "none",
                               wordBreak: "break-word", cursor: "default", userSelect: "text",
                             }}>
+
+                            {/* Message text or deleted state */}
                             {msg.deleted ? (
                               <span style={{ fontStyle: "italic", opacity: 0.5 }}>
-                                {isMine ? "You unsent a message" : "🚫 Message was unsent"}
+                                {isMine ? "You unsent a message" : "Message was unsent"}
                               </span>
                             ) : msg.text}
 
@@ -751,14 +721,11 @@ export default function AdminFloatingChat({ me }) {
                           </div>
 
                           {isLast && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3, marginLeft: 4, marginRight: 4 }}>
-                              <span style={{ fontSize: 10, color: "#334155" }}>{fmtTime(msg.createdAt)}</span>
+                            <div className="flex items-center gap-1 mt-0.5 mr-1 ml-1">
+                              <span className="text-[10px] text-slate-700">{fmtTime(msg.createdAt)}</span>
                               {isMine && !msg.deleted && (msg.seen
-                                ? <CheckCheck size={11} style={{ color: "#6366f1" }} />
-                                : <Check size={11} style={{ color: "#334155" }} />)}
-                              {!isMine && isUnseen && (
-                                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", display: "inline-block", marginLeft: 2 }} />
-                              )}
+                                ? <CheckCheck size={11} className="text-indigo-500" />
+                                : <Check size={11} className="text-slate-700" />)}
                             </div>
                           )}
                         </motion.div>
@@ -775,7 +742,7 @@ export default function AdminFloatingChat({ me }) {
                     <div ref={bottomRef} />
                   </div>
 
-                  {/* Scroll-to-bottom */}
+                  {/* Scroll-to-bottom button */}
                   <AnimatePresence>
                     {!isAtBottom && (
                       <motion.button
@@ -796,7 +763,7 @@ export default function AdminFloatingChat({ me }) {
                     )}
                   </AnimatePresence>
 
-                  {/* ── Message Context Menu ─────────────────────────────────── */}
+                  {/* ── Message Context Menu (dark theme) ───────────────────── */}
                   <AnimatePresence>
                     {msgMenu && (
                       <>
@@ -812,36 +779,29 @@ export default function AdminFloatingChat({ me }) {
                             borderRadius: 14,
                             boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)",
                             border: "1px solid rgba(255,255,255,0.08)",
-                            overflow: "hidden", zIndex: 30, minWidth: 185,
+                            overflow: "hidden", zIndex: 30, minWidth: 180,
                           }}>
-
-                          <button
-                            className="afc-menu-btn"
-                            onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
-                            style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "inherit" }}>
-                            <span style={{ fontSize: 15 }}>📋</span> Copy text
-                          </button>
-
-                          <button
-                            className="afc-menu-btn"
-                            onClick={handleDeleteForMe}
-                            style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: msgMenu.isMine ? "1px solid rgba(255,255,255,0.06)" : "none", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#818cf8", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "inherit" }}>
-                            <EyeOff size={14} /> Delete for me
-                          </button>
-
                           {msgMenu.isMine && (
                             <button
-                              className="afc-menu-btn"
-                              onClick={handleUnsend}
-                              style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#f87171", cursor: "pointer", display: "flex", alignItems: "center", gap: 9, fontFamily: "inherit" }}>
-                              <Trash2 size={14} /> Unsend for everyone
+                              onClick={handleDeleteMsg}
+                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#f87171", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                              🗑 Unsend for everyone
                             </button>
                           )}
-
+                          {/* ── CHANGE 3: Delete for me button ── */}
                           <button
-                            className="afc-menu-btn"
+                            onClick={handleDeleteForMe}
+                            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#818cf8", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                            🙈 Delete for me
+                          </button>
+                          <button
+                            onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
+                            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                            📋 Copy
+                          </button>
+                          <button
                             onClick={() => setMsgMenu(null)}
-                            style={{ width: "100%", padding: "11px 14px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, fontWeight: 500, color: "#475569", cursor: "pointer", fontFamily: "inherit" }}>
+                            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "inherit" }}>
                             Cancel
                           </button>
                         </motion.div>
@@ -850,7 +810,7 @@ export default function AdminFloatingChat({ me }) {
                   </AnimatePresence>
 
                   {/* Input bar */}
-                  <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", gap: 8, alignItems: "flex-end", background: "#0f172a", flexShrink: 0 }}>
+                  <div className="p-2.5 px-3 border-t border-white/10 flex gap-2 items-end bg-slate-900 flex-shrink-0">
                     <textarea
                       ref={inputRef}
                       rows={1}
@@ -858,7 +818,7 @@ export default function AdminFloatingChat({ me }) {
                       onChange={handleInput}
                       onKeyDown={handleKey}
                       placeholder="Type a message…"
-                      style={{ flex: 1, background: "#1e293b", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "9px 12px", fontSize: 13, color: "#f1f5f9", maxHeight: 80, overflowY: "auto", fontFamily: "inherit", lineHeight: 1.4, outline: "none", resize: "none", transition: "border-color .15s" }}
+                      className="flex-1 bg-slate-800 border border-white/10 rounded-xl p-2 px-3 text-[13px] text-slate-100 max-h-20 overflow-y-auto font-sans leading-[1.4] outline-none resize-none transition-all duration-150 placeholder:text-slate-600"
                       onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.5)"}
                       onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
                     />
@@ -867,7 +827,7 @@ export default function AdminFloatingChat({ me }) {
                       whileTap={{ scale: 0.93 }}
                       onClick={handleSend}
                       disabled={!text.trim()}
-                      style={{ width: 38, height: 38, borderRadius: 12, border: "none", background: text.trim() ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "rgba(99,102,241,0.1)", color: text.trim() ? "#fff" : "#334155", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "not-allowed", flexShrink: 0, transition: "all .15s", boxShadow: text.trim() ? "0 3px 10px rgba(99,102,241,0.35)" : "none" }}>
+                      className={`w-[38px] h-[38px] rounded-xl border-0 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${text.trim() ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white cursor-pointer shadow-md shadow-indigo-500/35" : "bg-indigo-500/10 text-slate-700 cursor-not-allowed"}`}>
                       <Send size={15} />
                     </motion.button>
                   </div>
@@ -878,13 +838,13 @@ export default function AdminFloatingChat({ me }) {
         )}
       </AnimatePresence>
 
-      {/* ── FAB ──────────────────────────────────────────────────────────────── */}
+      {/* ── FAB ── badge uses totalUnreadCount ───────────────────────────────── */}
       {isDesktop ? (
         <motion.button
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
           onClick={() => setOpen(o => !o)}
-          style={{ ...fabBase, cursor: "pointer", position: "relative" }}>
+          style={{ ...fabBase, cursor: "pointer" }}>
           <AnimatePresence mode="wait">
             {open
               ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
@@ -910,7 +870,7 @@ export default function AdminFloatingChat({ me }) {
               onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
               onTouchStart={(e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
               onClick={() => { if (!hasDragged.current) setOpen(true); }}
-              style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab", position: "relative" }}>
+              style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab" }}>
               <MessageCircle size={22} />
               <AnimatePresence><Badge count={totalUnreadCount} /></AnimatePresence>
             </motion.button>
