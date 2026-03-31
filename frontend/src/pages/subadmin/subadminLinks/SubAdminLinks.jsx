@@ -83,6 +83,14 @@ function LinkShow({
   setView, handleDelete, handleEdit, onRefresh,
 }) {
   const { t } = useSubLang();
+  const [page, setPage] = useState(1);
+  const PER_PAGE   = 10;
+  const totalPages = Math.ceil(links.length / PER_PAGE);
+  const paginated  = links.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  useEffect(() => { setPage(1); }, [links.length]);
+
+  const gridCols = "28px 1fr 80px";
 
   const dropdownPanel = {
     position: "absolute", right: 0, top: "calc(100% + 6px)",
@@ -110,9 +118,6 @@ function LinkShow({
     cursor: "pointer", transition: "all .15s ease",
     boxShadow: "0 1px 4px rgba(99,102,241,0.05)",
   };
-
-  /* same grid as sublinks: serial | name | actions */
-  const gridCols = "28px 1fr 80px";
 
   return (
     <div style={{ marginTop: 28 }}>
@@ -148,15 +153,19 @@ function LinkShow({
                 onChange={e => setSearch(e.target.value)}
                 style={{ background: "transparent", outline: "none", border: "none", fontSize: 13, color: "#374151", width: "100%", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               />
-              {search && <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>}
+              {search && (
+                <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}>
+                  <X size={12} />
+                </button>
+              )}
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            {/* Buttons — 50% / 50% on all devices */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: "1 1 200px" }}>
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={onRefresh} disabled={loading}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", borderRadius: 11, padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#6366f1", cursor: "pointer" }}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", borderRadius: 11, padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#6366f1", cursor: "pointer" }}
               >
                 <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
                 <span>{t("রিফ্রেশ", "Refresh")}</span>
@@ -164,7 +173,7 @@ function LinkShow({
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setView("add")}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.32)" }}
+                style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.32)" }}
               >
                 <Plus size={14} strokeWidth={2.5} />
                 {t("লিংক যোগ করুন", "Add Link")}
@@ -227,7 +236,7 @@ function LinkShow({
               </div>
             </div>
 
-            {/* Column headers — same as sublinks */}
+            {/* Column headers */}
             <div style={{
               display: "grid",
               gridTemplateColumns: gridCols,
@@ -244,7 +253,7 @@ function LinkShow({
             </div>
 
             {/* Rows */}
-            <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+            <div>
               {loading ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12 }}>
                   <Loader2 size={26} style={{ color: "#c4cdd8" }} className="animate-spin" />
@@ -257,7 +266,7 @@ function LinkShow({
                   </div>
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো লিংক নেই।", "No links found.")}</p>
                 </div>
-              ) : links.map((link, index) => (
+              ) : paginated.map((link, index) => (
                 <motion.div
                   key={link._id}
                   initial={{ opacity: 0, y: 6 }}
@@ -274,10 +283,12 @@ function LinkShow({
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.025)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
-                  {/* # */}
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>{index + 1}</div>
+                  {/* # — continuous across pages */}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>
+                    {(page - 1) * PER_PAGE + index + 1}
+                  </div>
 
-                  {/* Name + status below — same as sublinks */}
+                  {/* Name + status below */}
                   <div style={{ minWidth: 0, paddingRight: 12 }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {link.name}
@@ -307,6 +318,36 @@ function LinkShow({
                 </motion.div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{
+                display: "flex", justifyContent: "center", alignItems: "center",
+                gap: 6, padding: "14px 20px",
+                borderTop: "1px solid rgba(99,102,241,0.08)",
+                background: "rgba(99,102,241,0.01)",
+              }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <motion.button
+                    key={p}
+                    whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      border: "1px solid",
+                      borderColor: page === p ? "#6366f1" : "rgba(99,102,241,0.15)",
+                      background: page === p ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "transparent",
+                      color: page === p ? "#fff" : "#6366f1",
+                      boxShadow: page === p ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    {p}
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>
