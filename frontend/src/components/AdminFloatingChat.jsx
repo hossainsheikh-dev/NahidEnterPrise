@@ -19,8 +19,6 @@ export default function AdminFloatingChat({ me }) {
   const [histLoaded, setHistLoaded]   = useState({});
   const [peerIds, setPeerIds]         = useState([]);
 
-  // Desktop ≥ 1024 px → fixed FAB (no drag, X icon when open), floating panel
-  // Mobile / tablet  < 1024 px → draggable FAB hidden when open, fullscreen panel
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
@@ -31,6 +29,9 @@ export default function AdminFloatingChat({ me }) {
   const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
+
+  // ── FIX: track the page URL that was active when chat opened ──────────────
+  const originPath = useRef(null);
 
   const bottomRef   = useRef(null);
   const inputRef    = useRef(null);
@@ -92,7 +93,7 @@ export default function AdminFloatingChat({ me }) {
     dragOrigin.current = { x: cx, y: cy, ...fabPos };
   }, [fabPos, isDesktop]);
 
-  // ── Load contacts on mount so badge works even when panel is closed ─────────
+  // ── Load contacts ──────────────────────────────────────────────────────────
   const loadSubAdmins = useCallback(async () => {
     setLoadingSA(true);
     try {
@@ -108,31 +109,64 @@ export default function AdminFloatingChat({ me }) {
   useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
-  // ── FIX 1: Badge = unique users with unread messages ───────────────────────
+  // ── Badge: unique users with unread messages ───────────────────────────────
   useEffect(() => {
     setPeerIds(subAdmins.map(s => s._id));
   }, [subAdmins]);
 
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
 
-  // ── FIX 3: Back-button support ────────────────────────────────────────────
+  // ── FIX: Back-button — never leave the current page ───────────────────────
+  const closeChat = useCallback(() => {
+    setOpen(false);
+    setScreen("list");
+    setActive(null);
+  }, []);
+
   useEffect(() => {
-    if (open) window.history.pushState({ afc: true }, "");
+    if (!open) return;
+
+    if (!originPath.current) {
+      originPath.current = window.location.href;
+    }
+
+    window.history.pushState({ afc: "list" }, "");
+
+    return () => {
+      originPath.current = null;
+    };
   }, [open]);
 
   useEffect(() => {
-    const onPop = () => {
-      if (!open) return;
-      if (screen === "chat") {
+    if (open && screen === "chat") {
+      window.history.pushState({ afc: "chat" }, "");
+    }
+  }, [open, screen]);
+
+  useEffect(() => {
+    const onPop = (e) => {
+      const state = e.state;
+
+      if (state?.afc === "chat") {
         setScreen("list");
-        window.history.pushState({ afc: true }, "");
-      } else {
-        setOpen(false);
+        window.history.pushState({ afc: "list" }, "");
+        return;
       }
+
+      if (state?.afc === "list") {
+        closeChat();
+        if (originPath.current) {
+          window.history.replaceState(null, "", originPath.current);
+        }
+        return;
+      }
+
+      closeChat();
     };
+
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [open, screen]);
+  }, [closeChat]);
 
   // ── History load ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -246,7 +280,7 @@ export default function AdminFloatingChat({ me }) {
                   </div>
                 )}
               </div>
-              <button onClick={() => setOpen(false)} className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-400">
+              <button onClick={closeChat} className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-400">
                 <X size={14} />
               </button>
             </div>
@@ -350,7 +384,6 @@ export default function AdminFloatingChat({ me }) {
 
       {/* ── FAB ──────────────────────────────────────────────────────────── */}
       {isDesktop ? (
-        // Desktop: always visible, no drag, X when open
         <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
           onClick={() => setOpen(o => !o)}
           style={{ ...fabBase, cursor: "pointer" }}>
@@ -365,7 +398,6 @@ export default function AdminFloatingChat({ me }) {
           </AnimatePresence>
         </motion.button>
       ) : (
-        // Mobile/Tablet: draggable, hidden when open
         <AnimatePresence>
           {!open && (
             <motion.button key="fab" className="afc-fab"

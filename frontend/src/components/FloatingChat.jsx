@@ -19,8 +19,6 @@ export default function FloatingChat({ me, other }) {
   const [loadingSA, setLoadingSA]     = useState(false);
   const [peerIds, setPeerIds]         = useState([]);
 
-  // Desktop ≥ 1024 px → fixed FAB (no drag, X icon when open), floating panel
-  // Mobile / tablet  < 1024 px → draggable FAB hidden when open, fullscreen panel
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
   const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
@@ -31,6 +29,9 @@ export default function FloatingChat({ me, other }) {
   const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
+
+  // ── FIX: track the page URL that was active when chat opened ──────────────
+  const originPath = useRef(null);
 
   const bottomRef   = useRef(null);
   const inputRef    = useRef(null);
@@ -94,7 +95,7 @@ export default function FloatingChat({ me, other }) {
     dragOrigin.current = { x: cx, y: cy, ...fabPos };
   }, [fabPos, isDesktop]);
 
-  // ── Load contacts on mount so badge works even when panel is closed ─────────
+  // ── Load contacts ──────────────────────────────────────────────────────────
   const loadSubAdmins = useCallback(async () => {
     setLoadingSA(true);
     try {
@@ -115,7 +116,7 @@ export default function FloatingChat({ me, other }) {
   useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
-  // ── FIX 1: Badge = unique users with unread messages ───────────────────────
+  // ── Badge: unique users with unread messages ───────────────────────────────
   useEffect(() => {
     setPeerIds([
       ...(other ? [other.id] : []),
@@ -125,24 +126,69 @@ export default function FloatingChat({ me, other }) {
 
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
 
-  // ── FIX 3: Back-button support ────────────────────────────────────────────
-  useEffect(() => {
-    if (open) window.history.pushState({ fc: true }, "");
-  }, [open]);
+  // ── FIX: Back-button — never leave the current page ───────────────────────
+  const closeChat = useCallback(() => {
+    setOpen(false);
+    setScreen("list");
+    setActiveOther(null);
+  }, []);
 
   useEffect(() => {
-    const onPop = () => {
-      if (!open) return;
-      if (screen === "chat") {
-        setScreen("list");
-        window.history.pushState({ fc: true }, "");
-      } else {
-        setOpen(false);
-      }
+    if (!open) return;
+
+    // Save the page we opened from (only once per open session)
+    if (!originPath.current) {
+      originPath.current = window.location.href;
+    }
+
+    // Push TWO states so we own the back-button stack:
+    //   state[0] = "chat list open"
+    //   state[1] = "chat conversation open"  (pushed later when entering chat screen)
+    window.history.pushState({ fc: "list" }, "");
+
+    return () => {
+      originPath.current = null;
     };
+  }, [open]);
+
+  // When user goes into a chat conversation, push another state
+  useEffect(() => {
+    if (open && screen === "chat") {
+      window.history.pushState({ fc: "chat" }, "");
+    }
+  }, [open, screen]);
+
+  useEffect(() => {
+    const onPop = (e) => {
+      const state = e.state;
+
+      if (state?.fc === "chat") {
+        // Popped from conversation → go back to list, push list state again so
+        // next back press is handled by us too
+        setScreen("list");
+        window.history.pushState({ fc: "list" }, "");
+        return;
+      }
+
+      if (state?.fc === "list") {
+        // Popped from list → close the chat panel entirely, but stay on same page.
+        // Replace current history entry with the original page URL so the
+        // browser back stack is clean and pressing back again goes to the
+        // real previous page — not our synthetic states.
+        closeChat();
+        if (originPath.current) {
+          window.history.replaceState(null, "", originPath.current);
+        }
+        return;
+      }
+
+      // state has no fc key → user is navigating away for real; just close panel
+      closeChat();
+    };
+
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [open, screen]);
+  }, [closeChat]);
 
   // ── History load ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -197,7 +243,6 @@ export default function FloatingChat({ me, other }) {
     ? { position: "fixed", bottom: 88, right: 24, width: 360, height: 520, borderRadius: 20, zIndex: 1000 }
     : { position: "fixed", left: 0, right: 0, bottom: 0, top: window.innerHeight - vpHeight, width: "100%", height: vpHeight, borderRadius: 0, zIndex: 1000 };
 
-  // Shared FAB base (desktop overrides bottom/right with fixed 24/24)
   const fabBase = {
     position: "fixed", bottom: 24, right: 24, zIndex: 1001,
     width: 52, height: 52, borderRadius: 16, border: "none",
@@ -269,7 +314,7 @@ export default function FloatingChat({ me, other }) {
                     </div>
                   </div>
                 )}
-                <button onClick={() => setOpen(false)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
+                <button onClick={closeChat} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
                   <ChevronDown size={15} />
                 </button>
               </div>
@@ -372,7 +417,6 @@ export default function FloatingChat({ me, other }) {
 
         {/* ── FAB ──────────────────────────────────────────────────────────── */}
         {isDesktop ? (
-          // Desktop: always visible, no drag, X when open
           <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
             onClick={() => setOpen(o => !o)}
             style={{ ...fabBase, cursor: "pointer" }}>
@@ -387,7 +431,6 @@ export default function FloatingChat({ me, other }) {
             </AnimatePresence>
           </motion.button>
         ) : (
-          // Mobile/Tablet: draggable, hidden when open
           <AnimatePresence>
             {!open && (
               <motion.button key="fab" className="fc-sa-fab"
