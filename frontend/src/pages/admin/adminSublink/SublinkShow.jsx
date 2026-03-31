@@ -17,9 +17,8 @@ const SublinkShow = ({
   const [parentDropdown,  setParentDropdown]  = useState(false);
   const parentRef = useRef(null);
 
-  // pagination
   const [page, setPage] = useState(1);
-  const limit = 15;
+  const limit = 10;
 
   useEffect(() => {
     const handler = (e) => {
@@ -29,7 +28,6 @@ const SublinkShow = ({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // reset page on filter/search change
   useEffect(() => { setPage(1); }, [search, sort, filterParent]);
 
   const selectedParentName = parents.find(p => p._id === filterParent)?.name;
@@ -69,7 +67,7 @@ const SublinkShow = ({
 
         .ss-dropdown {
           background: #1a2235; border: 1px solid rgba(255,255,255,0.09);
-          border-radius: 14px; overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+          border-radius: 14px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
         }
         .ss-dropdown-item { padding: 10px 16px; font-size: 12px; color: #94a3b8; cursor: pointer; transition: all 0.12s; }
         .ss-dropdown-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
@@ -106,7 +104,6 @@ const SublinkShow = ({
         .ss-row:last-child { border-bottom: none; }
         .ss-row:hover { background: rgba(255,255,255,0.025); }
 
-        /* ── Mobile: hide parent column ── */
         @media (max-width: 640px) {
           .ss-col-header { grid-template-columns: 22px 1fr 80px 36px; padding: 9px 12px; gap: 6px; }
           .ss-col-header .col-parent { display: none; }
@@ -205,13 +202,12 @@ const SublinkShow = ({
                   </div>
                 </div>
 
-                {/* stat cards — 2 col on mobile, 4 on sm+ */}
                 <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-3">
                   {[
-                    { labelBn: "মোট",      labelEn: "Total",    count: sublinks.length,                          color: "#c9a84c" },
-                    { labelBn: "সক্রিয়",   labelEn: "Active",   count: sublinks.filter(s=>s.isActive).length,   color: "#34d399" },
-                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: sublinks.filter(s=>!s.isActive).length,  color: "#f87171" },
-                    { labelBn: "প্যারেন্ট", labelEn: "Parents",  count: parents.length,                          color: "#a78bfa" },
+                    { labelBn: "মোট",      labelEn: "Total",    count: sublinks.length,                         color: "#c9a84c" },
+                    { labelBn: "সক্রিয়",   labelEn: "Active",   count: sublinks.filter(s=>s.isActive).length,  color: "#34d399" },
+                    { labelBn: "নিষ্ক্রিয়",labelEn: "Inactive", count: sublinks.filter(s=>!s.isActive).length, color: "#f87171" },
+                    { labelBn: "প্যারেন্ট", labelEn: "Parents",  count: parents.length,                         color: "#a78bfa" },
                   ].map(({ labelBn, labelEn, count, color }) => (
                     <div key={labelEn} className="sm:flex-1 min-w-0 rounded-xl p-3"
                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -225,7 +221,6 @@ const SublinkShow = ({
 
             {/* ══ CONTROLS ══ */}
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* search */}
               <div className="relative flex-1">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#475569" }}/>
                 <input type="text"
@@ -239,7 +234,6 @@ const SublinkShow = ({
                 )}
               </div>
 
-              {/* parent filter */}
               <div className="relative sm:w-48" ref={parentRef}>
                 <button className="ss-sort-btn" onClick={() => setParentDropdown(!parentDropdown)}>
                   <span style={{ color: filterParent ? "#c9a84c" : "#64748b", fontWeight: filterParent ? 600 : 400 }}>
@@ -269,7 +263,6 @@ const SublinkShow = ({
                 </AnimatePresence>
               </div>
 
-              {/* sort */}
               <div className="relative sm:w-48" ref={dropdownRef}>
                 <button className="ss-sort-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
                   <span style={{ color: "#cbd5e1" }}>
@@ -281,7 +274,7 @@ const SublinkShow = ({
                   {dropdownOpen && (
                     <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
-                      className="ss-dropdown absolute right-0 mt-2 w-full z-50">
+                      className="ss-dropdown absolute right-0 mt-2 w-full z-50 max-h-52 overflow-y-auto">
                       {sortOptions.map(option => (
                         <div key={option.value}
                           className={`ss-dropdown-item ${sort === option.value ? "active" : ""}`}
@@ -294,7 +287,6 @@ const SublinkShow = ({
                 </AnimatePresence>
               </div>
 
-              {/* clear filter */}
               {filterParent && (
                 <button onClick={() => setFilterParent("")}
                   className="ss-btn"
