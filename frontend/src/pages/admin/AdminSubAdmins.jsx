@@ -304,7 +304,7 @@ export default function AdminSubAdmins() {
                 <RefreshCw size={13}/> {t("রিফ্রেশ","Refresh")}
               </button>
             </div>
-            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+            <div className="grid grid-cols-2 sm:flex gap-3">
               {[
                 { key:"all", labelBn:"মোট", labelEn:"Total", count:counts.all, color:"#c9a84c" },
                 { key:"pending", labelBn:"অপেক্ষমাণ", labelEn:"Pending", count:counts.pending, color:"#e8a427" },
