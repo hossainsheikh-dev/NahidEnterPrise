@@ -154,11 +154,23 @@ export default function FloatingChat({ me, other }) {
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
   useEffect(() => {
-    setPeerIds([
+    const ids = [
       ...(other ? [other.id] : []),
       ...subAdmins.map(s => s._id),
-    ]);
-  }, [other, subAdmins]);
+    ];
+    setPeerIds(ids);
+    // ── FIX: সব peer এর history background এ load কর যাতে
+    // badge এবং bold সাথে সাথে সঠিক count দেখায় ──────────────
+    ids.forEach(pid => {
+      setHistLoaded(prev => {
+        if (prev[pid]) return prev; // আগেই load হয়েছে
+        loadHistory(pid).then(() =>
+          setHistLoaded(p => ({ ...p, [pid]: true }))
+        );
+        return prev;
+      });
+    });
+  }, [other, subAdmins]); // eslint-disable-line
 
   const totalUnreadCount = peerIds.reduce((sum, id) => sum + getUnread(id), 0);
 

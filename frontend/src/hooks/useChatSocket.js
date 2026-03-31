@@ -3,17 +3,11 @@ import { io } from "socket.io-client";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-const UNREAD_KEY  = (myId) => `chat_unread_${myId}`;
-const DFM_KEY     = (myId) => `chat_dfm_${myId}`;   // "delete for me"
+// ─── "Delete for me" — শুধু এটাই localStorage এ রাখা হবে ───────────────────
+// Unread count এখন server এর `seen` field থেকে বের করা হবে,
+// তাই localStorage clear হলেও unread count হারাবে না।
+const DFM_KEY = (myId) => `chat_dfm_${myId}`;
 
-const loadUnread = (myId) => {
-  try { return JSON.parse(localStorage.getItem(UNREAD_KEY(myId)) || "{}"); }
-  catch { return {}; }
-};
-const saveUnread = (myId, map) => {
-  try { localStorage.setItem(UNREAD_KEY(myId), JSON.stringify(map)); } catch {}
-};
 const loadDfm = (myId) => {
   try { return new Set(JSON.parse(localStorage.getItem(DFM_KEY(myId)) || "[]")); }
   catch { return new Set(); }
@@ -24,22 +18,29 @@ const saveDfm = (myId, set) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function useChatSocket({ myId, myName, myRole, tokenKey }) {
-  const socketRef   = useRef(null);
+  const socketRef  = useRef(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [allMessages, setAllMessages] = useState({});
   const [typingFrom,  setTypingFrom]  = useState({});
 
-  // Initialised from localStorage — survives page refresh
-  const [unreadMap, setUnreadMap] = useState(() => loadUnread(myId));
+  // ── Unread map: server `seen` field থেকে compute করা হবে ─────────────────
+  // key = peerId (string), value = unread count (number)
+  // এটা in-memory। page refresh হলে loadHistory() call হবে এবং
+  // server থেকে আসা messages এর seen field দিয়ে আবার count হবে।
+  const [unreadMap, setUnreadMap] = useState({});
 
-  // "Delete for me" set — persisted locally
+  // "Delete for me" set — শুধু এটাই localStorage এ থাকবে
   const dfmRef = useRef(loadDfm(myId));
 
   const typingTimers = useRef({});
 
-  useEffect(() => {
-    if (myId) saveUnread(myId, unreadMap);
-  }, [unreadMap, myId]);
+  // ── Helper: একটা peer এর message list থেকে unread count বের কর ──────────
+  // unread = আমাকে পাঠানো হয়েছে (senderId !== myId) AND seen === false
+  const computeUnread = useCallback((msgs, myIdStr) => {
+    return msgs.filter(
+      m => m.senderId?.toString() !== myIdStr && !m.seen && !m.deleted
+    ).length;
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem(tokenKey);
@@ -47,7 +48,7 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
 
     const socket = io(API, {
       auth: { token },
-      transports: ["websocket"]
+      transports: ["websocket"],
     });
     socketRef.current = socket;
 
@@ -60,33 +61,38 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
     });
 
     socket.on("receive_message", (msg) => {
-      const sid = (msg.senderId || '').toString();
-      setAllMessages(prev => ({
-        ...prev,
-        [sid]: [...(prev[sid] || []), msg],
-      }));
-      setUnreadMap(prev => {
-        const next = { ...prev, [sid]: (prev[sid] || 0) + 1 };
-        saveUnread(myId, next);
-        return next;
+      const sid = (msg.senderId || "").toString();
+      setAllMessages(prev => {
+        const updated = { ...prev, [sid]: [...(prev[sid] || []), msg] };
+        // unread count আবার compute কর
+        const myIdStr = myId?.toString();
+        setUnreadMap(u => ({
+          ...u,
+          [sid]: computeUnread(updated[sid], myIdStr),
+        }));
+        return updated;
       });
     });
 
     socket.on("message_sent", (msg) => {
-      const rid = (msg.receiverId || '').toString();
+      const rid = (msg.receiverId || "").toString();
       setAllMessages(prev => {
         const list = prev[rid] || [];
         const idx  = list.findIndex(m => m._tempId && m._tempId === msg._tempId);
+        let updated;
         if (idx !== -1) {
           const n = [...list]; n[idx] = msg;
-          return { ...prev, [rid]: n };
+          updated = { ...prev, [rid]: n };
+        } else {
+          updated = { ...prev, [rid]: [...list, msg] };
         }
-        return { ...prev, [rid]: [...list, msg] };
+        return updated;
       });
+      // নিজের পাঠানো মেসেজে unread বাড়বে না, তাই recompute দরকার নেই
     });
 
     socket.on("user_typing", ({ senderId, isTyping }) => {
-      const sid = (senderId || '').toString();
+      const sid = (senderId || "").toString();
       setTypingFrom(prev => ({ ...prev, [sid]: isTyping }));
       if (isTyping) {
         clearTimeout(typingTimers.current[sid]);
@@ -96,7 +102,7 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
     });
 
     socket.on("messages_seen", ({ by }) => {
-      const bid = (by || '').toString();
+      const bid = (by || "").toString();
       setAllMessages(prev => {
         const updated = {};
         Object.entries(prev).forEach(([k, msgs]) => {
@@ -105,13 +111,11 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
               ? { ...m, seen: true } : m
           );
         });
+        // আমার মেসেজ seen হয়েছে মানে unread আমার দিক থেকে নেই এখানে,
+        // bid এর unread 0 করার দরকার নেই কারণ bid আমাকে seen করেছে
         return updated;
       });
-      setUnreadMap(prev => {
-        const next = { ...prev, [bid]: 0 };
-        saveUnread(myId, next);
-        return next;
-      });
+      // bid এর কাছে আমার পাঠানো মেসেজ seen — unread map এ bid এর count নেই এখানে
     });
 
     socket.on("message_deleted", ({ msgId }) => {
@@ -123,6 +127,12 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
               ? { ...m, deleted: true, text: "" }
               : m
           );
+          // deleted হলে unread recompute
+          const myIdStr = myId?.toString();
+          setUnreadMap(u => ({
+            ...u,
+            [k]: computeUnread(updated[k], myIdStr),
+          }));
         });
         return updated;
       });
@@ -133,29 +143,40 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
     });
 
     return () => { socket.disconnect(); };
-  }, [myId, myRole, tokenKey]); // eslint-disable-line
+  }, [myId, myRole, tokenKey, computeUnread]); // eslint-disable-line
 
+  // ── History load: server থেকে আসা messages এর seen field দিয়ে count ──────
   const loadHistory = useCallback(async (otherId) => {
     try {
       const token = localStorage.getItem(tokenKey);
-      const res = await fetch(`${API}/api/chat/${otherId}`, {
+      const res   = await fetch(`${API}/api/chat/${otherId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
-        const dfm = dfmRef.current;
+        const dfm     = dfmRef.current;
+        const myIdStr = myId?.toString();
+        const filtered = data.data.filter(m => !dfm.has(m._id?.toString()));
+
         setAllMessages(prev => ({
           ...prev,
-          [otherId.toString()]: data.data.filter(m => !dfm.has(m._id?.toString())),
+          [otherId.toString()]: filtered,
+        }));
+
+        // ── FIX: server এর seen field থেকে unread count বের কর ────────────
+        const unreadCount = computeUnread(filtered, myIdStr);
+        setUnreadMap(prev => ({
+          ...prev,
+          [otherId.toString()]: unreadCount,
         }));
       }
     } catch (e) { console.log("loadHistory error:", e); }
-  }, [tokenKey]);
+  }, [tokenKey, myId, computeUnread]);
 
   const sendMessage = useCallback(({ receiverId, receiverModel, text }) => {
     if (!socketRef.current || !text.trim() || !receiverId) return;
     const tempId = Date.now().toString();
-    const rid = receiverId.toString();
+    const rid    = receiverId.toString();
     setAllMessages(prev => ({
       ...prev,
       [rid]: [...(prev[rid] || []), {
@@ -187,14 +208,23 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
     socketRef.current.emit("typing", { receiverId: receiverId.toString(), isTyping });
   }, []);
 
+  // ── markSeen: server এ পাঠাও এবং local unread 0 কর ─────────────────────
   const markSeen = useCallback((senderId) => {
-    const sid = (senderId || '').toString();
+    const sid = (senderId || "").toString();
     if (!sid || !socketRef.current) return;
     socketRef.current.emit("mark_seen", { senderId: sid });
-    setUnreadMap(prev => {
-      const next = { ...prev, [sid]: 0 };
-      saveUnread(myId, next);
-      return next;
+
+    // local messages এও seen: true কর যাতে recompute এ 0 আসে
+    setAllMessages(prev => {
+      if (!prev[sid]) return prev;
+      const updated = {
+        ...prev,
+        [sid]: prev[sid].map(m =>
+          m.senderId?.toString() !== myId?.toString() ? { ...m, seen: true } : m
+        ),
+      };
+      setUnreadMap(u => ({ ...u, [sid]: 0 }));
+      return updated;
     });
   }, [myId]);
 
@@ -204,7 +234,7 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
     socketRef.current.emit("delete_message", { msgId, receiverId: receiverId?.toString() });
   }, []);
 
-  // Delete for me only — local only, no server call, survives refresh
+  // Delete for me only — local only, persists via localStorage
   const deleteForMe = useCallback((msgId) => {
     const id = msgId?.toString();
     if (!id) return;
@@ -216,19 +246,28 @@ export function useChatSocket({ myId, myName, myRole, tokenKey }) {
         updated[k] = msgs.filter(
           m => m._id?.toString() !== id && m._tempId?.toString() !== id
         );
+        // recompute unread after deletion
+        const myIdStr = myId?.toString();
+        setUnreadMap(u => ({
+          ...u,
+          [k]: computeUnread(updated[k], myIdStr),
+        }));
       });
       return updated;
     });
-  }, [myId]);
+  }, [myId, computeUnread]);
 
-  const isOnline    = useCallback((id) => onlineUsers.includes((id || '').toString()), [onlineUsers]);
+  const isOnline = useCallback((id) =>
+    onlineUsers.includes((id || "").toString()), [onlineUsers]);
+
   const getMessages = useCallback((otherId) => {
     const dfm  = dfmRef.current;
-    const msgs = allMessages[(otherId || '').toString()] || [];
+    const msgs = allMessages[(otherId || "").toString()] || [];
     return msgs.filter(m => !dfm.has(m._id?.toString()));
   }, [allMessages]);
-  const isTyping    = useCallback((id) => !!typingFrom[(id || '').toString()], [typingFrom]);
-  const getUnread   = useCallback((id) => unreadMap[(id || '').toString()] || 0, [unreadMap]);
+
+  const isTyping  = useCallback((id) => !!typingFrom[(id || "").toString()], [typingFrom]);
+  const getUnread = useCallback((id) => unreadMap[(id || "").toString()] || 0, [unreadMap]);
   const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
 
   return {
