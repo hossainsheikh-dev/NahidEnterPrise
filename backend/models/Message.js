@@ -22,6 +22,7 @@ const messageSchema = new mongoose.Schema({
     required: true,
     enum: ['admin', 'subadmin']
   },
+
   receiverId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -41,7 +42,13 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  seenAt: Date
+  seenAt: Date,
+
+  deleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: Date
 }, { timestamps: true });
 
 module.exports = mongoose.model("Message", messageSchema);

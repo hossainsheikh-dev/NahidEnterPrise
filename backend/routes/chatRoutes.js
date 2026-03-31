@@ -2,7 +2,7 @@ const express = require("express");
 const router  = express.Router();
 const { protectSoft }     = require("../middleware/authMiddleware");
 const { protectSubAdmin } = require("../middleware/subAdminMiddleware");
-const { getChatHistory, markSeen, getUnreadCount } = require("../controllers/chatController");
+const { getChatHistory, markSeen, getUnreadCount, deleteMessage } = require("../controllers/chatController");
 
 const protectAny = (req, res, next) => {
   protectSoft(req, res, (adminErr) => {
@@ -23,5 +23,6 @@ const protectAny = (req, res, next) => {
 router.get("/unread",        protectAny, getUnreadCount);
 router.get("/:otherId",      protectAny, getChatHistory);
 router.put("/:otherId/seen", protectAny, markSeen);
+router.delete("/msg/:msgId", protectAny, deleteMessage);
 
 module.exports = router;

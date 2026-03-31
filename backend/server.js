@@ -104,6 +104,23 @@ io.on("connection", (socket) => {
     }
   });
 
+    socket.on("delete_message", async ({ msgId, receiverId }) => {
+    try {
+      const Message = require("./models/Message");
+      const receiverIdStr = receiverId.toString();
+
+      await Message.findByIdAndUpdate(msgId, { deleted: true, text: "" });
+
+      const receiverSocket = onlineUsers.get(receiverIdStr);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("message_deleted", { msgId });
+      }
+      socket.emit("message_deleted", { msgId });
+    } catch (e) {
+      console.log("delete_message error:", e.message);
+    }
+  });
+
   socket.on("disconnect", () => {
     onlineUsers.delete(userId.toString());
     io.emit("online_users", Array.from(onlineUsers.keys()));

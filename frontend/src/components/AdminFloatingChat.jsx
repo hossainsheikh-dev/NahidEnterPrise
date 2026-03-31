@@ -9,7 +9,6 @@ import { useChatSocket } from "../hooks/useChatSocket";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const getDateLabel = (date) => {
   const d = new Date(date);
   const today = new Date();
@@ -50,20 +49,20 @@ export default function AdminFloatingChat({ me }) {
   const [histLoaded, setHistLoaded]   = useState({});
   const [peerIds, setPeerIds]         = useState([]);
 
-  // ── New feature states ────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery]   = useState("");
-  const [isMuted, setIsMuted]           = useState(false);
-  const [notifToast, setNotifToast]     = useState(null);  // { id, name, text }
-  const [isAtBottom, setIsAtBottom]     = useState(true);
-  const [newMsgBelow, setNewMsgBelow]   = useState(0);
-  const [copiedId, setCopiedId]         = useState(null);
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [isMuted, setIsMuted]               = useState(false);
+  const [notifToast, setNotifToast]         = useState(null);
+  const [isAtBottom, setIsAtBottom]         = useState(true);
+  const [newMsgBelow, setNewMsgBelow]       = useState(0);
+  const [copiedId, setCopiedId]             = useState(null);
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
+  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text }
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
-  const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
-  const isDragging   = useRef(false);
-  const hasDragged   = useRef(false);
-  const dragOrigin   = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
+  const [fabPos, setFabPos]       = useState({ bottom: 24, right: 24 });
+  const isDragging  = useRef(false);
+  const hasDragged  = useRef(false);
+  const dragOrigin  = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
   const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
@@ -79,17 +78,15 @@ export default function AdminFloatingChat({ me }) {
 
   const {
     isOnline, getMessages, isTyping, getUnread,
-    loadHistory, sendMessage, sendTyping, markSeen,
+    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage,
   } = useChatSocket({ myId: me.id, myName: me.name, myRole: "admin", tokenKey: "token" });
 
-  // ── Responsive ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
 
-  // ── Visual viewport ────────────────────────────────────────────────────────
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -99,7 +96,6 @@ export default function AdminFloatingChat({ me }) {
     return () => { vv.removeEventListener("resize", u); vv.removeEventListener("scroll", u); };
   }, []);
 
-  // ── Drag ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const onMove = (e) => {
       if (!isDragging.current || isDesktop) return;
@@ -133,7 +129,6 @@ export default function AdminFloatingChat({ me }) {
     dragOrigin.current = { x: cx, y: cy, ...fabPos };
   }, [fabPos, isDesktop]);
 
-  // ── Load contacts ──────────────────────────────────────────────────────────
   const loadSubAdmins = useCallback(async () => {
     setLoadingSA(true);
     try {
@@ -149,14 +144,12 @@ export default function AdminFloatingChat({ me }) {
   useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
-  // ── Peer IDs ───────────────────────────────────────────────────────────────
   useEffect(() => {
     setPeerIds(subAdmins.map(s => s._id));
   }, [subAdmins]);
 
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
 
-  // ── Contact list (sorted by last message) ─────────────────────────────────
   const contactList = [...subAdmins].sort((a, b) => {
     const aMsg = getMessages(a._id).slice(-1)[0];
     const bMsg = getMessages(b._id).slice(-1)[0];
@@ -170,7 +163,6 @@ export default function AdminFloatingChat({ me }) {
     ? contactList.filter(sa => sa.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     : contactList;
 
-  // ── New message detection & toast ─────────────────────────────────────────
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const unreadSnapshot = peerIds.map(id => getUnread(id)).join(",");
 
@@ -178,11 +170,9 @@ export default function AdminFloatingChat({ me }) {
     peerIds.forEach(pid => {
       const pidStr = pid?.toString();
       const curr   = getUnread(pid);
-
       if (pidStr in prevUnreadRef.current) {
         const prev         = prevUnreadRef.current[pidStr];
         const isActiveChat = open && screen === "chat" && activeOther?.id?.toString() === pidStr;
-
         if (curr > prev) {
           if (isActiveChat && !isAtBottom) {
             setNewMsgBelow(c => c + (curr - prev));
@@ -202,7 +192,6 @@ export default function AdminFloatingChat({ me }) {
     });
   }, [unreadSnapshot]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── First unread index ────────────────────────────────────────────────────
   useEffect(() => {
     if (!activeOther || !histLoaded[activeOther.id]) return;
     const messages = getMessages(activeOther.id);
@@ -210,7 +199,6 @@ export default function AdminFloatingChat({ me }) {
     setFirstUnreadIdx(unread > 0 ? Math.max(0, messages.length - unread) : null);
   }, [activeOther?.id, histLoaded[activeOther?.id]]); // eslint-disable-line
 
-  // ── Scroll tracking ────────────────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = chatScrollRef.current;
     if (!el) return;
@@ -225,7 +213,6 @@ export default function AdminFloatingChat({ me }) {
     setIsAtBottom(true);
   }, []);
 
-  // ── History & messages ─────────────────────────────────────────────────────
   useEffect(() => {
     if (activeOther && !histLoaded[activeOther.id]) {
       loadHistory(activeOther.id).then(() =>
@@ -236,7 +223,6 @@ export default function AdminFloatingChat({ me }) {
 
   const msgs = activeOther ? getMessages(activeOther.id) : [];
 
-  // Smart auto-scroll
   useEffect(() => {
     if (screen !== "chat") return;
     const newLen  = msgs.length;
@@ -264,7 +250,6 @@ export default function AdminFloatingChat({ me }) {
     if (open && screen === "chat" && activeOther) markSeen(activeOther.id);
   }, [open, screen, activeOther, msgs.length, markSeen]);
 
-  // ── Close / back-navigation ────────────────────────────────────────────────
   const closeChat = useCallback(() => {
     setOpen(false);
     setScreen("list");
@@ -301,11 +286,11 @@ export default function AdminFloatingChat({ me }) {
     return () => window.removeEventListener("popstate", onPop);
   }, [closeChat]);
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   const openChat = (sa) => {
     setActive({ id: sa._id, name: sa.name, model: "SubAdmin" });
     setScreen("chat");
     setSearchQuery("");
+    setMsgMenu(null);
   };
 
   const handleInput = (e) => {
@@ -334,10 +319,23 @@ export default function AdminFloatingChat({ me }) {
     });
   }, []);
 
+  // ── Message long-press / right-click menu ──────────────────────────────────
+  const handleMsgPress = useCallback((e, msg, isMine) => {
+    e.preventDefault();
+    const msgId = msg._id || msg._tempId;
+    if (!msgId || msg.deleted) return;
+    setMsgMenu({ msgId, isMine, text: msg.text });
+  }, []);
+
+  const handleDeleteMsg = useCallback(() => {
+    if (!msgMenu || !activeOther) return;
+    deleteMessage({ msgId: msgMenu.msgId, receiverId: activeOther.id });
+    setMsgMenu(null);
+  }, [msgMenu, deleteMessage, activeOther]);
+
   const fmtTime = (d) =>
     new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
 
-  // ── Build rendered message list ────────────────────────────────────────────
   const renderedMsgs = [];
   let lastDateStr    = null;
 
@@ -361,7 +359,6 @@ export default function AdminFloatingChat({ me }) {
     });
   });
 
-  // ── Panel & FAB styles ─────────────────────────────────────────────────────
   const panelStyle = isDesktop
     ? { position: "fixed", bottom: 88, right: 24, width: 340, height: 540, borderRadius: 16, zIndex: 2147483646 }
     : { position: "fixed", left: 0, right: 0, bottom: 0, top: window.innerHeight - vpHeight, width: "100%", height: vpHeight, borderRadius: 0, zIndex: 2147483646 };
@@ -374,11 +371,19 @@ export default function AdminFloatingChat({ me }) {
     boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
+  // Badge with pulse animation
   const Badge = ({ count }) => count > 0 ? (
     <motion.span
       initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid #0f172a" }}>
+      style={{
+        position: "absolute", top: -4, right: -4, minWidth: 18, height: 18,
+        borderRadius: 99, background: "#f43f5e", color: "#fff",
+        fontSize: 10, fontWeight: 900,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        paddingInline: 4, border: "2px solid #0f172a",
+        animation: "afc-badge-pulse 1.5s ease-in-out infinite",
+      }}>
       {count > 9 ? "9+" : count}
     </motion.span>
   ) : null;
@@ -398,6 +403,10 @@ export default function AdminFloatingChat({ me }) {
         .afc-dot:nth-child(2){animation-delay:.2s;} .afc-dot:nth-child(3){animation-delay:.4s;}
         .afc-bubble { transition: filter 0.15s; }
         .afc-bubble:hover { filter: brightness(1.08); }
+        @keyframes afc-badge-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.5); }
+          50%       { box-shadow: 0 0 0 5px rgba(244,63,94,0); }
+        }
       `}</style>
 
       {/* ── Notification Toast ─────────────────────────────────────────────── */}
@@ -430,13 +439,10 @@ export default function AdminFloatingChat({ me }) {
               if (sa) { setOpen(true); openChat(sa); }
               setNotifToast(null);
             }}>
-            {/* Accent stripe */}
             <div style={{ width: 3, alignSelf: "stretch", borderRadius: 99, background: "linear-gradient(180deg,#6366f1,#4f46e5)", flexShrink: 0 }} />
-            {/* Avatar */}
             <div style={{ width: 34, height: 34, borderRadius: 11, background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#818cf8", flexShrink: 0 }}>
               {notifToast.name?.[0]?.toUpperCase()}
             </div>
-            {/* Text */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: "#e2e8f0" }}>{notifToast.name}</span>
@@ -446,7 +452,6 @@ export default function AdminFloatingChat({ me }) {
                 {notifToast.text}
               </p>
             </div>
-            {/* Dismiss */}
             <button
               onClick={e => { e.stopPropagation(); setNotifToast(null); }}
               style={{ background: "none", border: "none", padding: 3, cursor: "pointer", color: "#334155", display: "flex", flexShrink: 0 }}>
@@ -500,7 +505,6 @@ export default function AdminFloatingChat({ me }) {
                 )}
               </div>
 
-              {/* Mute toggle */}
               <button
                 onClick={() => setIsMuted(m => !m)}
                 title={isMuted ? "Unmute" : "Mute"}
@@ -529,7 +533,6 @@ export default function AdminFloatingChat({ me }) {
                   className="flex-1 flex flex-col overflow-hidden"
                   style={{ background: "#0f172a" }}>
 
-                  {/* Search */}
                   <div style={{ padding: "10px 12px 8px", flexShrink: 0 }}>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 8, background: "#1e293b", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "7px 12px", transition: "border-color .15s" }}
@@ -550,7 +553,6 @@ export default function AdminFloatingChat({ me }) {
                     </div>
                   </div>
 
-                  {/* Contact rows */}
                   <div className="afc-scroll flex-1 overflow-y-auto">
                     {loadingSA ? (
                       <div className="flex justify-center p-8">
@@ -587,7 +589,11 @@ export default function AdminFloatingChat({ me }) {
                               )}
                             </div>
                             <p style={{ fontSize: 11.5, color: unread > 0 ? "#64748b" : "#334155", fontWeight: unread > 0 ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {lastMsg ? lastMsg.text : sa.email}
+                              {lastMsg
+                                ? lastMsg.deleted
+                                  ? "Message was unsent"
+                                  : lastMsg.text
+                                : sa.email}
                             </p>
                           </div>
                           {unread > 0 && (
@@ -635,7 +641,6 @@ export default function AdminFloatingChat({ me }) {
                       </div>
                     ) : renderedMsgs.map(item => {
 
-                      /* Date separator */
                       if (item.type === "date") return (
                         <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 6px" }}>
                           <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)" }} />
@@ -646,7 +651,6 @@ export default function AdminFloatingChat({ me }) {
                         </div>
                       );
 
-                      /* Unread divider */
                       if (item.type === "unread") return (
                         <div key="unread-divider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 6px" }}>
                           <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.3)" }} />
@@ -657,7 +661,6 @@ export default function AdminFloatingChat({ me }) {
                         </div>
                       );
 
-                      /* Message bubble */
                       const { msg, isFirst, isLast } = item;
                       const isMine = msg.senderId === me.id || msg.senderRole === "admin";
                       const msgId  = msg._id || msg._tempId;
@@ -672,12 +675,28 @@ export default function AdminFloatingChat({ me }) {
                           style={{ marginBottom: isLast ? 4 : 1 }}>
                           <div
                             className="afc-bubble"
-                            onDoubleClick={() => copyMessage(msg.text, msgId)}
-                            title="Double-click to copy"
-                            style={{ position: "relative", maxWidth: "78%", padding: "8px 12px", borderRadius: msgRadius(isMine, isFirst, isLast), background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#1e293b", color: isMine ? "#fff" : "#e2e8f0", fontSize: 13.5, lineHeight: 1.45, fontWeight: 500, boxShadow: isMine ? "0 2px 10px rgba(99,102,241,0.35)" : "0 1px 4px rgba(0,0,0,0.3)", border: !isMine ? "1px solid rgba(255,255,255,0.07)" : "none", wordBreak: "break-word", cursor: "default", userSelect: "text" }}>
-                            {msg.text}
+                            onContextMenu={(e) => handleMsgPress(e, msg, isMine)}
+                            onDoubleClick={() => !msg.deleted && copyMessage(msg.text, msgId)}
+                            title={msg.deleted ? "" : "Double-click to copy • Right-click for options"}
+                            style={{
+                              position: "relative", maxWidth: "78%", padding: "8px 12px",
+                              borderRadius: msgRadius(isMine, isFirst, isLast),
+                              background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#1e293b",
+                              color: isMine ? "#fff" : "#e2e8f0",
+                              fontSize: msg.deleted ? 12 : 13.5,
+                              lineHeight: 1.45, fontWeight: 500,
+                              boxShadow: isMine ? "0 2px 10px rgba(99,102,241,0.35)" : "0 1px 4px rgba(0,0,0,0.3)",
+                              border: !isMine ? "1px solid rgba(255,255,255,0.07)" : "none",
+                              wordBreak: "break-word", cursor: "default", userSelect: "text",
+                            }}>
 
-                            {/* Copy feedback */}
+                            {/* Message text or deleted state */}
+                            {msg.deleted ? (
+                              <span style={{ fontStyle: "italic", opacity: 0.5 }}>
+                                {isMine ? "You unsent a message" : "Message was unsent"}
+                              </span>
+                            ) : msg.text}
+
                             <AnimatePresence>
                               {copiedId === msgId && (
                                 <motion.div
@@ -691,11 +710,10 @@ export default function AdminFloatingChat({ me }) {
                             </AnimatePresence>
                           </div>
 
-                          {/* Timestamp + seen */}
                           {isLast && (
                             <div className="flex items-center gap-1 mt-0.5 mr-1 ml-1">
                               <span className="text-[10px] text-slate-700">{fmtTime(msg.createdAt)}</span>
-                              {isMine && (msg.seen
+                              {isMine && !msg.deleted && (msg.seen
                                 ? <CheckCheck size={11} className="text-indigo-500" />
                                 : <Check size={11} className="text-slate-700" />)}
                             </div>
@@ -704,7 +722,6 @@ export default function AdminFloatingChat({ me }) {
                       );
                     })}
 
-                    {/* Typing indicator */}
                     {isTyping(activeOther?.id) && (
                       <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 4 }}>
                         <div style={{ padding: "10px 14px", borderRadius: "18px 18px 18px 4px", background: "#1e293b", border: "1px solid rgba(255,255,255,0.07)", display: "inline-flex", gap: 4, alignItems: "center" }}>
@@ -733,6 +750,46 @@ export default function AdminFloatingChat({ me }) {
                           </div>
                         ) : <ArrowDown size={15} />}
                       </motion.button>
+                    )}
+                  </AnimatePresence>
+
+                  {/* ── Message Context Menu (dark theme) ───────────────────── */}
+                  <AnimatePresence>
+                    {msgMenu && (
+                      <>
+                        <div onClick={() => setMsgMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 20 }} />
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.88, y: 6 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.88, y: 6 }}
+                          transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                          style={{
+                            position: "absolute", bottom: 72, right: 12,
+                            background: "#1e293b",
+                            borderRadius: 14,
+                            boxShadow: "0 8px 32px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            overflow: "hidden", zIndex: 30, minWidth: 155,
+                          }}>
+                          {msgMenu.isMine && (
+                            <button
+                              onClick={handleDeleteMsg}
+                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#f87171", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                              🗑 Unsend Message
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
+                            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#e2e8f0", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                            📋 Copy
+                          </button>
+                          <button
+                            onClick={() => setMsgMenu(null)}
+                            style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#475569", cursor: "pointer", fontFamily: "inherit" }}>
+                            Cancel
+                          </button>
+                        </motion.div>
+                      </>
                     )}
                   </AnimatePresence>
 

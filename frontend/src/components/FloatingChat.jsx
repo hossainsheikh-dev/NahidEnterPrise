@@ -10,7 +10,6 @@ import { useChatSocket } from "../hooks/useChatSocket";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const getDateLabel = (date) => {
   const d = new Date(date);
   const today = new Date();
@@ -51,20 +50,20 @@ export default function FloatingChat({ me, other }) {
   const [loadingSA, setLoadingSA]     = useState(false);
   const [peerIds, setPeerIds]         = useState([]);
 
-  // ── New feature states ────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery]   = useState("");
-  const [isMuted, setIsMuted]           = useState(false);
-  const [notifToast, setNotifToast]     = useState(null);  // { id, name, text }
-  const [isAtBottom, setIsAtBottom]     = useState(true);
-  const [newMsgBelow, setNewMsgBelow]   = useState(0);
-  const [copiedId, setCopiedId]         = useState(null);
+  const [searchQuery, setSearchQuery]       = useState("");
+  const [isMuted, setIsMuted]               = useState(false);
+  const [notifToast, setNotifToast]         = useState(null);
+  const [isAtBottom, setIsAtBottom]         = useState(true);
+  const [newMsgBelow, setNewMsgBelow]       = useState(0);
+  const [copiedId, setCopiedId]             = useState(null);
   const [firstUnreadIdx, setFirstUnreadIdx] = useState(null);
+  const [msgMenu, setMsgMenu]               = useState(null); // { msgId, isMine, text }
 
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
-  const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
-  const isDragging   = useRef(false);
-  const hasDragged   = useRef(false);
-  const dragOrigin   = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
+  const [fabPos, setFabPos]       = useState({ bottom: 24, right: 24 });
+  const isDragging  = useRef(false);
+  const hasDragged  = useRef(false);
+  const dragOrigin  = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
   const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
@@ -80,19 +79,17 @@ export default function FloatingChat({ me, other }) {
 
   const {
     isOnline, getMessages, isTyping, getUnread,
-    loadHistory, sendMessage, sendTyping, markSeen,
+    loadHistory, sendMessage, sendTyping, markSeen, deleteMessage,
   } = useChatSocket({
     myId: me.id, myName: me.name, myRole: "subadmin", tokenKey: "subAdminToken",
   });
 
-  // ── Responsive ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
 
-  // ── Visual viewport (keyboard) ─────────────────────────────────────────────
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -102,7 +99,6 @@ export default function FloatingChat({ me, other }) {
     return () => { vv.removeEventListener("resize", u); vv.removeEventListener("scroll", u); };
   }, []);
 
-  // ── Drag (mobile/tablet only) ──────────────────────────────────────────────
   useEffect(() => {
     const onMove = (e) => {
       if (!isDragging.current || isDesktop) return;
@@ -136,7 +132,6 @@ export default function FloatingChat({ me, other }) {
     dragOrigin.current = { x: cx, y: cy, ...fabPos };
   }, [fabPos, isDesktop]);
 
-  // ── Load contacts ──────────────────────────────────────────────────────────
   const loadSubAdmins = useCallback(async () => {
     setLoadingSA(true);
     try {
@@ -157,7 +152,6 @@ export default function FloatingChat({ me, other }) {
   useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
-  // ── Peer IDs ───────────────────────────────────────────────────────────────
   useEffect(() => {
     setPeerIds([
       ...(other ? [other.id] : []),
@@ -167,7 +161,6 @@ export default function FloatingChat({ me, other }) {
 
   const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
 
-  // ── Contact list (raw + sorted by last message) ────────────────────────────
   const rawContacts = [
     ...(other ? [{ ...other, _id: other.id, isAdmin: true }] : []),
     ...subAdmins.map(s => ({ ...s, id: s._id, model: "SubAdmin", isAdmin: false })),
@@ -188,7 +181,6 @@ export default function FloatingChat({ me, other }) {
     ? contactList.filter(c => c.name?.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     : contactList;
 
-  // ── New message detection & toast notification ─────────────────────────────
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const unreadSnapshot = peerIds.map(id => getUnread(id)).join(",");
 
@@ -196,11 +188,9 @@ export default function FloatingChat({ me, other }) {
     peerIds.forEach(pid => {
       const pidStr = pid?.toString();
       const curr   = getUnread(pid);
-
       if (pidStr in prevUnreadRef.current) {
         const prev         = prevUnreadRef.current[pidStr];
         const isActiveChat = open && screen === "chat" && activeOther?.id?.toString() === pidStr;
-
         if (curr > prev) {
           if (isActiveChat && !isAtBottom) {
             setNewMsgBelow(c => c + (curr - prev));
@@ -220,7 +210,6 @@ export default function FloatingChat({ me, other }) {
     });
   }, [unreadSnapshot]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── First unread index (for "Unread Messages" divider) ────────────────────
   useEffect(() => {
     if (!activeOther || !histLoaded[activeOther.id]) return;
     const messages = getMessages(activeOther.id);
@@ -228,7 +217,6 @@ export default function FloatingChat({ me, other }) {
     setFirstUnreadIdx(unread > 0 ? Math.max(0, messages.length - unread) : null);
   }, [activeOther?.id, histLoaded[activeOther?.id]]); // eslint-disable-line
 
-  // ── Scroll tracking ────────────────────────────────────────────────────────
   const handleScroll = useCallback(() => {
     const el = chatScrollRef.current;
     if (!el) return;
@@ -243,7 +231,6 @@ export default function FloatingChat({ me, other }) {
     setIsAtBottom(true);
   }, []);
 
-  // ── History load ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeOther && !histLoaded[activeOther.id]) {
       loadHistory(activeOther.id).then(() =>
@@ -254,10 +241,9 @@ export default function FloatingChat({ me, other }) {
 
   const msgs = activeOther ? getMessages(activeOther.id) : [];
 
-  // Smart auto-scroll: scroll only when at bottom, always scroll for own messages
   useEffect(() => {
     if (screen !== "chat") return;
-    const newLen  = msgs.length;
+    const newLen = msgs.length;
     if (newLen > prevMsgsLen.current) {
       const lastMsg = msgs[newLen - 1];
       const isMyMsg = lastMsg?.senderId?.toString() === me.id?.toString();
@@ -268,7 +254,6 @@ export default function FloatingChat({ me, other }) {
     prevMsgsLen.current = newLen;
   }, [msgs.length, screen]); // eslint-disable-line
 
-  // Scroll to bottom when opening a conversation
   useEffect(() => {
     if (screen === "chat" && activeOther) {
       setIsAtBottom(true);
@@ -283,7 +268,6 @@ export default function FloatingChat({ me, other }) {
     if (open && screen === "chat" && activeOther) markSeen(activeOther.id);
   }, [open, screen, activeOther, msgs.length, markSeen]);
 
-  // ── Close / back-navigation ────────────────────────────────────────────────
   const closeChat = useCallback(() => {
     setOpen(false);
     setScreen("list");
@@ -320,11 +304,11 @@ export default function FloatingChat({ me, other }) {
     return () => window.removeEventListener("popstate", onPop);
   }, [closeChat]);
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   const openChat = (person) => {
     setActiveOther(person);
     setScreen("chat");
     setSearchQuery("");
+    setMsgMenu(null);
   };
 
   const handleInput = (e) => {
@@ -353,10 +337,23 @@ export default function FloatingChat({ me, other }) {
     });
   }, []);
 
+  // ── Message long-press / right-click menu ──────────────────────────────────
+  const handleMsgPress = useCallback((e, msg, isMine) => {
+    e.preventDefault();
+    const msgId = msg._id || msg._tempId;
+    if (!msgId || msg.deleted) return;
+    setMsgMenu({ msgId, isMine, text: msg.text });
+  }, []);
+
+  const handleDeleteMsg = useCallback(() => {
+    if (!msgMenu || !activeOther) return;
+    deleteMessage({ msgId: msgMenu.msgId, receiverId: activeOther.id });
+    setMsgMenu(null);
+  }, [msgMenu, deleteMessage, activeOther]);
+
   const fmtTime = (d) =>
     new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
 
-  // ── Build rendered message list (with separators & grouping) ───────────────
   const renderedMsgs = [];
   let lastDateStr    = null;
 
@@ -380,7 +377,6 @@ export default function FloatingChat({ me, other }) {
     });
   });
 
-  // ── Panel & FAB styles ─────────────────────────────────────────────────────
   const panelStyle = isDesktop
     ? { position: "fixed", bottom: 88, right: 24, width: 360, height: 560, borderRadius: 20, zIndex: 1000 }
     : { position: "fixed", left: 0, right: 0, bottom: 0, top: window.innerHeight - vpHeight, width: "100%", height: vpHeight, borderRadius: 0, zIndex: 1000 };
@@ -393,11 +389,19 @@ export default function FloatingChat({ me, other }) {
     boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
+  // Badge with pulse animation when there are unread messages
   const Badge = ({ count }) => count > 0 ? (
     <motion.span
       initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
+      style={{
+        position: "absolute", top: -4, right: -4, minWidth: 18, height: 18,
+        borderRadius: 99, background: "#f43f5e", color: "#fff",
+        fontSize: 10, fontWeight: 900,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        paddingInline: 4, border: "2px solid white",
+        animation: "fc-sa-badge-pulse 1.5s ease-in-out infinite",
+      }}>
       {count > 9 ? "9+" : count}
     </motion.span>
   ) : null;
@@ -419,9 +423,12 @@ export default function FloatingChat({ me, other }) {
         .fc-sa-fab { touch-action:none; user-select:none; -webkit-user-select:none; }
         @keyframes fc-sa-online-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.5);} 70%{box-shadow:0 0 0 5px rgba(34,197,94,0);} }
         .fc-sa-online { animation: fc-sa-online-pulse 2s infinite; }
-        @keyframes fc-sa-toast-in { from{opacity:0;transform:translateY(8px) scale(0.96);} to{opacity:1;transform:translateY(0) scale(1);} }
         .fc-sa-msg-bubble { transition: box-shadow 0.15s; }
         .fc-sa-msg-bubble:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.18) !important; }
+        @keyframes fc-sa-badge-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.5); }
+          50%       { box-shadow: 0 0 0 5px rgba(244,63,94,0); }
+        }
       `}</style>
 
       <div className="fc-sa">
@@ -459,13 +466,10 @@ export default function FloatingChat({ me, other }) {
                 }
                 setNotifToast(null);
               }}>
-              {/* Accent stripe */}
               <div style={{ width: 3, alignSelf: "stretch", borderRadius: 99, background: "linear-gradient(180deg,#6366f1,#4f46e5)", flexShrink: 0 }} />
-              {/* Avatar */}
               <div style={{ width: 34, height: 34, borderRadius: 11, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#6366f1", flexShrink: 0 }}>
                 {notifToast.name?.[0]?.toUpperCase()}
               </div>
-              {/* Text */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 1 }}>
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: "#1e293b" }}>{notifToast.name}</span>
@@ -475,7 +479,6 @@ export default function FloatingChat({ me, other }) {
                   {notifToast.text}
                 </p>
               </div>
-              {/* Dismiss */}
               <button
                 onClick={e => { e.stopPropagation(); setNotifToast(null); }}
                 style={{ background: "none", border: "none", padding: 3, cursor: "pointer", color: "#cbd5e1", display: "flex", flexShrink: 0 }}>
@@ -531,7 +534,6 @@ export default function FloatingChat({ me, other }) {
                   </div>
                 )}
 
-                {/* Mute toggle */}
                 <button
                   onClick={() => setIsMuted(m => !m)}
                   title={isMuted ? "Unmute notifications" : "Mute notifications"}
@@ -558,7 +560,6 @@ export default function FloatingChat({ me, other }) {
                     exit={{ opacity: 0, x: -16 }}
                     style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: "#f8f9ff" }}>
 
-                    {/* Search */}
                     <div style={{ padding: "10px 12px 8px", flexShrink: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ffffff", border: "1.5px solid rgba(99,102,241,0.14)", borderRadius: 12, padding: "7px 12px", transition: "border-color .15s" }}
                         onFocusCapture={e => e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"}
@@ -578,7 +579,6 @@ export default function FloatingChat({ me, other }) {
                       </div>
                     </div>
 
-                    {/* Contact rows */}
                     <div className="fc-sa-scroll" style={{ flex: 1, overflowY: "auto" }}>
                       {loadingSA ? (
                         <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
@@ -627,7 +627,11 @@ export default function FloatingChat({ me, other }) {
                                 )}
                               </div>
                               <p style={{ fontSize: 11.5, color: unread > 0 ? "#475569" : "#94a3b8", fontWeight: unread > 0 ? 600 : 400, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {lastMsg ? lastMsg.text : (person.isAdmin ? "Admin" : person.email || "SubAdmin")}
+                                {lastMsg
+                                  ? lastMsg.deleted
+                                    ? "Message was unsent"
+                                    : lastMsg.text
+                                  : (person.isAdmin ? "Admin" : person.email || "SubAdmin")}
                               </p>
                             </div>
 
@@ -675,7 +679,6 @@ export default function FloatingChat({ me, other }) {
                         </div>
                       ) : renderedMsgs.map(item => {
 
-                        /* Date separator */
                         if (item.type === "date") return (
                           <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 6px" }}>
                             <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.08)" }} />
@@ -686,7 +689,6 @@ export default function FloatingChat({ me, other }) {
                           </div>
                         );
 
-                        /* Unread divider */
                         if (item.type === "unread") return (
                           <div key="unread-divider" style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 6px" }}>
                             <div style={{ flex: 1, height: 1, background: "rgba(99,102,241,0.2)" }} />
@@ -697,7 +699,6 @@ export default function FloatingChat({ me, other }) {
                           </div>
                         );
 
-                        /* Message bubble */
                         const { msg, isFirst, isLast } = item;
                         const isMine = msg.senderId?.toString() === me.id?.toString();
                         const msgId  = msg._id || msg._tempId;
@@ -711,10 +712,27 @@ export default function FloatingChat({ me, other }) {
                             style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", marginBottom: isLast ? 4 : 1 }}>
                             <div
                               className="fc-sa-msg-bubble"
-                              onDoubleClick={() => copyMessage(msg.text, msgId)}
-                              title="Double-click to copy"
-                              style={{ position: "relative", maxWidth: "78%", padding: "8px 12px", borderRadius: msgRadius(isMine, isFirst, isLast), background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#ffffff", color: isMine ? "#fff" : "#1e293b", fontSize: 13.5, lineHeight: 1.45, fontWeight: 500, boxShadow: isMine ? "0 2px 8px rgba(99,102,241,0.25)" : "0 1px 4px rgba(0,0,0,0.06)", border: !isMine ? "1px solid rgba(99,102,241,0.08)" : "none", wordBreak: "break-word", cursor: "default", userSelect: "text" }}>
-                              {msg.text}
+                              onContextMenu={(e) => handleMsgPress(e, msg, isMine)}
+                              onDoubleClick={() => !msg.deleted && copyMessage(msg.text, msgId)}
+                              title={msg.deleted ? "" : "Double-click to copy • Right-click for options"}
+                              style={{
+                                position: "relative", maxWidth: "78%", padding: "8px 12px",
+                                borderRadius: msgRadius(isMine, isFirst, isLast),
+                                background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#ffffff",
+                                color: isMine ? "#fff" : "#1e293b",
+                                fontSize: msg.deleted ? 12 : 13.5,
+                                lineHeight: 1.45, fontWeight: 500,
+                                boxShadow: isMine ? "0 2px 8px rgba(99,102,241,0.25)" : "0 1px 4px rgba(0,0,0,0.06)",
+                                border: !isMine ? "1px solid rgba(99,102,241,0.08)" : "none",
+                                wordBreak: "break-word", cursor: "default", userSelect: "text",
+                              }}>
+
+                              {/* Message text or deleted state */}
+                              {msg.deleted ? (
+                                <span style={{ fontStyle: "italic", opacity: 0.55 }}>
+                                  {isMine ? "You unsent a message" : "Message was unsent"}
+                                </span>
+                              ) : msg.text}
 
                               {/* Copy feedback */}
                               <AnimatePresence>
@@ -730,11 +748,10 @@ export default function FloatingChat({ me, other }) {
                               </AnimatePresence>
                             </div>
 
-                            {/* Timestamp + seen */}
                             {isLast && (
                               <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3, marginLeft: 4, marginRight: 4 }}>
                                 <span style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(msg.createdAt)}</span>
-                                {isMine && (msg.seen
+                                {isMine && !msg.deleted && (msg.seen
                                   ? <CheckCheck size={11} style={{ color: "#6366f1" }} />
                                   : <Check size={11} style={{ color: "#c4cdd8" }} />)}
                               </div>
@@ -743,7 +760,6 @@ export default function FloatingChat({ me, other }) {
                         );
                       })}
 
-                      {/* Typing indicator */}
                       {isTyping(activeOther?.id) && (
                         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 4 }}>
                           <div style={{ padding: "10px 14px", borderRadius: "18px 18px 18px 4px", background: "#fff", border: "1px solid rgba(99,102,241,0.08)", display: "inline-flex", gap: 4, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
@@ -772,6 +788,46 @@ export default function FloatingChat({ me, other }) {
                             </div>
                           ) : <ArrowDown size={15} />}
                         </motion.button>
+                      )}
+                    </AnimatePresence>
+
+                    {/* ── Message Context Menu ─────────────────────────────── */}
+                    <AnimatePresence>
+                      {msgMenu && (
+                        <>
+                          <div onClick={() => setMsgMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 20 }} />
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.88, y: 6 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.88, y: 6 }}
+                            transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                            style={{
+                              position: "absolute", bottom: 72, right: 12,
+                              background: "#ffffff",
+                              borderRadius: 14,
+                              boxShadow: "0 8px 32px rgba(99,102,241,0.18), 0 2px 8px rgba(0,0,0,0.06)",
+                              border: "1px solid rgba(99,102,241,0.12)",
+                              overflow: "hidden", zIndex: 30, minWidth: 155,
+                            }}>
+                            {msgMenu.isMine && (
+                              <button
+                                onClick={handleDeleteMsg}
+                                style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderBottom: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
+                                🗑 Unsend Message
+                              </button>
+                            )}
+                            <button
+                              onClick={() => { copyMessage(msgMenu.text, msgMenu.msgId); setMsgMenu(null); }}
+                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#1e293b", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', sans-serif" }}>
+                              📋 Copy
+                            </button>
+                            <button
+                              onClick={() => setMsgMenu(null)}
+                              style={{ width: "100%", padding: "10px 14px", background: "none", border: "none", borderTop: "1px solid rgba(99,102,241,0.08)", textAlign: "left", fontSize: 12.5, fontWeight: 600, color: "#94a3b8", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                              Cancel
+                            </button>
+                          </motion.div>
+                        </>
                       )}
                     </AnimatePresence>
 
