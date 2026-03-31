@@ -1,65 +1,14 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle, X, Send, Check, CheckCheck,
-  ChevronLeft, Loader2, Smile, ArrowDown, Search,
+  ChevronDown, ChevronLeft, Loader2,
 } from "lucide-react";
 import { useChatSocket } from "../hooks/useChatSocket";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
-const EMOJIS = ["👍","❤️","😂","😮","😢","🎉","🔥","✅","👏","🙏","😎","💯","🤔","👀","🫡","🥳"];
 
-/* ── Helpers ──────────────────────────────────────────────────────────────── */
-const fmt = (d) =>
-  new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
-
-const dayLabel = (d) => {
-  const diff = Math.floor((Date.now() - new Date(d)) / 86400000);
-  if (diff === 0) return "Today";
-  if (diff === 1) return "Yesterday";
-  return new Date(d).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" });
-};
-
-const sameDay = (a, b) =>
-  new Date(a).toDateString() === new Date(b).toDateString();
-
-/* ── Tiny sub-components ─────────────────────────────────────────────────── */
-const OnlineDot = ({ on }) => (
-  <span style={{
-    position: "absolute", bottom: -1, right: -1,
-    width: 10, height: 10, borderRadius: "50%",
-    background: on ? "#22d3ee" : "rgba(255,255,255,0.12)",
-    border: "2px solid #0a0f1e",
-    boxShadow: on ? "0 0 8px #22d3ee99" : "none",
-    transition: "all .3s",
-  }} />
-);
-
-const Badge = ({ count }) =>
-  count > 0 ? (
-    <motion.span
-      key={count}
-      initial={{ scale: 0.4, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.4, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 500, damping: 22 }}
-      style={{
-        position: "absolute", top: -5, right: -5,
-        minWidth: 20, height: 20, borderRadius: 99,
-        background: "linear-gradient(135deg,#f43f5e,#e11d48)",
-        color: "#fff", fontSize: 10, fontWeight: 800,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        paddingInline: 4, border: "2px solid #0a0f1e",
-        boxShadow: "0 2px 10px #f43f5e66",
-        pointerEvents: "none",
-      }}
-    >
-      {count > 9 ? "9+" : count}
-    </motion.span>
-  ) : null;
-
-/* ══════════════════════════════════════════════════════════════════════════ */
 export default function FloatingChat({ me, other }) {
   const [open, setOpen]               = useState(false);
   const [screen, setScreen]           = useState("list");
@@ -68,52 +17,41 @@ export default function FloatingChat({ me, other }) {
   const [histLoaded, setHistLoaded]   = useState({});
   const [subAdmins, setSubAdmins]     = useState([]);
   const [loadingSA, setLoadingSA]     = useState(false);
-  const [showEmoji, setShowEmoji]     = useState(false);
-  const [atBottom, setAtBottom]       = useState(true);
-  const [search, setSearch]           = useState("");
-  const [showSearch, setShowSearch]   = useState(false);
-  const [isDesktop, setIsDesktop]     = useState(window.innerWidth >= 1024);
-  const [fabPos, setFabPos]           = useState({ bottom: 24, right: 24 });
-  const [vpHeight, setVpHeight]       = useState(
+  const [peerIds, setPeerIds]         = useState([]);
+
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+  const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
+  const isDragging = useRef(false);
+  const hasDragged = useRef(false);
+  const dragOrigin = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
+
+  const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
 
-  const isDragging  = useRef(false);
-  const hasDragged  = useRef(false);
-  const dragOrigin  = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
-  const originPath  = useRef(null);
+  // ── FIX: track the page URL that was active when chat opened ──────────────
+  const originPath = useRef(null);
+
   const bottomRef   = useRef(null);
-  const scrollRef   = useRef(null);
   const inputRef    = useRef(null);
   const typingDelay = useRef(null);
 
   const {
-    isOnline, getMessages, isTyping, getUnread, totalUnread,
+    isOnline, getMessages, isTyping, getUnread,
     loadHistory, sendMessage, sendTyping, markSeen,
   } = useChatSocket({
     myId: me.id, myName: me.name, myRole: "subadmin", tokenKey: "subAdminToken",
   });
 
-  /* ── Badge: totalUnread triggers recompute without intermediate state ── */
-  const contactIds = useMemo(() => [
-    ...(other ? [other.id] : []),
-    ...subAdmins.map(s => s._id),
-  ], [other, subAdmins]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const unreadUsersCount = useMemo(
-    () => contactIds.filter(id => getUnread(id) > 0).length,
-    [contactIds, totalUnread]
-  );
-
-  /* ── Responsive ── */
+  // ── Responsive ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const h = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
 
-  /* ── Visual viewport ── */
+  // ── Visual viewport (keyboard) ─────────────────────────────────────────────
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -123,7 +61,7 @@ export default function FloatingChat({ me, other }) {
     return () => { vv.removeEventListener("resize", u); vv.removeEventListener("scroll", u); };
   }, []);
 
-  /* ── Drag ── */
+  // ── Drag (mobile/tablet only) ──────────────────────────────────────────────
   useEffect(() => {
     const onMove = (e) => {
       if (!isDragging.current || isDesktop) return;
@@ -139,14 +77,14 @@ export default function FloatingChat({ me, other }) {
     };
     const onEnd = () => { isDragging.current = false; };
     window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onEnd);
+    window.addEventListener("mouseup",   onEnd);
     window.addEventListener("touchmove", onMove, { passive: true });
-    window.addEventListener("touchend", onEnd);
+    window.addEventListener("touchend",  onEnd);
     return () => {
       window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onEnd);
+      window.removeEventListener("mouseup",   onEnd);
       window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
+      window.removeEventListener("touchend",  onEnd);
     };
   }, [isDesktop]);
 
@@ -157,7 +95,7 @@ export default function FloatingChat({ me, other }) {
     dragOrigin.current = { x: cx, y: cy, ...fabPos };
   }, [fabPos, isDesktop]);
 
-  /* ── Load contacts ── */
+  // ── Load contacts ──────────────────────────────────────────────────────────
   const loadSubAdmins = useCallback(async () => {
     setLoadingSA(true);
     try {
@@ -178,41 +116,81 @@ export default function FloatingChat({ me, other }) {
   useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
   useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
 
-  /* ── Back-button: never leave page ── */
+  // ── Badge: unique users with unread messages ───────────────────────────────
+  useEffect(() => {
+    setPeerIds([
+      ...(other ? [other.id] : []),
+      ...subAdmins.map(s => s._id),
+    ]);
+  }, [other, subAdmins]);
+
+  const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
+
+  // ── FIX: Back-button — never leave the current page ───────────────────────
   const closeChat = useCallback(() => {
-    setOpen(false); setScreen("list"); setActiveOther(null);
-    setShowEmoji(false); setSearch(""); setShowSearch(false);
+    setOpen(false);
+    setScreen("list");
+    setActiveOther(null);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    originPath.current = originPath.current || window.location.href;
+
+    // Save the page we opened from (only once per open session)
+    if (!originPath.current) {
+      originPath.current = window.location.href;
+    }
+
+    // Push TWO states so we own the back-button stack:
+    //   state[0] = "chat list open"
+    //   state[1] = "chat conversation open"  (pushed later when entering chat screen)
     window.history.pushState({ fc: "list" }, "");
-    return () => { originPath.current = null; };
+
+    return () => {
+      originPath.current = null;
+    };
   }, [open]);
 
+  // When user goes into a chat conversation, push another state
   useEffect(() => {
-    if (open && screen === "chat") window.history.pushState({ fc: "chat" }, "");
+    if (open && screen === "chat") {
+      window.history.pushState({ fc: "chat" }, "");
+    }
   }, [open, screen]);
 
   useEffect(() => {
     const onPop = (e) => {
-      const s = e.state;
-      if (s?.fc === "chat") {
+      const state = e.state;
+
+      if (state?.fc === "chat") {
+        // Popped from conversation → go back to list, push list state again so
+        // next back press is handled by us too
         setScreen("list");
         window.history.pushState({ fc: "list" }, "");
-      } else if (s?.fc === "list") {
-        closeChat();
-        if (originPath.current) window.history.replaceState(null, "", originPath.current);
-      } else {
-        closeChat();
+        return;
       }
+
+      if (state?.fc === "list") {
+        // Popped from list → close the chat panel entirely, but stay on same page.
+        // Replace current history entry with the original page URL so the
+        // browser back stack is clean and pressing back again goes to the
+        // real previous page — not our synthetic states.
+        closeChat();
+        if (originPath.current) {
+          window.history.replaceState(null, "", originPath.current);
+        }
+        return;
+      }
+
+      // state has no fc key → user is navigating away for real; just close panel
+      closeChat();
     };
+
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [closeChat]);
 
-  /* ── History load ── */
+  // ── History load ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeOther && !histLoaded[activeOther.id]) {
       loadHistory(activeOther.id).then(() =>
@@ -223,35 +201,15 @@ export default function FloatingChat({ me, other }) {
 
   const msgs = activeOther ? getMessages(activeOther.id) : [];
 
-  const filteredMsgs = useMemo(() =>
-    search.trim()
-      ? msgs.filter(m => m.text?.toLowerCase().includes(search.toLowerCase()))
-      : msgs,
-    [msgs, search]
-  );
-
-  /* ── Scroll ── */
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 60);
-  }, []);
-
   useEffect(() => {
-    if (screen === "chat" && atBottom)
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [screen, activeOther, msgs.length, atBottom]);
+    if (screen === "chat") bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [screen, activeOther, msgs.length]);
 
-  /* ── Mark seen ── */
   useEffect(() => {
     if (open && screen === "chat" && activeOther) markSeen(activeOther.id);
   }, [open, screen, activeOther, msgs.length, markSeen]);
 
-  /* ── Actions ── */
-  const openChat = (person) => {
-    setActiveOther(person); setScreen("chat");
-    setShowEmoji(false); setSearch(""); setShowSearch(false);
-  };
+  const openChat = (person) => { setActiveOther(person); setScreen("chat"); };
 
   const handleInput = (e) => {
     setText(e.target.value);
@@ -263,9 +221,8 @@ export default function FloatingChat({ me, other }) {
   const handleSend = useCallback(() => {
     if (!text.trim() || !activeOther) return;
     sendMessage({ receiverId: activeOther.id, receiverModel: activeOther.model, text });
-    setText(""); setShowEmoji(false);
+    setText("");
     sendTyping(activeOther.id, false);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     inputRef.current?.focus();
   }, [text, activeOther, sendMessage, sendTyping]);
 
@@ -273,346 +230,181 @@ export default function FloatingChat({ me, other }) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  const contactList = useMemo(() => [
+  const fmtTime = (d) =>
+    new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
+
+  const contactList = [
     ...(other ? [{ ...other, _id: other.id, isAdmin: true }] : []),
     ...subAdmins.map(s => ({ ...s, id: s._id, model: "SubAdmin", isAdmin: false })),
-  ], [other, subAdmins]);
+  ];
 
-  /* ── Panel style ── */
+  // ── Panel style ────────────────────────────────────────────────────────────
   const panelStyle = isDesktop
-    ? { position: "fixed", bottom: 90, right: 24, width: 375, height: 570, borderRadius: 26, zIndex: 1000 }
+    ? { position: "fixed", bottom: 88, right: 24, width: 360, height: 520, borderRadius: 20, zIndex: 1000 }
     : { position: "fixed", left: 0, right: 0, bottom: 0, top: window.innerHeight - vpHeight, width: "100%", height: vpHeight, borderRadius: 0, zIndex: 1000 };
 
   const fabBase = {
     position: "fixed", bottom: 24, right: 24, zIndex: 1001,
-    width: 54, height: 54, borderRadius: 18, border: "none",
-    background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)",
+    width: 52, height: 52, borderRadius: 16, border: "none",
+    background: "linear-gradient(135deg,#6366f1,#4f46e5)",
     color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 8px 30px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.3)",
+    boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
   };
 
-  /* ════════════════════════════════════════════════ RENDER */
+  const Badge = ({ count }) => count > 0 ? (
+    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
+      {count > 9 ? "9+" : count}
+    </motion.span>
+  ) : null;
+
   return ReactDOM.createPortal(
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        .fc-root * { box-sizing:border-box; font-family:'Plus Jakarta Sans',sans-serif; }
-        .fc-scroll::-webkit-scrollbar { width:3px; }
-        .fc-scroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.07); border-radius:99px; }
-        .fc-ta { outline:none; resize:none; background:transparent; border:none; width:100%; color:#e2e8f0; font-size:13.5px; line-height:1.45; font-family:'Plus Jakarta Sans',sans-serif; }
-        .fc-ta::placeholder { color:rgba(148,163,184,0.45); }
-        .fc-si { outline:none; background:transparent; border:none; color:#e2e8f0; font-size:13px; width:100%; font-family:'Plus Jakarta Sans',sans-serif; }
-        .fc-si::placeholder { color:rgba(100,116,139,0.7); }
-        .fc-fab-m { touch-action:none; user-select:none; -webkit-user-select:none; }
-        @keyframes fc-pulse { 0%,100%{opacity:.35;transform:scale(.8);} 50%{opacity:1;transform:scale(1);} }
-        .fc-dot { width:7px;height:7px;border-radius:50%;background:#64748b;display:inline-block;animation:fc-pulse 1.4s ease-in-out infinite; }
-        .fc-dot:nth-child(2){animation-delay:.2s;} .fc-dot:nth-child(3){animation-delay:.4s;}
-        @keyframes spin { to{transform:rotate(360deg);} }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        .fc-sa * { box-sizing:border-box; font-family:'DM Sans',sans-serif; }
+        .fc-sa-scroll::-webkit-scrollbar { width:3px; }
+        .fc-sa-scroll::-webkit-scrollbar-thumb { background:rgba(99,102,241,0.15); border-radius:99px; }
+        .fc-sa-inp { outline:none; resize:none; }
+        .fc-sa-inp::placeholder { color:#94a3b8; }
+        @keyframes fc-sa-dots { 0%,80%,100%{opacity:0;transform:scale(0.6);} 40%{opacity:1;transform:scale(1);} }
+        .fc-sa-dot { display:inline-block;width:6px;height:6px;border-radius:50%;background:#94a3b8;animation:fc-sa-dots 1.2s infinite; }
+        .fc-sa-dot:nth-child(2){animation-delay:.2s;} .fc-sa-dot:nth-child(3){animation-delay:.4s;}
+        .fc-sa-fab { touch-action:none; user-select:none; -webkit-user-select:none; }
       `}</style>
 
-      <div className="fc-root">
+      <div className="fc-sa">
 
-        {/* ══ PANEL ══════════════════════════════════════════════════════════ */}
+        {/* ── Chat Panel ─────────────────────────────────────────────────── */}
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, y: isDesktop ? 24 : 60, scale: isDesktop ? 0.92 : 1 }}
+              initial={{ opacity: 0, y: isDesktop ? 16 : 40, scale: isDesktop ? 0.95 : 1 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: isDesktop ? 24 : 60, scale: isDesktop ? 0.92 : 1 }}
+              exit={{ opacity: 0, y: isDesktop ? 16 : 40, scale: isDesktop ? 0.95 : 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 28 }}
-              style={{
-                ...panelStyle, overflow: "hidden",
-                display: "flex", flexDirection: "column",
-                background: "#0a0f1e",
-                border: isDesktop ? "1px solid rgba(255,255,255,0.06)" : "none",
-                boxShadow: "0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(99,102,241,0.12), inset 0 1px 0 rgba(255,255,255,0.04)",
-              }}
-            >
-              {/* glow bar */}
-              <div style={{ height: 2, flexShrink: 0, background: "linear-gradient(90deg,transparent 0%,#6366f1 30%,#a855f7 60%,#06b6d4 85%,transparent 100%)", opacity: 0.9 }} />
+              style={{ ...panelStyle, overflow: "hidden", display: "flex", flexDirection: "column", background: "linear-gradient(160deg,#ffffff,#fafbff)", border: isDesktop ? "1px solid rgba(99,102,241,0.12)" : "none", boxShadow: "0 24px 64px rgba(99,102,241,0.14),0 4px 16px rgba(0,0,0,0.06)" }}>
 
-              {/* ── HEADER ──────────────────────────────────────────────── */}
-              <div style={{
-                padding: "11px 14px", display: "flex", alignItems: "center", gap: 10,
-                flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.04)",
-                background: "rgba(255,255,255,0.018)",
-              }}>
+              <div style={{ height: 2, background: "linear-gradient(90deg,transparent,#6366f1,#8b5cf6,transparent)", flexShrink: 0 }} />
+
+              {/* Header */}
+              <div style={{ background: "linear-gradient(135deg,#6366f1,#4f46e5)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                 {screen === "chat" && (
-                  <motion.button whileTap={{ scale: 0.86 }} onClick={() => setScreen("list")}
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b", flexShrink: 0 }}>
+                  <button onClick={() => setScreen("list")} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff", flexShrink: 0 }}>
                     <ChevronLeft size={15} />
-                  </motion.button>
+                  </button>
                 )}
-
                 {screen === "list" ? (
-                  <>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 14, fontWeight: 800, color: "#f1f5f9", margin: 0, letterSpacing: "-0.3px" }}>Messages</p>
-                      <p style={{ fontSize: 11, color: "#334155", margin: 0 }}>{contactList.length} contacts</p>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.86 }} onClick={() => { setShowSearch(s => !s); setSearch(""); }}
-                      style={{ background: showSearch ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)", border: `1px solid ${showSearch ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)"}`, borderRadius: 10, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: showSearch ? "#818cf8" : "#475569", transition: "all .2s" }}>
-                      <Search size={13} />
-                    </motion.button>
-                  </>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13.5, fontWeight: 700, color: "#fff", margin: 0 }}>Messages</p>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", margin: 0 }}>{contactList.length} Contacts</p>
+                  </div>
                 ) : (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                     <div style={{ position: "relative", flexShrink: 0 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 12, background: "linear-gradient(135deg,rgba(99,102,241,0.25),rgba(139,92,246,0.2))", border: "1px solid rgba(99,102,241,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13.5, fontWeight: 800, color: "#a5b4fc" }}>
-                        {activeOther?.name?.[0]?.toUpperCase()}
-                      </div>
-                      <OnlineDot on={isOnline(activeOther?.id)} />
+                      <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff" }}>{activeOther?.name?.[0]?.toUpperCase()}</div>
+                      <span style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: isOnline(activeOther?.id) ? "#22c55e" : "rgba(255,255,255,0.3)", border: "2px solid white" }} />
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: 13.5, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>{activeOther?.name}</p>
-                      <p style={{ fontSize: 11, margin: 0, transition: "color .3s", color: isTyping(activeOther?.id) ? "#22d3ee" : isOnline(activeOther?.id) ? "#4ade80" : "#334155" }}>
-                        {isTyping(activeOther?.id) ? "typing…" : isOnline(activeOther?.id) ? "● Online" : "Offline"}
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, lineHeight: 1.2 }}>{activeOther?.name}</p>
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", margin: 0 }}>
+                        {isTyping(activeOther?.id) ? "typing…" : isOnline(activeOther?.id) ? "Online" : "Offline"}
                       </p>
                     </div>
                   </div>
                 )}
-
-                <motion.button whileTap={{ scale: 0.86 }} onClick={closeChat}
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#475569" }}>
-                  <X size={14} />
-                </motion.button>
+                <button onClick={closeChat} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
+                  <ChevronDown size={15} />
+                </button>
               </div>
 
-              {/* search bar */}
-              <AnimatePresence>
-                {showSearch && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 42, opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    style={{ overflow: "hidden", flexShrink: 0, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 14px", height: 42, background: "rgba(255,255,255,0.015)" }}>
-                      <Search size={13} style={{ color: "#334155", flexShrink: 0 }} />
-                      <input className="fc-si" placeholder={screen === "chat" ? "Search messages…" : "Search contacts…"} value={search} onChange={e => setSearch(e.target.value)} autoFocus />
-                      {search && <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSearch("")} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 13, flexShrink: 0 }}>✕</motion.button>}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ══ CONTENT ════════════════════════════════════════════════ */}
+              {/* Content */}
               <AnimatePresence mode="wait">
-
-                {/* ── LIST ── */}
                 {screen === "list" && (
-                  <motion.div key="list" initial={{ opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.16 }}
-                    className="fc-scroll" style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}>
+                  <motion.div key="list" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                    className="fc-sa-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 0", background: "#f8f9ff" }}>
                     {loadingSA ? (
-                      <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-                        <Loader2 size={20} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />
-                      </div>
+                      <div style={{ display: "flex", justifyContent: "center", padding: 32 }}><Loader2 size={20} className="animate-spin" style={{ color: "#6366f1" }} /></div>
                     ) : contactList.length === 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: 44 }}>
-                        <div style={{ width: 50, height: 50, borderRadius: 17, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <MessageCircle size={22} style={{ color: "#4338ca" }} />
-                        </div>
-                        <p style={{ fontSize: 12.5, color: "#334155", margin: 0 }}>No contacts yet</p>
-                      </div>
-                    ) : contactList
-                        .filter(p => !search.trim() || p.name?.toLowerCase().includes(search.toLowerCase()))
-                        .map((person, i) => {
-                          const pid     = person.id || person._id;
-                          const unread  = getUnread(pid);
-                          const online  = isOnline(pid);
-                          const lastMsg = getMessages(pid).slice(-1)[0];
-                          return (
-                            <motion.button key={pid}
-                              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}
-                              whileHover={{ background: "rgba(99,102,241,0.07)" }}
-                              onClick={() => openChat({ id: pid, name: person.name, model: person.model || (person.isAdmin ? "User" : "SubAdmin") })}
-                              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", transition: "background .15s" }}>
-                              <div style={{ position: "relative", flexShrink: 0 }}>
-                                <div style={{
-                                  width: 43, height: 43, borderRadius: 15,
-                                  background: person.isAdmin ? "linear-gradient(135deg,rgba(99,102,241,0.22),rgba(139,92,246,0.18))" : "linear-gradient(135deg,rgba(6,182,212,0.18),rgba(99,102,241,0.15))",
-                                  border: `1px solid ${person.isAdmin ? "rgba(99,102,241,0.22)" : "rgba(6,182,212,0.18)"}`,
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  fontSize: 15, fontWeight: 800,
-                                  color: person.isAdmin ? "#a5b4fc" : "#67e8f9",
-                                }}>
-                                  {person.name?.[0]?.toUpperCase()}
-                                </div>
-                                <OnlineDot on={online} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                                  <span style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: unread > 0 ? "#f1f5f9" : "#94a3b8" }}>{person.name}</span>
-                                  {lastMsg && <span style={{ fontSize: 10, color: "#1e293b" }}>{fmt(lastMsg.createdAt)}</span>}
-                                </div>
-                                <p style={{ fontSize: 12, color: unread > 0 ? "#475569" : "#1e293b", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: unread > 0 ? 500 : 400 }}>
-                                  {lastMsg ? lastMsg.text : person.isAdmin ? "Admin" : person.email || "SubAdmin"}
-                                </p>
-                              </div>
-                              <AnimatePresence>
-                                {unread > 0 && (
-                                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                                    style={{ minWidth: 20, height: 20, borderRadius: 99, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 5, flexShrink: 0, boxShadow: "0 2px 10px rgba(99,102,241,0.55)" }}>
-                                    {unread > 9 ? "9+" : unread}
-                                  </motion.span>
-                                )}
-                              </AnimatePresence>
-                            </motion.button>
-                          );
-                        })
-                    }
+                      <p style={{ textAlign: "center", fontSize: 13, color: "#94a3b8", padding: 32 }}>No contacts yet</p>
+                    ) : contactList.map((person) => {
+                      const pid     = person.id || person._id;
+                      const unread  = getUnread(pid);
+                      const online  = isOnline(pid);
+                      const lastMsg = getMessages(pid).slice(-1)[0];
+                      return (
+                        <motion.button key={pid} whileHover={{ backgroundColor: "rgba(99,102,241,0.05)" }}
+                          onClick={() => openChat({ id: pid, name: person.name, model: person.model || (person.isAdmin ? "User" : "SubAdmin") })}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+                          <div style={{ position: "relative", flexShrink: 0 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 12, background: person.isAdmin ? "rgba(99,102,241,0.12)" : "rgba(139,92,246,0.12)", border: `1px solid ${person.isAdmin ? "rgba(99,102,241,0.2)" : "rgba(139,92,246,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: person.isAdmin ? "#6366f1" : "#8b5cf6" }}>
+                              {person.name?.[0]?.toUpperCase()}
+                            </div>
+                            <span style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: online ? "#22c55e" : "#cbd5e1", border: "2px solid #f8f9ff" }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{person.name}</span>
+                              {lastMsg && <span style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(lastMsg.createdAt)}</span>}
+                            </div>
+                            <p style={{ fontSize: 11.5, color: "#94a3b8", margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {lastMsg ? lastMsg.text : (person.isAdmin ? "Admin" : person.email || "SubAdmin")}
+                            </p>
+                          </div>
+                          {unread > 0 && (
+                            <span style={{ minWidth: 18, height: 18, borderRadius: 99, background: "#6366f1", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, flexShrink: 0 }}>
+                              {unread > 9 ? "9+" : unread}
+                            </span>
+                          )}
+                        </motion.button>
+                      );
+                    })}
                   </motion.div>
                 )}
 
-                {/* ── CHAT ── */}
                 {screen === "chat" && (
-                  <motion.div key="chat" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 18 }} transition={{ duration: 0.16 }}
-                    style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
-
-                    {/* messages */}
-                    <div ref={scrollRef} onScroll={handleScroll}
-                      className="fc-scroll"
-                      style={{ flex: 1, overflowY: "auto", padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
+                  <motion.div key="chat" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
+                    style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                    <div className="fc-sa-scroll" style={{ flex: 1, overflowY: "auto", padding: "12px 12px 4px", display: "flex", flexDirection: "column", gap: 6, background: "#f8f9ff" }}>
                       {!histLoaded[activeOther?.id] ? (
-                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Loader2 size={22} style={{ color: "#6366f1", animation: "spin 1s linear infinite" }} />
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={20} className="animate-spin" style={{ color: "#6366f1" }} /></div>
+                      ) : msgs.length === 0 ? (
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          <MessageCircle size={28} style={{ color: "#c4cdd8" }} />
+                          <p style={{ fontSize: 12, color: "#94a3b8" }}>No messages yet. Say hi! 👋</p>
                         </div>
-                      ) : filteredMsgs.length === 0 ? (
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
-                          <div style={{ width: 52, height: 52, borderRadius: 18, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <MessageCircle size={24} style={{ color: "#4338ca" }} />
-                          </div>
-                          <p style={{ fontSize: 12.5, color: "#334155", margin: 0 }}>
-                            {search ? "No messages found" : `Say hi to ${activeOther?.name}! 👋`}
-                          </p>
-                        </div>
-                      ) : filteredMsgs.map((msg, i) => {
-                          const isMine = msg.senderId?.toString() === me.id?.toString();
-                          const prev   = filteredMsgs[i - 1];
-                          const next   = filteredMsgs[i + 1];
-                          const newDay = !prev || !sameDay(prev.createdAt, msg.createdAt);
-                          const groupPrev = prev && prev.senderId?.toString() === msg.senderId?.toString() && !newDay;
-                          const groupNext = next && next.senderId?.toString() === msg.senderId?.toString() && sameDay(msg.createdAt, next?.createdAt);
-
-                          const br = isMine
-                            ? `${groupPrev ? 6 : 18}px ${groupPrev ? 6 : 18}px 4px ${groupNext ? 6 : 18}px`
-                            : `${groupPrev ? 6 : 18}px ${groupPrev ? 6 : 18}px ${groupNext ? 6 : 18}px 4px`;
-
-                          return (
-                            <div key={msg._id || msg._tempId || i}>
-                              {newDay && (
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 10px" }}>
-                                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.04)" }} />
-                                  <span style={{ fontSize: 10, color: "#1e293b", fontWeight: 600, letterSpacing: "0.6px", textTransform: "uppercase" }}>
-                                    {dayLabel(msg.createdAt)}
-                                  </span>
-                                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.04)" }} />
-                                </div>
-                              )}
-                              <motion.div
-                                initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                transition={{ duration: 0.14 }}
-                                style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start", marginBottom: groupNext ? 2 : 6 }}>
-                                <div style={{
-                                  maxWidth: "78%", padding: "8px 13px",
-                                  borderRadius: br,
-                                  background: isMine
-                                    ? "linear-gradient(135deg,#6366f1 0%,#7c3aed 100%)"
-                                    : "rgba(255,255,255,0.055)",
-                                  color: isMine ? "#fff" : "#cbd5e1",
-                                  fontSize: 13.5, lineHeight: 1.5, fontWeight: 500,
-                                  boxShadow: isMine ? "0 4px 18px rgba(99,102,241,0.38)" : "none",
-                                  border: !isMine ? "1px solid rgba(255,255,255,0.05)" : "none",
-                                  wordBreak: "break-word",
-                                }}>
-                                  {msg.text}
-                                </div>
-                                {!groupNext && (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 3, marginInline: 4 }}>
-                                    <span style={{ fontSize: 10, color: "#1e293b" }}>{fmt(msg.createdAt)}</span>
-                                    {isMine && (msg.seen
-                                      ? <CheckCheck size={11} style={{ color: "#818cf8" }} />
-                                      : <Check size={11} style={{ color: "#1e293b" }} />
-                                    )}
-                                  </div>
-                                )}
-                              </motion.div>
+                      ) : msgs.map((msg, i) => {
+                        const isMine = msg.senderId?.toString() === me.id?.toString();
+                        return (
+                          <motion.div key={msg._id || msg._tempId || i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                            style={{ display: "flex", flexDirection: "column", alignItems: isMine ? "flex-end" : "flex-start" }}>
+                            <div style={{ maxWidth: "78%", padding: "8px 12px", borderRadius: isMine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: isMine ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "#ffffff", color: isMine ? "#fff" : "#1e293b", fontSize: 13.5, lineHeight: 1.45, fontWeight: 500, boxShadow: isMine ? "0 2px 8px rgba(99,102,241,0.25)" : "0 1px 4px rgba(0,0,0,0.06)", border: !isMine ? "1px solid rgba(99,102,241,0.08)" : "none", wordBreak: "break-word" }}>
+                              {msg.text}
                             </div>
-                          );
-                        })
-                      }
-
-                      {/* typing */}
-                      <AnimatePresence>
-                        {isTyping(activeOther?.id) && (
-                          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}>
-                            <div style={{ display: "inline-flex", gap: 5, alignItems: "center", padding: "10px 14px", borderRadius: "18px 18px 18px 4px", background: "rgba(255,255,255,0.055)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                              <span className="fc-dot" /><span className="fc-dot" /><span className="fc-dot" />
+                            <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 2, marginLeft: 4, marginRight: 4 }}>
+                              <span style={{ fontSize: 10, color: "#94a3b8" }}>{fmtTime(msg.createdAt)}</span>
+                              {isMine && (msg.seen ? <CheckCheck size={11} style={{ color: "#6366f1" }} /> : <Check size={11} style={{ color: "#c4cdd8" }} />)}
                             </div>
                           </motion.div>
-                        )}
-                      </AnimatePresence>
-                      <div ref={bottomRef} />
-                    </div>
-
-                    {/* scroll to bottom */}
-                    <AnimatePresence>
-                      {!atBottom && (
-                        <motion.button
-                          initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}
-                          whileTap={{ scale: 0.88 }}
-                          onClick={() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); setAtBottom(true); }}
-                          style={{ position: "absolute", bottom: 68, right: 14, width: 32, height: 32, borderRadius: 99, background: "rgba(10,15,30,0.96)", border: "1px solid rgba(99,102,241,0.35)", color: "#818cf8", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 20px rgba(0,0,0,0.5)", zIndex: 5 }}>
-                          <ArrowDown size={14} />
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-
-                    {/* emoji picker */}
-                    <AnimatePresence>
-                      {showEmoji && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.94 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.94 }}
-                          style={{ position: "absolute", bottom: 64, left: 10, right: 10, background: "rgba(10,15,30,0.98)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: "12px 14px", display: "flex", flexWrap: "wrap", gap: 8, boxShadow: "0 12px 40px rgba(0,0,0,0.6)", backdropFilter: "blur(20px)", zIndex: 10 }}>
-                          {EMOJIS.map(em => (
-                            <motion.button key={em} whileHover={{ scale: 1.35 }} whileTap={{ scale: 0.85 }}
-                              onClick={() => { setText(t => t + em); setShowEmoji(false); inputRef.current?.focus(); }}
-                              style={{ background: "none", border: "none", fontSize: 21, cursor: "pointer", lineHeight: 1, padding: 2 }}>
-                              {em}
-                            </motion.button>
-                          ))}
+                        );
+                      })}
+                      {isTyping(activeOther?.id) && (
+                        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
+                          <div style={{ padding: "10px 14px", borderRadius: "16px 16px 16px 4px", background: "#fff", border: "1px solid rgba(99,102,241,0.08)", display: "inline-flex", gap: 4, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                            <span className="fc-sa-dot" /><span className="fc-sa-dot" /><span className="fc-sa-dot" />
+                          </div>
                         </motion.div>
                       )}
-                    </AnimatePresence>
-
-                    {/* input bar */}
-                    <div style={{ padding: "9px 12px 10px", borderTop: "1px solid rgba(255,255,255,0.04)", display: "flex", gap: 8, alignItems: "flex-end", background: "rgba(255,255,255,0.012)", flexShrink: 0 }}>
-                      <motion.button whileTap={{ scale: 0.85, rotate: 20 }}
-                        onClick={() => setShowEmoji(s => !s)}
-                        style={{ width: 36, height: 36, borderRadius: 12, background: showEmoji ? "rgba(99,102,241,0.18)" : "rgba(255,255,255,0.05)", border: `1px solid ${showEmoji ? "rgba(99,102,241,0.3)" : "rgba(255,255,255,0.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: showEmoji ? "#818cf8" : "#334155", flexShrink: 0, transition: "all .2s" }}>
-                        <Smile size={16} />
-                      </motion.button>
-
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "8px 12px", transition: "border-color .2s" }}
-                        onFocus={() => {}} // handled by textarea
-                      >
-                        <textarea ref={inputRef} className="fc-ta" rows={1}
-                          value={text} onChange={handleInput} onKeyDown={handleKey}
-                          placeholder="Message…"
-                          style={{ maxHeight: 80, overflowY: "auto" }}
-                          onFocus={e => e.target.closest("div").style.borderColor = "rgba(99,102,241,0.35)"}
-                          onBlur={e => e.target.closest("div").style.borderColor = "rgba(255,255,255,0.06)"}
-                        />
-                      </div>
-
-                      <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.88 }}
-                        onClick={handleSend} disabled={!text.trim()}
-                        style={{
-                          width: 38, height: 38, borderRadius: 13, border: "none", flexShrink: 0,
-                          background: text.trim() ? "linear-gradient(135deg,#6366f1,#7c3aed)" : "rgba(255,255,255,0.04)",
-                          color: text.trim() ? "#fff" : "#1e293b",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: text.trim() ? "pointer" : "not-allowed",
-                          boxShadow: text.trim() ? "0 4px 18px rgba(99,102,241,0.5)" : "none",
-                          transition: "all .2s",
-                        }}>
+                      <div ref={bottomRef} />
+                    </div>
+                    <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(99,102,241,0.08)", display: "flex", gap: 8, alignItems: "flex-end", background: "#ffffff", flexShrink: 0 }}>
+                      <textarea ref={inputRef} className="fc-sa-inp" rows={1} value={text} onChange={handleInput} onKeyDown={handleKey} placeholder="Type a message…"
+                        style={{ flex: 1, background: "#f8f9ff", border: "1.5px solid rgba(99,102,241,0.14)", borderRadius: 12, padding: "9px 12px", fontSize: 13, color: "#1e293b", maxHeight: 80, overflowY: "auto", fontFamily: "'DM Sans',sans-serif", lineHeight: 1.4, transition: "border-color .15s" }}
+                        onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.4)"}
+                        onBlur={e => e.target.style.borderColor = "rgba(99,102,241,0.14)"} />
+                      <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }} onClick={handleSend} disabled={!text.trim()}
+                        style={{ width: 38, height: 38, borderRadius: 12, border: "none", background: text.trim() ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "rgba(99,102,241,0.08)", color: text.trim() ? "#fff" : "#c4cdd8", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "not-allowed", flexShrink: 0, transition: "all .15s", boxShadow: text.trim() ? "0 3px 10px rgba(99,102,241,0.35)" : "none" }}>
                         <Send size={15} />
                       </motion.button>
                     </div>
@@ -623,17 +415,15 @@ export default function FloatingChat({ me, other }) {
           )}
         </AnimatePresence>
 
-        {/* ══ FAB ════════════════════════════════════════════════════════════ */}
+        {/* ── FAB ──────────────────────────────────────────────────────────── */}
         {isDesktop ? (
-          <motion.button
-            whileHover={{ scale: 1.1, boxShadow: "0 14px 44px rgba(99,102,241,0.65)" }}
-            whileTap={{ scale: 0.9 }}
+          <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
             onClick={() => setOpen(o => !o)}
-            style={{ ...fabBase, cursor: "pointer", position: "relative" }}>
+            style={{ ...fabBase, cursor: "pointer" }}>
             <AnimatePresence mode="wait">
               {open
-                ? <motion.span key="x" initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: 90 }} transition={{ duration: 0.18 }}><X size={22} /></motion.span>
-                : <motion.span key="m" initial={{ scale: 0, rotate: 90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0, rotate: -90 }} transition={{ duration: 0.18 }}><MessageCircle size={22} /></motion.span>
+                ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
+                : <motion.span key="m" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><MessageCircle size={22} /></motion.span>
               }
             </AnimatePresence>
             <AnimatePresence>
@@ -643,14 +433,14 @@ export default function FloatingChat({ me, other }) {
         ) : (
           <AnimatePresence>
             {!open && (
-              <motion.button key="fab" className="fc-fab-m"
+              <motion.button key="fab" className="fc-sa-fab"
                 initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 360, damping: 26 }}
-                whileTap={{ scale: 0.88 }}
+                transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
                 onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
                 onTouchStart={(e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
                 onClick={() => { if (!hasDragged.current) setOpen(true); }}
-                style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab", position: "relative" }}>
+                style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab" }}>
                 <MessageCircle size={22} />
                 <AnimatePresence><Badge count={unreadUsersCount} /></AnimatePresence>
               </motion.button>
