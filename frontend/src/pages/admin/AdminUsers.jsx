@@ -22,8 +22,8 @@ function StatCard({ icon, label, value, color, loading }) {
         style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
         <span style={{ color }}>{icon}</span>
       </div>
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "#475569" }}>{label}</p>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-widest truncate" style={{ color: "#475569" }}>{label}</p>
         {loading
           ? <div className="h-6 w-16 rounded-lg animate-pulse mt-1" style={{ background: "rgba(255,255,255,0.06)" }} />
           : <p className="text-[22px] font-black" style={{ color: "#f1f5f9" }}>{value}</p>
@@ -51,33 +51,40 @@ function OrderRow({ order }) {
     paid:                  "#22c55e",
     failed:                "#ef4444",
   };
-  const color    = STATUS_COLOR[order.status]              || "#64748b";
-  const payColor = PAY_STATUS_COLOR[order.paymentStatus]   || "#64748b";
+  const color    = STATUS_COLOR[order.status]            || "#64748b";
+  const payColor = PAY_STATUS_COLOR[order.paymentStatus] || "#64748b";
 
   return (
-    <div className="rounded-xl overflow-hidden"
+    <div className="rounded-xl overflow-hidden w-full"
       style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="flex items-center justify-between px-3 py-2.5">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="font-black text-[11px]" style={{ color: "#c9a84c" }}>{order.orderId}</span>
-          <span className="text-[11px]" style={{ color: "#475569" }}>
+      <div className="flex items-center justify-between px-3 py-2.5 gap-2 min-w-0">
+
+        {/* বাম পাশ */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="font-black text-[11px] flex-shrink-0" style={{ color: "#c9a84c" }}>
+            {order.orderId}
+          </span>
+          <span className="text-[11px] flex-shrink-0" style={{ color: "#475569" }}>
             {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
           </span>
-          <span className="text-[11px] hidden sm:block capitalize px-2 py-0.5 rounded-lg"
+          <span className="text-[11px] hidden sm:block capitalize px-2 py-0.5 rounded-lg flex-shrink-0"
             style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
             {order.status}
           </span>
         </div>
+
+        {/* ডান পাশ */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] capitalize px-2 py-0.5 rounded-lg"
+          <span className="text-[11px] capitalize px-2 py-0.5 rounded-lg hidden xs:block flex-shrink-0"
             style={{ background: `${payColor}18`, color: payColor, border: `1px solid ${payColor}30` }}>
             {order.paymentMethod?.toUpperCase()}
           </span>
-          <span className="font-black text-[13px]" style={{ color: "#f1f5f9" }}>
+          <span className="font-black text-[13px] whitespace-nowrap" style={{ color: "#f1f5f9" }}>
             ৳{order.total?.toLocaleString()}
           </span>
         </div>
       </div>
+
       {/* Items preview */}
       {order.items?.length > 0 && (
         <div className="px-3 pb-2.5 flex gap-2 overflow-x-auto">
@@ -85,13 +92,13 @@ function OrderRow({ order }) {
             <div key={i} className="flex items-center gap-1.5 flex-shrink-0 rounded-lg px-2 py-1"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" }}>
               {item.image
-                ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white"/>
-                : <Package size={12} style={{ color: "#334155" }}/>
+                ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white" />
+                : <Package size={12} style={{ color: "#334155" }} />
               }
               <span className="text-[10px] max-w-[80px] truncate" style={{ color: "#64748b" }}>
                 {item.name}
               </span>
-              <span className="text-[10px] font-bold" style={{ color: "#c9a84c" }}>×{item.quantity}</span>
+              <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#c9a84c" }}>×{item.quantity}</span>
             </div>
           ))}
           {order.items.length > 4 && (
@@ -168,18 +175,22 @@ function UserCard({ user, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.35 }}
       className="rounded-2xl overflow-hidden"
-      style={{ background: "#0d1426", border: `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`, transition: "border-color 0.2s" }}>
+      style={{
+        background: "#0d1426",
+        border: `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`,
+        transition: "border-color 0.2s",
+      }}>
 
       {/* ── Header ── */}
-      <div className="flex items-center gap-4 px-5 py-4">
+      <div className="flex items-center gap-3 px-4 py-4 min-w-0">
 
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           {user.avatar
             ? <img src={user.avatar} alt={user.name}
-                className="w-12 h-12 rounded-xl object-cover border-2"
+                className="w-11 h-11 rounded-xl object-cover border-2"
                 style={{ borderColor: "rgba(201,168,76,0.25)" }} />
-            : <div className="w-12 h-12 rounded-xl flex items-center justify-center text-[13px] font-black"
+            : <div className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-black"
                 style={{
                   background: user.isGuest
                     ? "linear-gradient(135deg,#1e293b,#334155)"
@@ -191,17 +202,17 @@ function UserCard({ user, index }) {
               </div>
           }
           {/* Online indicator */}
-          <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2"
+          <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2"
             style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }} />
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-[14px] font-bold" style={{ color: "#f1f5f9" }}>{user.name}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-[13px] font-bold truncate" style={{ color: "#f1f5f9" }}>{user.name}</p>
 
             {/* Provider badge */}
-            <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
+            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0"
               style={{
                 background: `${providerColor[user.provider] || "#64748b"}18`,
                 color:       providerColor[user.provider] || "#64748b",
@@ -212,7 +223,7 @@ function UserCard({ user, index }) {
 
             {/* Verified badge */}
             {user.isVerified && !user.isGuest && (
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5"
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5 flex-shrink-0"
                 style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
                 <CheckCircle size={8}/> {t("ভেরিফাইড", "Verified")}
               </span>
@@ -220,7 +231,7 @@ function UserCard({ user, index }) {
 
             {/* Blocked badge */}
             {isBlocked && (
-              <span className="text-[9px] font-black px-2 py-0.5 rounded-full"
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
                 style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
                 {t("ব্লকড", "Blocked")}
               </span>
@@ -228,24 +239,25 @@ function UserCard({ user, index }) {
           </div>
 
           {/* Contact info */}
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             {user.email && (
-              <span className="flex items-center gap-1 text-[11px]" style={{ color: "#64748b" }}>
-                <Mail size={10}/> {user.email}
+              <span className="flex items-center gap-1 text-[11px] min-w-0" style={{ color: "#64748b" }}>
+                <Mail size={10} className="flex-shrink-0"/>
+                <span className="truncate max-w-[130px] sm:max-w-[200px]">{user.email}</span>
               </span>
             )}
             {user.phone && (
-              <span className="flex items-center gap-1 text-[11px]" style={{ color: "#64748b" }}>
+              <span className="flex items-center gap-1 text-[11px] flex-shrink-0" style={{ color: "#64748b" }}>
                 <Phone size={10}/> {user.phone}
               </span>
             )}
-            <span className="flex items-center gap-1 text-[11px]" style={{ color: "#475569" }}>
+            <span className="flex items-center gap-1 text-[11px] flex-shrink-0" style={{ color: "#475569" }}>
               <Calendar size={10}/> {joined}
             </span>
           </div>
         </div>
 
-        {/* Quick stats */}
+        {/* Quick stats — শুধু md+ এ */}
         <div className="hidden md:flex items-center gap-4 flex-shrink-0">
           <div className="text-center">
             <p className="text-[16px] font-black" style={{ color: "#c9a84c" }}>{fetched ? orders.length : "—"}</p>
@@ -254,7 +266,7 @@ function UserCard({ user, index }) {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-[16px] font-black" style={{ color: "#22c55e" }}>
+            <p className="text-[16px] font-black whitespace-nowrap" style={{ color: "#22c55e" }}>
               {fetched ? `৳${totalSpent.toLocaleString()}` : "—"}
             </p>
             <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>
@@ -278,7 +290,7 @@ function UserCard({ user, index }) {
           {!user.isGuest && (
             <button onClick={handleBlock} disabled={blocking}
               title={isBlocked ? t("আনব্লক করুন", "Unblock") : t("ব্লক করুন", "Block")}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
               style={{
                 background: isBlocked ? "rgba(34,197,94,0.1)"  : "rgba(239,68,68,0.08)",
                 border:     isBlocked ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(239,68,68,0.15)",
@@ -292,7 +304,7 @@ function UserCard({ user, index }) {
           )}
 
           <button onClick={handleExpand}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
             style={{
               background: expanded ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
               border:     expanded ? "1px solid rgba(201,168,76,0.25)" : "1px solid rgba(255,255,255,0.08)",
@@ -312,7 +324,7 @@ function UserCard({ user, index }) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="overflow-hidden">
-            <div className="px-5 pb-5 space-y-5"
+            <div className="px-4 pb-5 space-y-5"
               style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
 
               {/* ── Summary cards ── */}
@@ -349,12 +361,12 @@ function UserCard({ user, index }) {
                       { icon: <CreditCard size={12}/>, label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
                       { icon: <CheckCircle size={12}/>,label: t("ভেরিফাইড", "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
                     ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between text-[12px]">
-                        <span className="flex items-center gap-2" style={{ color: "#475569" }}>
+                      <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
+                        <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
                           <span style={{ color: "#334155" }}>{row.icon}</span>
                           {row.label}
                         </span>
-                        <span className="font-semibold" style={{ color: "#94a3b8" }}>{row.value}</span>
+                        <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -371,12 +383,12 @@ function UserCard({ user, index }) {
                       { icon: <MapPin size={12}/>,  label: t("থানা",      "Thana"),     value: user.address?.thana    || "—" },
                       { icon: <Star size={12}/>,    label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label  || "—" },
                     ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between text-[12px]">
-                        <span className="flex items-center gap-2" style={{ color: "#475569" }}>
+                      <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
+                        <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
                           <span style={{ color: "#334155" }}>{row.icon}</span>
                           {row.label}
                         </span>
-                        <span className="font-semibold" style={{ color: "#94a3b8" }}>{row.value}</span>
+                        <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -509,7 +521,7 @@ export default function AdminUsers() {
             style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)" }}>
             <Users size={22} style={{ color: "#c9a84c" }}/>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 style={{ fontFamily: "'Instrument Serif',serif", fontSize: "22px", color: "#f1f5f9" }}>
               {t("ব্যবহারকারী", "Users")}
             </h1>
@@ -518,7 +530,7 @@ export default function AdminUsers() {
             </p>
           </div>
           <button onClick={fetchUsers}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}>
             <RefreshCw size={15} className={loading ? "animate-spin" : ""}/>
           </button>
@@ -544,7 +556,12 @@ export default function AdminUsers() {
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t("নাম, ইমেইল বা ফোন...", "Search by name, email or phone...")}
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
-            style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'DM Sans',sans-serif" }}
+            style={{
+              background: "#0d1426",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "#e2e8f0",
+              fontFamily: "'DM Sans',sans-serif",
+            }}
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}>
@@ -552,11 +569,13 @@ export default function AdminUsers() {
             </button>
           )}
         </div>
-        <div className="flex gap-1.5 p-1 rounded-xl flex-wrap"
+
+        {/* Filter buttons — মোবাইলে scroll করা যাবে */}
+        <div className="flex gap-1.5 p-1 rounded-xl overflow-x-auto"
           style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
           {FILTERS.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
+              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0"
               style={filter === f.key
                 ? { background: "rgba(201,168,76,0.15)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.25)" }
                 : { color: "#475569", border: "1px solid transparent" }
@@ -581,7 +600,7 @@ export default function AdminUsers() {
             <div key={i} className="rounded-2xl p-5 animate-pulse"
               style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }}/>
+                <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}/>
                 <div className="flex-1 space-y-2">
                   <div className="h-3 rounded-lg w-1/3" style={{ background: "rgba(255,255,255,0.06)" }}/>
                   <div className="h-2.5 rounded-lg w-1/2" style={{ background: "rgba(255,255,255,0.04)" }}/>
