@@ -87,6 +87,24 @@ export default function SubAdminOrderBell() {
           75%      { transform: rotate(3deg); }
         }
         .ob-bell { animation: ob-bell 0.7s ease-in-out; }
+
+        .ob-dropdown {
+          position: absolute;
+          right: 0;
+          top: 3rem;
+          width: 20rem;
+        }
+        @media (max-width: 640px) {
+          .ob-dropdown {
+            position: fixed;
+            left: 50%;
+            right: auto;
+            top: 4rem;
+            transform: translateX(-50%);
+            width: calc(100vw - 24px);
+            max-width: 20rem;
+          }
+        }
       `}</style>
 
       <div className="ob-wrap relative" ref={ref}>
@@ -135,7 +153,7 @@ export default function SubAdminOrderBell() {
               animate={{ opacity:1, y:0, scale:1 }}
               exit={{ opacity:0, y:8, scale:0.95 }}
               transition={{ type:"spring", stiffness:300, damping:28 }}
-              className="absolute right-0 top-12 w-80 rounded-2xl overflow-hidden z-50"
+              className="ob-dropdown rounded-2xl overflow-hidden z-50"
               style={{
                 background:"linear-gradient(160deg,#ffffff,#fafbff)",
                 border:"1px solid rgba(99,102,241,0.12)",

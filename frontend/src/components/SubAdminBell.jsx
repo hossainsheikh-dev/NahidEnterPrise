@@ -27,7 +27,6 @@ export default function SubAdminBell() {
   useEffect(() => {
     const load = async () => {
       try {
-        /* ── SubAdmin pending registrations ── */
         const r1 = await fetch(`${API}/api/subadmin/pending-count`, {
           headers: { Authorization: `Bearer ${getToken()}` },
         });
@@ -39,7 +38,6 @@ export default function SubAdminBell() {
           setSubAdminCount(n);
         }
 
-        /* ── Pending orders ── */
         const r2 = await fetch(`${API}/api/orders`, {
           headers: { Authorization: `Bearer ${getToken()}` },
         });
@@ -52,7 +50,6 @@ export default function SubAdminBell() {
           setOrderCount(n);
         }
 
-        /* ── Profile change requests ── */
         const r3 = await fetch(`${API}/api/subadmin/change-requests/count`, {
           headers: { Authorization: `Bearer ${getToken()}` },
         });
@@ -182,10 +179,8 @@ export default function SubAdminBell() {
               className="bell-dropdown rounded-2xl overflow-hidden z-50"
               style={{ background:"#0f172a", border:"1px solid rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,181,253,0.08)" }}>
 
-              {/* top accent */}
               <div className="h-px w-full" style={{ background:"linear-gradient(90deg,transparent,rgba(196,181,253,0.7),transparent)" }}/>
 
-              {/* header */}
               <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background:"rgba(196,181,253,0.15)" }}>
@@ -209,7 +204,6 @@ export default function SubAdminBell() {
                 </button>
               </div>
 
-              {/* body */}
               {total === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
@@ -255,7 +249,6 @@ export default function SubAdminBell() {
                 </div>
               )}
 
-              {/* footer */}
               <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop:"1px solid rgba(255,255,255,0.07)" }}>
                 <span className="text-[10px] font-medium" style={{ color:"#64748b" }}>
                   {t("প্রতি ৩০ সেকেন্ডে আপডেট","Updates every 30s")}
