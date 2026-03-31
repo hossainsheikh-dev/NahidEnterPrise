@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+0import { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,12 +11,24 @@ const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_UR
 
 export default function FloatingChat({ me, other }) {
   const [open, setOpen] = useState(false);
-  const [screen, setScreen] = useState("list"); // "list" | "chat"
+  const [screen, setScreen] = useState("list");
   const [activeOther, setActiveOther] = useState(null);
   const [text, setText] = useState("");
   const [histLoaded, setHistLoaded] = useState({});
   const [subAdmins, setSubAdmins] = useState([]);
   const [loadingSA, setLoadingSA] = useState(false);
+
+  // ── FIX 1: Draggable FAB position ──────────────────────────────────────────
+  const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
+  const isDragging = useRef(false);
+  const hasDragged = useRef(false);
+  const dragOrigin = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
+
+  // ── FIX 4: Visual viewport height (keyboard shrinks it on mobile) ──────────
+  const [vpHeight, setVpHeight] = useState(
+    () => window.visualViewport?.height ?? window.innerHeight
+  );
+
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const typingDelay = useRef(null);
@@ -28,7 +40,57 @@ export default function FloatingChat({ me, other }) {
     myId: me.id, myName: me.name, myRole: "subadmin", tokenKey: "subAdminToken",
   });
 
-  // SubAdmin list লোড করা (নিজে ছাড়া)
+  // ── FIX 4: Track visualViewport resize (keyboard open/close) ───────────────
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setVpHeight(vv.height);
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  // ── FIX 1: Global drag move / end listeners ─────────────────────────────────
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isDragging.current) return;
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      const dx = cx - dragOrigin.current.x;
+      const dy = cy - dragOrigin.current.y;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasDragged.current = true;
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const FAB = 56;
+      setFabPos({
+        right:  Math.max(8, Math.min(W - FAB - 8, dragOrigin.current.right  - dx)),
+        bottom: Math.max(8, Math.min(H - FAB - 8, dragOrigin.current.bottom - dy)),
+      });
+    };
+    const onEnd = () => { isDragging.current = false; };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup",   onEnd);
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend",  onEnd);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup",   onEnd);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend",  onEnd);
+    };
+  }, []);
+
+  const startDrag = useCallback((clientX, clientY) => {
+    isDragging.current = true;
+    hasDragged.current = false;
+    dragOrigin.current = { x: clientX, y: clientY, ...fabPos };
+  }, [fabPos]);
+
+  // ── SubAdmin list ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -36,9 +98,8 @@ export default function FloatingChat({ me, other }) {
       try {
         const token = localStorage.getItem("subAdminToken");
         const res = await fetch(`${API}/api/subadmin/list`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
         const list = Array.isArray(data)
           ? data.filter(s => s.status === "approved" && s._id !== me.id)
@@ -49,7 +110,7 @@ export default function FloatingChat({ me, other }) {
     })();
   }, [open, me.id]);
 
-  // History লোড
+  // ── Load history ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeOther && !histLoaded[activeOther.id]) {
       loadHistory(activeOther.id).then(() =>
@@ -58,15 +119,27 @@ export default function FloatingChat({ me, other }) {
     }
   }, [activeOther, histLoaded, loadHistory]);
 
-  // Scroll to bottom
+  // ── Scroll to bottom ────────────────────────────────────────────────────────
+  const msgs = activeOther ? getMessages(activeOther.id) : [];
+
   useEffect(() => {
     if (screen === "chat") bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [screen, activeOther, getMessages]);
+  }, [screen, activeOther, msgs.length]);
 
-  // Mark seen
+  // ── FIX 3: Mark seen whenever chat is open AND new messages arrive ──────────
+  // Runs when msgs.length changes so a live-arriving message is immediately marked.
   useEffect(() => {
-    if (screen === "chat" && activeOther) markSeen(activeOther.id);
-  }, [screen, activeOther, markSeen]);
+    if (open && screen === "chat" && activeOther) {
+      markSeen(activeOther.id);
+    }
+  }, [open, screen, activeOther, msgs.length, markSeen]);
+
+  // Also clear badge immediately when the user opens the chat window
+  useEffect(() => {
+    if (open && screen === "chat" && activeOther) {
+      markSeen(activeOther.id);
+    }
+  }, [open, screen, activeOther, markSeen]);
 
   const openChat = (person) => {
     setActiveOther(person);
@@ -82,11 +155,7 @@ export default function FloatingChat({ me, other }) {
 
   const handleSend = useCallback(() => {
     if (!text.trim() || !activeOther) return;
-    sendMessage({
-      receiverId: activeOther.id,
-      receiverModel: activeOther.model,
-      text,
-    });
+    sendMessage({ receiverId: activeOther.id, receiverModel: activeOther.model, text });
     setText("");
     sendTyping(activeOther.id, false);
     inputRef.current?.focus();
@@ -96,15 +165,39 @@ export default function FloatingChat({ me, other }) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  const fmtTime = (d) => new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
+  const fmtTime = (d) =>
+    new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
 
-  const msgs = activeOther ? getMessages(activeOther.id) : [];
-
-  // Admin কে contact list এ যোগ করা
   const contactList = [
     ...(other ? [{ ...other, _id: other.id, isAdmin: true }] : []),
     ...subAdmins.map(s => ({ ...s, id: s._id, model: "SubAdmin", isAdmin: false })),
   ];
+
+  // ── FIX 2: Chat panel — centred on screen ──────────────────────────────────
+  // On mobile (< 640 px) we fill the visual viewport (respects keyboard).
+  // On desktop we anchor near the FAB but still centred horizontally.
+  const isMobile = window.innerWidth < 640;
+
+  const panelStyle = isMobile
+    ? {
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        top: window.innerHeight - vpHeight,   // keyboard-aware top edge
+        width: "100%",
+        height: vpHeight,
+        borderRadius: 0,
+      }
+    : {
+        position: "fixed",
+        bottom: fabPos.bottom + 68,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: 360,
+        height: 520,
+        borderRadius: 20,
+      };
 
   return ReactDOM.createPortal(
     <>
@@ -115,28 +208,35 @@ export default function FloatingChat({ me, other }) {
         .fc-sa-scroll::-webkit-scrollbar-thumb { background:rgba(99,102,241,0.15); border-radius:99px; }
         .fc-sa-inp { outline:none; resize:none; }
         .fc-sa-inp::placeholder { color:#94a3b8; }
-        @keyframes fc-sa-dots { 0%,80%,100%{opacity:0;transform:scale(0.6);} 40%{opacity:1;transform:scale(1);} }
+        @keyframes fc-sa-dots {
+          0%,80%,100%{opacity:0;transform:scale(0.6);}
+          40%{opacity:1;transform:scale(1);}
+        }
         .fc-sa-dot { display:inline-block;width:6px;height:6px;border-radius:50%;background:#94a3b8;animation:fc-sa-dots 1.2s infinite; }
-        .fc-sa-dot:nth-child(2){animation-delay:.2s;} .fc-sa-dot:nth-child(3){animation-delay:.4s;}
+        .fc-sa-dot:nth-child(2){animation-delay:.2s;}
+        .fc-sa-dot:nth-child(3){animation-delay:.4s;}
+        .fc-sa-fab { touch-action: none; user-select: none; -webkit-user-select: none; }
       `}</style>
 
-      <div className="fc-sa" style={{ position: "fixed", bottom: 24, right: 24, zIndex: 999 }}>
+      <div className="fc-sa">
 
+        {/* ── Chat panel ──────────────────────────────────────────────────── */}
         <AnimatePresence>
           {open && (
             <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.95 }}
+              initial={{ opacity: 0, y: 20, scale: isMobile ? 1 : 0.95 }}
+              animate={{ opacity: 1, y: 0,  scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: isMobile ? 1 : 0.95 }}
               transition={{ type: "spring", stiffness: 300, damping: 28 }}
               style={{
-                position: "absolute", bottom: 64, right: 0,
-                width: 340, height: 500,
-                borderRadius: 20, overflow: "hidden",
-                display: "flex", flexDirection: "column",
+                ...panelStyle,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
                 background: "linear-gradient(160deg,#ffffff,#fafbff)",
-                border: "1px solid rgba(99,102,241,0.12)",
+                border: isMobile ? "none" : "1px solid rgba(99,102,241,0.12)",
                 boxShadow: "0 24px 64px rgba(99,102,241,0.14), 0 4px 16px rgba(0,0,0,0.06)",
+                zIndex: 1000,
               }}>
 
               {/* top accent */}
@@ -284,43 +384,40 @@ export default function FloatingChat({ me, other }) {
                           </motion.div>
                         );
                       })}
+
                       {isTyping(activeOther?.id) && (
-  <motion.div 
-    initial={{ opacity: 0, y: 4 }} 
-    animate={{ opacity: 1, y: 0 }}
-    style={{ display: "flex", marginTop: "auto" }}  // ← marginTop: "auto" যোগ
-  >
-    <div style={{ 
-      padding: "10px 14px", 
-      borderRadius: "16px 16px 16px 4px", 
-      background: "#fff", 
-      border: "1px solid rgba(99,102,241,0.08)", 
-      display: "flex", 
-      gap: 4, 
-      alignItems: "center", 
-      boxShadow: "0 1px 4px rgba(0,0,0,0.04)" 
-    }}>
-      <span className="fc-sa-dot"/>
-      <span className="fc-sa-dot"/>
-      <span className="fc-sa-dot"/>
-    </div>
-  </motion.div>
-)}
-<div ref={bottomRef}/>  {/* ← typing indicator এর পরে */}
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}>
+                          <div style={{ padding: "10px 14px", borderRadius: "16px 16px 16px 4px", background: "#fff", border: "1px solid rgba(99,102,241,0.08)", display: "inline-flex", gap: 4, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                            <span className="fc-sa-dot" />
+                            <span className="fc-sa-dot" />
+                            <span className="fc-sa-dot" />
+                          </div>
+                        </motion.div>
+                      )}
+
                       <div ref={bottomRef} />
                     </div>
 
                     {/* input */}
                     <div style={{ padding: "10px 12px", borderTop: "1px solid rgba(99,102,241,0.08)", display: "flex", gap: 8, alignItems: "flex-end", background: "#ffffff", flexShrink: 0 }}>
-                      <textarea ref={inputRef} className="fc-sa-inp" rows={1}
-                        value={text} onChange={handleInput} onKeyDown={handleKey}
+                      <textarea
+                        ref={inputRef}
+                        className="fc-sa-inp"
+                        rows={1}
+                        value={text}
+                        onChange={handleInput}
+                        onKeyDown={handleKey}
                         placeholder="Type a message…"
                         style={{ flex: 1, background: "#f8f9ff", border: "1.5px solid rgba(99,102,241,0.14)", borderRadius: 12, padding: "9px 12px", fontSize: 13, color: "#1e293b", maxHeight: 80, overflowY: "auto", fontFamily: "'DM Sans',sans-serif", lineHeight: 1.4, transition: "border-color .15s" }}
                         onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.4)"}
                         onBlur={e => e.target.style.borderColor = "rgba(99,102,241,0.14)"}
                       />
-                      <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                        onClick={handleSend} disabled={!text.trim()}
+                      <motion.button
+                        whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                        onClick={handleSend}
+                        disabled={!text.trim()}
                         style={{ width: 38, height: 38, borderRadius: 12, border: "none", background: text.trim() ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "rgba(99,102,241,0.08)", color: text.trim() ? "#fff" : "#c4cdd8", display: "flex", alignItems: "center", justifyContent: "center", cursor: text.trim() ? "pointer" : "not-allowed", flexShrink: 0, transition: "all .15s", boxShadow: text.trim() ? "0 3px 10px rgba(99,102,241,0.35)" : "none" }}>
                         <Send size={15} />
                       </motion.button>
@@ -332,19 +429,46 @@ export default function FloatingChat({ me, other }) {
           )}
         </AnimatePresence>
 
-        {/* FAB */}
-        <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-          onClick={() => setOpen(o => !o)}
-          style={{ width: 52, height: 52, borderRadius: 16, border: "none", background: "linear-gradient(135deg,#6366f1,#4f46e5)", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 24px rgba(99,102,241,0.45)", position: "relative" }}>
+        {/* ── FIX 1: Draggable FAB ──────────────────────────────────────────── */}
+        <motion.button
+          className="fc-sa-fab"
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.93 }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            startDrag(e.clientX, e.clientY);
+          }}
+          onTouchStart={(e) => {
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
+          }}
+          onClick={() => {
+            // Only toggle if the user didn't drag
+            if (!hasDragged.current) setOpen(o => !o);
+          }}
+          style={{
+            position: "fixed",
+            bottom: fabPos.bottom,
+            right: fabPos.right,
+            zIndex: 1001,
+            width: 52, height: 52,
+            borderRadius: 16, border: "none",
+            background: "linear-gradient(135deg,#6366f1,#4f46e5)",
+            color: "#fff", cursor: "grab",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
+          }}>
           <AnimatePresence mode="wait">
             {open
               ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
               : <motion.span key="m" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><MessageCircle size={22} /></motion.span>
             }
           </AnimatePresence>
+
+          {/* ── FIX 3: Badge only shows when there truly are unread messages ── */}
           <AnimatePresence>
             {!open && totalUnread > 0 && (
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+              <motion.span
+                initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
                 {totalUnread > 9 ? "9+" : totalUnread}
