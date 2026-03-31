@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  MessageCircle, X, Send, Check, CheckCheck,
+  MessageCircle, Send, Check, CheckCheck,
   ChevronDown, ChevronLeft, Loader2,
 } from "lucide-react";
 import { useChatSocket } from "../hooks/useChatSocket";
@@ -429,53 +429,56 @@ export default function FloatingChat({ me, other }) {
           )}
         </AnimatePresence>
 
-        {/* ── FIX 1: Draggable FAB ──────────────────────────────────────────── */}
-        <motion.button
-          className="fc-sa-fab"
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.93 }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            startDrag(e.clientX, e.clientY);
-          }}
-          onTouchStart={(e) => {
-            startDrag(e.touches[0].clientX, e.touches[0].clientY);
-          }}
-          onClick={() => {
-            // Only toggle if the user didn't drag
-            if (!hasDragged.current) setOpen(o => !o);
-          }}
-          style={{
-            position: "fixed",
-            bottom: fabPos.bottom,
-            right: fabPos.right,
-            zIndex: 1001,
-            width: 52, height: 52,
-            borderRadius: 16, border: "none",
-            background: "linear-gradient(135deg,#6366f1,#4f46e5)",
-            color: "#fff", cursor: "grab",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
-          }}>
-          <AnimatePresence mode="wait">
-            {open
-              ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
-              : <motion.span key="m" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><MessageCircle size={22} /></motion.span>
-            }
-          </AnimatePresence>
+        {/* ── FIX 1: Draggable FAB — hidden while messenger is open ─────────── */}
+        <AnimatePresence>
+          {!open && (
+            <motion.button
+              key="fab"
+              className="fc-sa-fab"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.93 }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                startDrag(e.clientX, e.clientY);
+              }}
+              onTouchStart={(e) => {
+                startDrag(e.touches[0].clientX, e.touches[0].clientY);
+              }}
+              onClick={() => {
+                if (!hasDragged.current) setOpen(true);
+              }}
+              style={{
+                position: "fixed",
+                bottom: fabPos.bottom,
+                right: fabPos.right,
+                zIndex: 1001,
+                width: 52, height: 52,
+                borderRadius: 16, border: "none",
+                background: "linear-gradient(135deg,#6366f1,#4f46e5)",
+                color: "#fff", cursor: "grab",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
+              }}>
+              <MessageCircle size={22} />
 
-          {/* ── FIX 3: Badge only shows when there truly are unread messages ── */}
-          <AnimatePresence>
-            {!open && totalUnread > 0 && (
-              <motion.span
-                initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
-                {totalUnread > 9 ? "9+" : totalUnread}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+              {/* Badge */}
+              <AnimatePresence>
+                {totalUnread > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
+                    {totalUnread > 9 ? "9+" : totalUnread}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </>,
     document.body
