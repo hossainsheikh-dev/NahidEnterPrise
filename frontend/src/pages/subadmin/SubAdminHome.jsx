@@ -134,7 +134,7 @@ function StatCard({ icon: Icon, label, value, sub, color, colorSoft, loading, de
 
           {/* value */}
           {loading ? (
-            <Skeleton.Input active size="large" style={{ width: 76, height: 32, borderRadius: 6 }} />
+            <Skeleton.Input active size="large" style={{ width: "55%", maxWidth: 76, height: 32, borderRadius: 6, display: "block" }} />
           ) : (
             <div style={{ fontSize: 28, fontWeight: 800, color: T.textPrimary, lineHeight: 1, letterSpacing: "-0.025em" }}>
               {typeof value === "number" ? <Counter value={value} /> : value}
@@ -323,7 +323,7 @@ function PerformanceSummary({ stats, loading, t }) {
                       <span style={{ fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color, opacity: 0.5 }}>{t("লাইভ", "live")}</span>
                     </div>
                     {loading ? (
-                      <Skeleton.Input active size="default" style={{ width: 52, height: 24, borderRadius: 6 }} />
+                      <Skeleton.Input active size="default" style={{ width: "60%", maxWidth: 52, height: 24, borderRadius: 6, display: "block" }} />
                     ) : (
                       <>
                         <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
@@ -473,6 +473,9 @@ export default function SubAdminHome() {
         .sa-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; align-items: stretch; }
         @media (max-width: 860px) { .sa-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; } }
         @media (max-width: 400px) { .sa-stat-grid { grid-template-columns: repeat(2, 1fr); gap: 7px; } }
+
+        /* Fix Ant skeleton not respecting percentage width on mobile */
+        .sa-home .ant-skeleton-input { min-width: unset !important; width: 55% !important; max-width: 76px !important; }
 
         /* chip button */
         .sa-chip-btn {
