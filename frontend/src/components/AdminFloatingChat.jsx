@@ -10,66 +10,69 @@ import { useChatSocket } from "../hooks/useChatSocket";
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
 export default function AdminFloatingChat({ me }) {
-  const [open, setOpen] = useState(false);
-  const [screen, setScreen] = useState("list");
-  const [activeOther, setActive] = useState(null);
-  const [subAdmins, setSubAdmins] = useState([]);
-  const [loadingSA, setLoadingSA] = useState(false);
-  const [text, setText] = useState("");
-  const [histLoaded, setHistLoaded] = useState({});
+  const [open, setOpen]               = useState(false);
+  const [screen, setScreen]           = useState("list");
+  const [activeOther, setActive]      = useState(null);
+  const [subAdmins, setSubAdmins]     = useState([]);
+  const [loadingSA, setLoadingSA]     = useState(false);
+  const [text, setText]               = useState("");
+  const [histLoaded, setHistLoaded]   = useState({});
+  const [peerIds, setPeerIds]         = useState([]);
 
-  // ── FIX 1: Draggable FAB position ─────────────────────────────────────────
+  // Desktop ≥ 1024 px → fixed FAB (no drag, X icon when open), floating panel
+  // Mobile / tablet  < 1024 px → draggable FAB hidden when open, fullscreen panel
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
   const [fabPos, setFabPos] = useState({ bottom: 24, right: 24 });
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
   const dragOrigin = useRef({ x: 0, y: 0, bottom: 24, right: 24 });
 
-  // ── FIX 4: Visual viewport height (keyboard shrinks it on mobile) ──────────
   const [vpHeight, setVpHeight] = useState(
     () => window.visualViewport?.height ?? window.innerHeight
   );
 
-  const bottomRef = useRef(null);
-  const inputRef = useRef(null);
+  const bottomRef   = useRef(null);
+  const inputRef    = useRef(null);
   const typingDelay = useRef(null);
 
   const {
-    isOnline, getMessages, isTyping, getUnread, totalUnread,
+    isOnline, getMessages, isTyping, getUnread,
     loadHistory, sendMessage, sendTyping, markSeen,
   } = useChatSocket({ myId: me.id, myName: me.name, myRole: "admin", tokenKey: "token" });
 
-  // ── FIX 4: Track visualViewport resize ────────────────────────────────────
+  // ── Responsive ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const h = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  // ── Visual viewport (keyboard) ─────────────────────────────────────────────
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const update = () => setVpHeight(vv.height);
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
+    const u = () => setVpHeight(vv.height);
+    vv.addEventListener("resize", u);
+    vv.addEventListener("scroll", u);
+    return () => { vv.removeEventListener("resize", u); vv.removeEventListener("scroll", u); };
   }, []);
 
-  // ── FIX 1: Global drag move / end listeners ────────────────────────────────
+  // ── Drag (mobile/tablet only) ──────────────────────────────────────────────
   useEffect(() => {
     const onMove = (e) => {
-      if (!isDragging.current) return;
+      if (!isDragging.current || isDesktop) return;
       const cx = e.touches ? e.touches[0].clientX : e.clientX;
       const cy = e.touches ? e.touches[0].clientY : e.clientY;
       const dx = cx - dragOrigin.current.x;
       const dy = cy - dragOrigin.current.y;
       if (Math.abs(dx) > 4 || Math.abs(dy) > 4) hasDragged.current = true;
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      const FAB = 56;
       setFabPos({
-        right:  Math.max(8, Math.min(W - FAB - 8, dragOrigin.current.right  - dx)),
-        bottom: Math.max(8, Math.min(H - FAB - 8, dragOrigin.current.bottom - dy)),
+        right:  Math.max(8, Math.min(window.innerWidth  - 60, dragOrigin.current.right  - dx)),
+        bottom: Math.max(8, Math.min(window.innerHeight - 60, dragOrigin.current.bottom - dy)),
       });
     };
     const onEnd = () => { isDragging.current = false; };
-
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup",   onEnd);
     window.addEventListener("touchmove", onMove, { passive: true });
@@ -80,31 +83,58 @@ export default function AdminFloatingChat({ me }) {
       window.removeEventListener("touchmove", onMove);
       window.removeEventListener("touchend",  onEnd);
     };
-  }, []);
+  }, [isDesktop]);
 
-  const startDrag = useCallback((clientX, clientY) => {
+  const startDrag = useCallback((cx, cy) => {
+    if (isDesktop) return;
     isDragging.current = true;
     hasDragged.current = false;
-    dragOrigin.current = { x: clientX, y: clientY, ...fabPos };
-  }, [fabPos]);
+    dragOrigin.current = { x: cx, y: cy, ...fabPos };
+  }, [fabPos, isDesktop]);
 
-  // ── SubAdmin list ──────────────────────────────────────────────────────────
+  // ── Load contacts on mount so badge works even when panel is closed ─────────
+  const loadSubAdmins = useCallback(async () => {
+    setLoadingSA(true);
+    try {
+      const res  = await fetch(`${API}/api/subadmin`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const data = await res.json();
+      setSubAdmins(Array.isArray(data) ? data.filter(s => s.status === "approved") : []);
+    } catch (e) { console.log(e); }
+    finally { setLoadingSA(false); }
+  }, []);
+
+  useEffect(() => { loadSubAdmins(); }, [loadSubAdmins]);
+  useEffect(() => { if (open) loadSubAdmins(); }, [open, loadSubAdmins]);
+
+  // ── FIX 1: Badge = unique users with unread messages ───────────────────────
   useEffect(() => {
-    if (!open) return;
-    (async () => {
-      setLoadingSA(true);
-      try {
-        const res = await fetch(`${API}/api/subadmin`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        const data = await res.json();
-        setSubAdmins(Array.isArray(data) ? data.filter(s => s.status === "approved") : []);
-      } catch (e) { console.log(e); }
-      finally { setLoadingSA(false); }
-    })();
+    setPeerIds(subAdmins.map(s => s._id));
+  }, [subAdmins]);
+
+  const unreadUsersCount = peerIds.filter(id => getUnread(id) > 0).length;
+
+  // ── FIX 3: Back-button support ────────────────────────────────────────────
+  useEffect(() => {
+    if (open) window.history.pushState({ afc: true }, "");
   }, [open]);
 
-  // ── Load history ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    const onPop = () => {
+      if (!open) return;
+      if (screen === "chat") {
+        setScreen("list");
+        window.history.pushState({ afc: true }, "");
+      } else {
+        setOpen(false);
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [open, screen]);
+
+  // ── History load ───────────────────────────────────────────────────────────
   useEffect(() => {
     if (activeOther && !histLoaded[activeOther.id]) {
       loadHistory(activeOther.id).then(() =>
@@ -113,14 +143,12 @@ export default function AdminFloatingChat({ me }) {
     }
   }, [activeOther, histLoaded, loadHistory]);
 
-  // ── Scroll to bottom ───────────────────────────────────────────────────────
   const msgs = activeOther ? getMessages(activeOther.id) : [];
 
   useEffect(() => {
     if (screen === "chat") bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [screen, activeOther, msgs.length]);
 
-  // ── FIX 3: Mark seen whenever chat is open AND new messages arrive ─────────
   useEffect(() => {
     if (open && screen === "chat" && activeOther) markSeen(activeOther.id);
   }, [open, screen, activeOther, msgs.length, markSeen]);
@@ -149,103 +177,49 @@ export default function AdminFloatingChat({ me }) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  const fmtTime = (d) => new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
+  const fmtTime = (d) =>
+    new Date(d).toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
 
-  // ── FIX 2: Chat panel — centred on screen ─────────────────────────────────
-  const isMobile = window.innerWidth < 640;
+  // ── Panel style ────────────────────────────────────────────────────────────
+  const panelStyle = isDesktop
+    ? { position: "fixed", bottom: 88, right: 24, width: 340, height: 500, borderRadius: 16, zIndex: 2147483646 }
+    : { position: "fixed", left: 0, right: 0, bottom: 0, top: window.innerHeight - vpHeight, width: "100%", height: vpHeight, borderRadius: 0, zIndex: 2147483646 };
 
-  const panelStyle = isMobile
-    ? {
-        position: "fixed",
-        left: 0, right: 0, bottom: 0,
-        top: window.innerHeight - vpHeight,
-        width: "100%",
-        height: vpHeight,
-        borderRadius: 0,
-        zIndex: 2147483646,
-      }
-    : {
-        position: "fixed",
-        bottom: fabPos.bottom + 68,
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: 340,
-        height: 500,
-        borderRadius: 16,
-        zIndex: 2147483646,
-      };
+  const fabBase = {
+    position: "fixed", bottom: 24, right: 24, zIndex: 2147483647,
+    width: 52, height: 52, borderRadius: 16, border: "none",
+    background: "linear-gradient(135deg,#6366f1,#4f46e5)",
+    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+    boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
+  };
+
+  const Badge = ({ count }) => count > 0 ? (
+    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid #0f172a" }}>
+      {count > 9 ? "9+" : count}
+    </motion.span>
+  ) : null;
 
   return ReactDOM.createPortal(
     <>
-      <style>{`.afc-fab { touch-action: none; user-select: none; -webkit-user-select: none; }`}</style>
+      <style>{`.afc-fab { touch-action:none; user-select:none; -webkit-user-select:none; }`}</style>
 
-      {/* ── FIX 1 + 5: Draggable FAB — hidden while messenger is open ─────── */}
-      <AnimatePresence>
-        {!open && (
-          <motion.button
-            key="fab"
-            className="afc-fab"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.93 }}
-            onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
-            onTouchStart={(e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
-            onClick={() => { if (!hasDragged.current) setOpen(true); }}
-            style={{
-              position: "fixed",
-              bottom: fabPos.bottom,
-              right: fabPos.right,
-              zIndex: 2147483647,
-              width: 52, height: 52,
-              borderRadius: 16, border: "none",
-              background: "linear-gradient(135deg,#6366f1,#4f46e5)",
-              color: "#fff", cursor: "grab",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 6px 24px rgba(99,102,241,0.45)",
-            }}>
-            <MessageCircle size={22} />
-            <AnimatePresence>
-              {totalUnread > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#f43f5e", color: "#fff", fontSize: 10, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", paddingInline: 4, border: "2px solid white" }}>
-                  {totalUnread > 9 ? "9+" : totalUnread}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* ── FIX 2: Chat panel — centred on screen ─────────────────────────── */}
+      {/* ── Chat Panel ───────────────────────────────────────────────────── */}
       <AnimatePresence>
         {open && (
           <motion.div
             key="chat-window"
-            initial={{ opacity: 0, y: isMobile ? 40 : 16, scale: isMobile ? 1 : 0.95 }}
+            initial={{ opacity: 0, y: isDesktop ? 16 : 40, scale: isDesktop ? 0.95 : 1 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: isMobile ? 40 : 16, scale: isMobile ? 1 : 0.95 }}
+            exit={{ opacity: 0, y: isDesktop ? 16 : 40, scale: isDesktop ? 0.95 : 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            style={{
-              ...panelStyle,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              background: "#0f172a",
-              border: isMobile ? "none" : "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
-            }}>
+            style={{ ...panelStyle, overflow: "hidden", display: "flex", flexDirection: "column", background: "#0f172a", border: isDesktop ? "1px solid rgba(255,255,255,0.08)" : "none", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}>
 
-            {/* header */}
+            {/* Header */}
             <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-3 flex items-center gap-2.5 flex-shrink-0 border-b border-white/10">
               {screen === "chat" && (
-                <button
-                  onClick={() => setScreen("list")}
-                  className="bg-white/10 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-400 hover:text-slate-300 flex-shrink-0">
+                <button onClick={() => setScreen("list")} className="bg-white/10 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-400 hover:text-slate-300 flex-shrink-0">
                   <ChevronLeft size={15} />
                 </button>
               )}
@@ -272,39 +246,27 @@ export default function AdminFloatingChat({ me }) {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-400">
+              <button onClick={() => setOpen(false)} className="bg-white/5 border-0 rounded-lg w-7 h-7 flex items-center justify-center cursor-pointer text-slate-500 hover:text-slate-400">
                 <X size={14} />
               </button>
             </div>
 
-            {/* content */}
+            {/* Content */}
             <AnimatePresence mode="wait">
               {screen === "list" && (
-                <motion.div
-                  key="list"
-                  initial={{ opacity: 0, x: -16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  className="flex-1 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-white/10"
-                  style={{ background: "#0f172a" }}>
+                <motion.div key="list" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                  className="flex-1 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-white/10" style={{ background: "#0f172a" }}>
                   {loadingSA ? (
-                    <div className="flex justify-center p-8">
-                      <Loader2 size={20} className="animate-spin text-indigo-500" />
-                    </div>
+                    <div className="flex justify-center p-8"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
                   ) : subAdmins.length === 0 ? (
                     <p className="text-center text-[13px] text-slate-600 p-8">No SubAdmins yet</p>
                   ) : subAdmins.map(sa => {
-                    const unread = getUnread(sa._id);
-                    const online = isOnline(sa._id);
+                    const unread  = getUnread(sa._id);
+                    const online  = isOnline(sa._id);
                     const lastMsg = getMessages(sa._id).slice(-1)[0];
                     return (
-                      <motion.button
-                        key={sa._id}
-                        whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
-                        onClick={() => openChat(sa)}
-                        className="w-full flex items-center gap-3 p-3 bg-transparent border-0 cursor-pointer text-left">
+                      <motion.button key={sa._id} whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+                        onClick={() => openChat(sa)} className="w-full flex items-center gap-3 p-3 bg-transparent border-0 cursor-pointer text-left">
                         <div className="relative flex-shrink-0">
                           <div className="w-[38px] h-[38px] rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-sm font-extrabold text-indigo-400">
                             {sa.name[0].toUpperCase()}
@@ -332,19 +294,11 @@ export default function AdminFloatingChat({ me }) {
               )}
 
               {screen === "chat" && (
-                <motion.div
-                  key="chat"
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 16 }}
+                <motion.div key="chat" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
                   className="flex-1 flex flex-col overflow-hidden">
-                  <div
-                    className="flex-1 overflow-y-auto p-3 pb-1 flex flex-col gap-1.5 scrollbar-thin scrollbar-thumb-white/10"
-                    style={{ background: "#0f172a" }}>
+                  <div className="flex-1 overflow-y-auto p-3 pb-1 flex flex-col gap-1.5 scrollbar-thin scrollbar-thumb-white/10" style={{ background: "#0f172a" }}>
                     {!histLoaded[activeOther?.id] ? (
-                      <div className="flex-1 flex items-center justify-center">
-                        <Loader2 size={20} className="animate-spin text-indigo-500" />
-                      </div>
+                      <div className="flex-1 flex items-center justify-center"><Loader2 size={20} className="animate-spin text-indigo-500" /></div>
                     ) : msgs.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center gap-2">
                         <MessageCircle size={26} className="text-slate-800" />
@@ -353,24 +307,14 @@ export default function AdminFloatingChat({ me }) {
                     ) : msgs.map((msg, i) => {
                       const isMine = msg.senderId === me.id || msg.senderRole === "admin";
                       return (
-                        <motion.div
-                          key={msg._id || msg._tempId || i}
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
+                        <motion.div key={msg._id || msg._tempId || i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                           className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
-                          <div className={`max-w-[78%] p-2 px-3 ${
-                            isMine
-                              ? "rounded-t-2xl rounded-l-2xl rounded-br-sm bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/30"
-                              : "rounded-t-2xl rounded-r-2xl rounded-bl-sm bg-slate-800 text-slate-200 border border-white/10"
-                          } text-[13.5px] leading-[1.45] font-medium break-words`}>
+                          <div className={`max-w-[78%] p-2 px-3 ${isMine ? "rounded-t-2xl rounded-l-2xl rounded-br-sm bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/30" : "rounded-t-2xl rounded-r-2xl rounded-bl-sm bg-slate-800 text-slate-200 border border-white/10"} text-[13.5px] leading-[1.45] font-medium break-words`}>
                             {msg.text}
                           </div>
                           <div className="flex items-center gap-1 mt-0.5 mr-1 ml-1">
                             <span className="text-[10px] text-slate-700">{fmtTime(msg.createdAt)}</span>
-                            {isMine && (msg.seen
-                              ? <CheckCheck size={11} className="text-indigo-500" />
-                              : <Check size={11} className="text-slate-700" />
-                            )}
+                            {isMine && (msg.seen ? <CheckCheck size={11} className="text-indigo-500" /> : <Check size={11} className="text-slate-700" />)}
                           </div>
                         </motion.div>
                       );
@@ -387,29 +331,13 @@ export default function AdminFloatingChat({ me }) {
                     <div ref={bottomRef} />
                   </div>
 
-                  {/* input */}
                   <div className="p-2.5 px-3 border-t border-white/10 flex gap-2 items-end bg-slate-900 flex-shrink-0">
-                    <textarea
-                      ref={inputRef}
-                      rows={1}
-                      value={text}
-                      onChange={handleInput}
-                      onKeyDown={handleKey}
-                      placeholder="Type a message…"
+                    <textarea ref={inputRef} rows={1} value={text} onChange={handleInput} onKeyDown={handleKey} placeholder="Type a message…"
                       className="flex-1 bg-slate-800 border border-white/10 rounded-xl p-2 px-3 text-[13px] text-slate-100 max-h-20 overflow-y-auto font-sans leading-[1.4] outline-none resize-none transition-all duration-150 placeholder:text-slate-600"
                       onFocus={e => e.target.style.borderColor = "rgba(99,102,241,0.5)"}
-                      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"}
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={handleSend}
-                      disabled={!text.trim()}
-                      className={`w-[38px] h-[38px] rounded-xl border-0 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${
-                        text.trim()
-                          ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white cursor-pointer shadow-md shadow-indigo-500/35"
-                          : "bg-indigo-500/10 text-slate-700 cursor-not-allowed"
-                      }`}>
+                      onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.08)"} />
+                    <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }} onClick={handleSend} disabled={!text.trim()}
+                      className={`w-[38px] h-[38px] rounded-xl border-0 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${text.trim() ? "bg-gradient-to-br from-indigo-500 to-indigo-600 text-white cursor-pointer shadow-md shadow-indigo-500/35" : "bg-indigo-500/10 text-slate-700 cursor-not-allowed"}`}>
                       <Send size={15} />
                     </motion.button>
                   </div>
@@ -419,6 +347,41 @@ export default function AdminFloatingChat({ me }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── FAB ──────────────────────────────────────────────────────────── */}
+      {isDesktop ? (
+        // Desktop: always visible, no drag, X when open
+        <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+          onClick={() => setOpen(o => !o)}
+          style={{ ...fabBase, cursor: "pointer" }}>
+          <AnimatePresence mode="wait">
+            {open
+              ? <motion.span key="x" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><X size={22} /></motion.span>
+              : <motion.span key="m" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }}><MessageCircle size={22} /></motion.span>
+            }
+          </AnimatePresence>
+          <AnimatePresence>
+            {!open && <Badge count={unreadUsersCount} />}
+          </AnimatePresence>
+        </motion.button>
+      ) : (
+        // Mobile/Tablet: draggable, hidden when open
+        <AnimatePresence>
+          {!open && (
+            <motion.button key="fab" className="afc-fab"
+              initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+              onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX, e.clientY); }}
+              onTouchStart={(e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }}
+              onClick={() => { if (!hasDragged.current) setOpen(true); }}
+              style={{ ...fabBase, bottom: fabPos.bottom, right: fabPos.right, cursor: "grab" }}>
+              <MessageCircle size={22} />
+              <AnimatePresence><Badge count={unreadUsersCount} /></AnimatePresence>
+            </motion.button>
+          )}
+        </AnimatePresence>
+      )}
     </>,
     document.body
   );
