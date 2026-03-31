@@ -475,7 +475,9 @@ export default function AdminSubAdmins() {
               return (
                 <motion.div key={s._id} className="sa-card"
                   initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.05, duration:0.3 }}>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+
+                  {/* ── রো ১: avatar + info ── */}
+                  <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 text-white font-bold text-sm select-none"
                       style={{ background:getGradient(s.name), boxShadow:"0 4px 12px rgba(0,0,0,0.3)" }}>
                       {(s.name||"S").slice(0,1).toUpperCase()}
@@ -494,8 +496,9 @@ export default function AdminSubAdmins() {
                         {s.phone && <span className="flex items-center gap-1.5 text-xs" style={{ color:"#475569" }}><Phone size={11} style={{ color:"#334155" }}/> {s.phone}</span>}
                       </div>
                     </div>
-                    <div className="sm:hidden h-px w-full" style={{ background:"rgba(255,255,255,0.05)" }}/>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+
+                    {/* desktop এ buttons এখানেই থাকবে */}
+                    <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
                       {s.status === "pending" && (
                         <>
                           <button className="sa-btn sa-btn-approve" onClick={() => setConfirmModal({ id:s._id, type:"approve" })} disabled={actionId===s._id}>
@@ -512,6 +515,25 @@ export default function AdminSubAdmins() {
                       </button>
                     </div>
                   </div>
+
+                  {/* ── রো ২: mobile এ buttons (শুধু ফোনে দেখাবে) ── */}
+                  <div className="flex sm:hidden items-center gap-2 mt-3 pt-3" style={{ borderTop:"1px solid rgba(255,255,255,0.05)" }}>
+                    {s.status === "pending" && (
+                      <>
+                        <button className="sa-btn sa-btn-approve flex-1 justify-center" onClick={() => setConfirmModal({ id:s._id, type:"approve" })} disabled={actionId===s._id}>
+                          {actionId===s._id ? <Loader size={12} className="animate-spin"/> : <ShieldCheck size={13}/>}
+                          {t("অনুমোদন","Approve")}
+                        </button>
+                        <button className="sa-btn sa-btn-reject flex-1 justify-center" onClick={() => setConfirmModal({ id:s._id, type:"reject" })} disabled={actionId===s._id}>
+                          <ShieldX size={13}/> {t("প্রত্যাখ্যান","Reject")}
+                        </button>
+                      </>
+                    )}
+                    <button className="sa-btn-delete ml-auto" onClick={() => setConfirmModal({ id:s._id, type:"delete" })} disabled={actionId===s._id}>
+                      {actionId===s._id ? <Loader size={12} className="animate-spin"/> : <Trash2 size={13}/>}
+                    </button>
+                  </div>
+
                 </motion.div>
               );
             })}
