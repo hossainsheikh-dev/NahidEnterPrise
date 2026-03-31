@@ -94,9 +94,15 @@ function SublinkShow({
   parentFilter, setParentFilter, parentFilterOpen, setParentFilterOpen, parentFilterRef,
   setView, handleDelete, handleEdit, parentLinks, onRefresh,
 }) {
-  const { t }      = useSubLang();
-  const screenW    = useWindowWidth();
-  const showParent = screenW >= 1024; // show Parent column only on desktop
+  const { t }   = useSubLang();
+  const screenW = useWindowWidth();
+
+  // ✅ pagination state
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
+
+  const showParent = screenW >= 1024;
+  const isMobile   = screenW < 640;
 
   const selectedParentName = parentLinks.find(p => p._id === parentFilter)?.name;
 
@@ -107,9 +113,12 @@ function SublinkShow({
     return matchSearch && matchParent;
   });
 
-  /* grid:
-     desktop  → serial | name | parent | actions
-     <1024px  → serial | name | actions               */
+  // ✅ reset page when filter/search changes
+  useEffect(() => { setPage(1); }, [displayed.length]);
+
+  const totalPages = Math.ceil(displayed.length / PER_PAGE);
+  const paginated  = displayed.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   const gridCols = showParent
     ? "28px 1fr 140px 80px"
     : "28px 1fr 80px";
@@ -175,15 +184,19 @@ function SublinkShow({
                 onChange={e => setSearch(e.target.value)}
                 style={{ background: "transparent", outline: "none", border: "none", fontSize: 13, color: "#374151", width: "100%", fontFamily: "'Plus Jakarta Sans',sans-serif" }}
               />
-              {search && <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}><X size={12} /></button>}
+              {search && (
+                <button onClick={() => setSearch("")} style={{ color: "#a8b4c8", lineHeight: 1, background: "none", border: "none", cursor: "pointer" }}>
+                  <X size={12} />
+                </button>
+              )}
             </div>
 
-            {/* Buttons */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            {/* ✅ Buttons — 50% / 50% on mobile, auto on desktop */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flex: isMobile ? "1 1 200px" : "0 0 auto" }}>
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={onRefresh} disabled={loading}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", borderRadius: 11, padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#6366f1", cursor: "pointer" }}
+                style={{ flex: isMobile ? 1 : "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)", borderRadius: 11, padding: "9px 14px", fontSize: 13, fontWeight: 500, color: "#6366f1", cursor: "pointer" }}
               >
                 <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
                 <span>{t("রিফ্রেশ", "Refresh")}</span>
@@ -191,7 +204,7 @@ function SublinkShow({
               <motion.button
                 whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setView("add")}
-                style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.32)" }}
+                style={{ flex: isMobile ? 1 : "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.32)" }}
               >
                 <Plus size={14} strokeWidth={2.5} />
                 {t("সাবলিংক যোগ করুন", "Add Sublink")}
@@ -218,17 +231,29 @@ function SublinkShow({
             }}>
               <h2 style={{ fontSize: 14, fontWeight: 900, color: "#1e293b", fontFamily: "'Plus Jakarta Sans',sans-serif", letterSpacing: "-0.02em" }}>
                 {t("সাবলিংক তালিকা", "Sublinks List")}
-                {displayed.length !== sublinks.length && (
+                {displayed.length !== sublinks.length ? (
                   <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
                     ({displayed.length} {t("এর মধ্যে", "of")} {sublinks.length})
+                  </span>
+                ) : (
+                  <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>
+                    ({sublinks.length})
                   </span>
                 )}
               </h2>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {/* ✅ Two dropdowns — 50% / 50% on mobile */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 8,
+                flexWrap: "wrap",
+                width: isMobile ? "100%" : "auto",
+              }}>
 
-                {/* Parent filter — all devices */}
-                <div style={{ position: "relative", width: 168 }} ref={parentFilterRef}>
+                {/* Parent filter */}
+                <div
+                  style={{ position: "relative", flex: isMobile ? 1 : "0 0 168px", width: isMobile ? undefined : 168 }}
+                  ref={parentFilterRef}
+                >
                   <button
                     type="button"
                     onClick={() => setParentFilterOpen(!parentFilterOpen)}
@@ -260,14 +285,19 @@ function SublinkShow({
                     )}
                   </AnimatePresence>
                 </div>
-                {parentFilter && (
+
+                {/* Clear filter button — only when filter active, only desktop */}
+                {parentFilter && !isMobile && (
                   <button onClick={() => setParentFilter("")} style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4 }}>
                     <X size={12} /> {t("ক্লিয়ার", "Clear")}
                   </button>
                 )}
 
-                {/* Sort — always visible */}
-                <div style={{ position: "relative", width: 168 }} ref={sortRef}>
+                {/* Sort */}
+                <div
+                  style={{ position: "relative", flex: isMobile ? 1 : "0 0 168px", width: isMobile ? undefined : 168 }}
+                  ref={sortRef}
+                >
                   <button onClick={() => setSortOpen(!sortOpen)} style={dropdownBtnStyle}>
                     <span style={{ fontSize: 13 }}>
                       {t(
@@ -295,6 +325,13 @@ function SublinkShow({
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Clear filter — mobile এ sort এর নিচে full width */}
+                {parentFilter && isMobile && (
+                  <button onClick={() => setParentFilter("")} style={{ fontSize: 12, fontWeight: 600, color: "#ef4444", cursor: "pointer", background: "none", border: "none", display: "flex", alignItems: "center", gap: 4, width: "100%", justifyContent: "center", padding: "4px 0" }}>
+                    <X size={12} /> {t("ফিল্টার ক্লিয়ার", "Clear Filter")}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -316,7 +353,7 @@ function SublinkShow({
             </div>
 
             {/* Rows */}
-            <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+            <div>
               {loading ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 0", gap: 12 }}>
                   <Loader2 size={26} style={{ color: "#c4cdd8" }} className="animate-spin" />
@@ -329,7 +366,7 @@ function SublinkShow({
                   </div>
                   <p style={{ fontSize: 13, color: "#94a3b8" }}>{t("কোনো সাবলিংক নেই।", "No sublinks found.")}</p>
                 </div>
-              ) : displayed.map((sub, index) => (
+              ) : paginated.map((sub, index) => (
                 <motion.div
                   key={sub._id}
                   initial={{ opacity: 0, y: 6 }}
@@ -346,8 +383,10 @@ function SublinkShow({
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.025)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
-                  {/* # */}
-                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>{index + 1}</div>
+                  {/* # — continuous across pages */}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "#c4cdd8" }}>
+                    {(page - 1) * PER_PAGE + index + 1}
+                  </div>
 
                   {/* Name */}
                   <div style={{ minWidth: 0, paddingRight: 12 }}>
@@ -396,6 +435,36 @@ function SublinkShow({
                 </motion.div>
               ))}
             </div>
+
+            {/* ✅ Pagination — same style as SubAdminLinks */}
+            {totalPages > 1 && (
+              <div style={{
+                display: "flex", justifyContent: "center", alignItems: "center",
+                gap: 6, padding: "14px 20px",
+                borderTop: "1px solid rgba(99,102,241,0.08)",
+                background: "rgba(99,102,241,0.01)",
+              }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  <motion.button
+                    key={p}
+                    whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8,
+                      fontSize: 12, fontWeight: 700, cursor: "pointer",
+                      border: "1px solid",
+                      borderColor: page === p ? "#6366f1" : "rgba(99,102,241,0.15)",
+                      background: page === p ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "transparent",
+                      color: page === p ? "#fff" : "#6366f1",
+                      boxShadow: page === p ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
+                      transition: "all .15s ease",
+                    }}
+                  >
+                    {p}
+                  </motion.button>
+                ))}
+              </div>
+            )}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -532,8 +601,8 @@ function SublinkAdd({ name, setName, parentId, setParentId, isActive, setIsActiv
                   </label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     {STATUS_OPTIONS.map(option => {
-                      const sel       = isActive === option.value;
-                      const dotColor  = option.value ? "#10b981" : "#f43f5e";
+                      const sel      = isActive === option.value;
+                      const dotColor = option.value ? "#10b981" : "#f43f5e";
                       return (
                         <motion.button key={String(option.value)} type="button" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => setIsActive(option.value)}
                           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px 14px", borderRadius: 13, cursor: "pointer", background: sel ? (option.value ? "rgba(16,185,129,0.07)" : "rgba(244,63,94,0.06)") : "#f8f9ff", border: `1.5px solid ${sel ? (option.value ? "rgba(16,185,129,0.3)" : "rgba(244,63,94,0.28)") : "rgba(99,102,241,0.10)"}`, color: sel ? (option.value ? "#059669" : "#e11d48") : "#94a3b8", fontSize: 13.5, fontWeight: sel ? 700 : 500, transition: "all .18s ease" }}>
