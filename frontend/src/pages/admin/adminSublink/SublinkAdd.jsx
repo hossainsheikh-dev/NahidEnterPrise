@@ -171,7 +171,7 @@ const SublinkAdd = ({
                     {statusDropdown && (
                       <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
-                        className="sla-dropdown absolute left-0 mt-2 w-full z-50">
+                        className="sla-dropdown absolute left-0 mt-2 w-full z-50 max-h-52 overflow-y-auto">
                         {statusOptions.map(option => (
                           <div key={String(option.value)}
                             className={`sla-dropdown-item ${isActive === option.value ? "active" : ""}`}
