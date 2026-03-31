@@ -20,7 +20,6 @@ export default function SubAdminOrderBell() {
   const prevCount = useRef(0);
   const ref = useRef(null);
 
-  /* ── fetch pending orders ── */
   useEffect(() => {
     const load = async () => {
       try {
@@ -46,7 +45,6 @@ export default function SubAdminOrderBell() {
     return () => clearInterval(id);
   }, []);
 
-  /* ── check approval notification ── */
   useEffect(() => {
     const info = JSON.parse(localStorage.getItem("subAdminInfo") || "{}");
     const key  = `sa_approved_notif_${info?._id}`;
@@ -64,7 +62,6 @@ export default function SubAdminOrderBell() {
     setApproved(false);
   };
 
-  /* ── outside click ── */
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", h);
@@ -88,28 +85,32 @@ export default function SubAdminOrderBell() {
         }
         .ob-bell { animation: ob-bell 0.7s ease-in-out; }
 
+        /* desktop: right-aligned under button */
         .ob-dropdown {
           position: absolute;
           right: 0;
           top: 3rem;
           width: 20rem;
+          z-index: 9999;
         }
+
+        /* mobile: fixed, perfectly centered horizontally */
         @media (max-width: 640px) {
           .ob-dropdown {
             position: fixed;
+            top: 4.5rem;
             left: 50%;
             right: auto;
-            top: 4rem;
             transform: translateX(-50%);
-            width: calc(100vw - 24px);
-            max-width: 20rem;
+            width: calc(100vw - 32px);
+            max-width: 22rem;
           }
         }
       `}</style>
 
       <div className="ob-wrap relative" ref={ref}>
 
-        {/* ── trigger ── */}
+        {/* trigger */}
         <button onClick={() => setOpen(o => !o)}
           className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
           style={{
@@ -145,7 +146,7 @@ export default function SubAdminOrderBell() {
           </AnimatePresence>
         </button>
 
-        {/* ── dropdown ── */}
+        {/* dropdown */}
         <AnimatePresence>
           {open && (
             <motion.div
@@ -153,14 +154,13 @@ export default function SubAdminOrderBell() {
               animate={{ opacity:1, y:0, scale:1 }}
               exit={{ opacity:0, y:8, scale:0.95 }}
               transition={{ type:"spring", stiffness:300, damping:28 }}
-              className="ob-dropdown rounded-2xl overflow-hidden z-50"
+              className="ob-dropdown rounded-2xl overflow-hidden"
               style={{
                 background:"linear-gradient(160deg,#ffffff,#fafbff)",
                 border:"1px solid rgba(99,102,241,0.12)",
                 boxShadow:"0 20px 60px rgba(99,102,241,0.14), 0 4px 16px rgba(0,0,0,0.06)",
               }}>
 
-              {/* top accent */}
               <div className="h-[2px] w-full"
                 style={{ background:"linear-gradient(90deg,transparent,#6366f1,#8b5cf6,transparent)" }}/>
 
@@ -207,8 +207,6 @@ export default function SubAdminOrderBell() {
                 </div>
               ) : (
                 <div>
-
-                  {/* ── Approval notification ── */}
                   <AnimatePresence>
                     {approved && (
                       <motion.div
@@ -216,7 +214,6 @@ export default function SubAdminOrderBell() {
                         exit={{ opacity:0, x:-8 }} transition={{ delay:0.04 }}
                         className="flex items-start gap-3 px-4 py-4"
                         style={{ borderBottom: count > 0 ? "1px solid rgba(99,102,241,0.06)" : "none", background:"rgba(16,185,129,0.03)" }}>
-
                         <div className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                           style={{ background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.22)" }}>
                           <ShieldCheck size={18} style={{ color:"#10b981" }}/>
@@ -228,7 +225,6 @@ export default function SubAdminOrderBell() {
                               style={{ background:"#10b981" }}/>
                           </span>
                         </div>
-
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold" style={{ color:"#1e293b" }}>
                             🎉 {t("অ্যাকাউন্ট অনুমোদিত!","Account Approved!")}
@@ -237,7 +233,6 @@ export default function SubAdminOrderBell() {
                             {t("অ্যাডমিন আপনার অ্যাকাউন্ট পরিবর্তন ও অনুমোদন করেছেন। স্বাগতম!","Admin has approved your account. Welcome!")}
                           </p>
                         </div>
-
                         <button onClick={dismissApproval}
                           className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-md transition-all"
                           style={{ background:"rgba(99,102,241,0.06)", color:"#94a3b8" }}
@@ -249,7 +244,6 @@ export default function SubAdminOrderBell() {
                     )}
                   </AnimatePresence>
 
-                  {/* ── Orders notification ── */}
                   {count > 0 && (
                     <motion.button
                       initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
@@ -259,7 +253,6 @@ export default function SubAdminOrderBell() {
                       style={{ background:"transparent" }}
                       onMouseEnter={e => e.currentTarget.style.background="rgba(99,102,241,0.04)"}
                       onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-
                       <div className="relative w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background:"rgba(99,102,241,0.10)", border:"1px solid rgba(99,102,241,0.20)" }}>
                         <ShoppingCart size={18} style={{ color:"#6366f1" }}/>
@@ -271,7 +264,6 @@ export default function SubAdminOrderBell() {
                             style={{ background:"#6366f1" }}/>
                         </span>
                       </div>
-
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold" style={{ color:"#1e293b" }}>
                           <span style={{ color:"#6366f1" }}>{count}</span>
@@ -281,7 +273,6 @@ export default function SubAdminOrderBell() {
                           {t("অর্ডার পরিচালনা করতে ক্লিক করুন","Click to manage orders")}
                         </p>
                       </div>
-
                       <ChevronRight size={14} style={{ color:"#c4cdd8" }}
                         className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform"/>
                     </motion.button>

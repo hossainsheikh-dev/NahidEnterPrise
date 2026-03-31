@@ -11,54 +11,43 @@ export default function SubAdminBell() {
   const navigate = useNavigate();
   const { t } = useAdminLang();
 
-  const [subAdminCount,    setSubAdminCount]    = useState(0);
-  const [orderCount,       setOrderCount]       = useState(0);
-  const [changeReqCount,   setChangeReqCount]   = useState(0);
-  const [open,             setOpen]             = useState(false);
-  const [pulse,            setPulse]            = useState(false);
+  const [subAdminCount,  setSubAdminCount]  = useState(0);
+  const [orderCount,     setOrderCount]     = useState(0);
+  const [changeReqCount, setChangeReqCount] = useState(0);
+  const [open,           setOpen]           = useState(false);
+  const [pulse,          setPulse]          = useState(false);
 
-  const prevSubAdmin   = useRef(0);
-  const prevOrder      = useRef(0);
-  const prevChangeReq  = useRef(0);
-  const ref            = useRef(null);
+  const prevSubAdmin  = useRef(0);
+  const prevOrder     = useRef(0);
+  const prevChangeReq = useRef(0);
+  const ref           = useRef(null);
 
   const total = subAdminCount + orderCount + changeReqCount;
 
   useEffect(() => {
     const load = async () => {
       try {
-        const r1 = await fetch(`${API}/api/subadmin/pending-count`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
+        const r1 = await fetch(`${API}/api/subadmin/pending-count`, { headers: { Authorization: `Bearer ${getToken()}` } });
         if (r1.ok) {
           const d1 = await r1.json();
           const n = d1.count || 0;
           if (n > prevSubAdmin.current) { setPulse(true); setTimeout(() => setPulse(false), 1000); }
-          prevSubAdmin.current = n;
-          setSubAdminCount(n);
+          prevSubAdmin.current = n; setSubAdminCount(n);
         }
-
-        const r2 = await fetch(`${API}/api/orders`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
+        const r2 = await fetch(`${API}/api/orders`, { headers: { Authorization: `Bearer ${getToken()}` } });
         if (r2.ok) {
           const d2 = await r2.json();
           const orders = d2.data || d2 || [];
           const n = Array.isArray(orders) ? orders.filter(o => o.status === "pending").length : 0;
           if (n > prevOrder.current) { setPulse(true); setTimeout(() => setPulse(false), 1000); }
-          prevOrder.current = n;
-          setOrderCount(n);
+          prevOrder.current = n; setOrderCount(n);
         }
-
-        const r3 = await fetch(`${API}/api/subadmin/change-requests/count`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
+        const r3 = await fetch(`${API}/api/subadmin/change-requests/count`, { headers: { Authorization: `Bearer ${getToken()}` } });
         if (r3.ok) {
           const d3 = await r3.json();
           const n = d3.count || 0;
           if (n > prevChangeReq.current) { setPulse(true); setTimeout(() => setPulse(false), 1000); }
-          prevChangeReq.current = n;
-          setChangeReqCount(n);
+          prevChangeReq.current = n; setChangeReqCount(n);
         }
       } catch (err) { console.log("bell error:", err); }
     };
@@ -118,28 +107,32 @@ export default function SubAdminBell() {
         }
         .bell-ring { animation: bell-ring 0.7s ease-in-out; }
 
+        /* desktop: right-aligned under button */
         .bell-dropdown {
           position: absolute;
           right: 0;
           top: 3rem;
           width: 20rem;
+          z-index: 9999;
         }
+
+        /* mobile: fixed, perfectly centered horizontally */
         @media (max-width: 640px) {
           .bell-dropdown {
             position: fixed;
+            top: 4.5rem;
             left: 50%;
             right: auto;
-            top: 4rem;
             transform: translateX(-50%);
-            width: calc(100vw - 24px);
-            max-width: 20rem;
+            width: calc(100vw - 32px);
+            max-width: 22rem;
           }
         }
       `}</style>
 
       <div className="bell-wrap relative" ref={ref}>
 
-        {/* ── trigger ── */}
+        {/* trigger */}
         <button onClick={() => setOpen(o => !o)}
           className="relative w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
           style={{
@@ -168,7 +161,7 @@ export default function SubAdminBell() {
           </AnimatePresence>
         </button>
 
-        {/* ── dropdown ── */}
+        {/* dropdown */}
         <AnimatePresence>
           {open && (
             <motion.div
@@ -176,11 +169,12 @@ export default function SubAdminBell() {
               animate={{ opacity:1, y:0, scale:1 }}
               exit={{ opacity:0, y:8, scale:0.95 }}
               transition={{ type:"spring", stiffness:300, damping:28 }}
-              className="bell-dropdown rounded-2xl overflow-hidden z-50"
+              className="bell-dropdown rounded-2xl overflow-hidden"
               style={{ background:"#0f172a", border:"1px solid rgba(255,255,255,0.12)", boxShadow:"0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,181,253,0.08)" }}>
 
               <div className="h-px w-full" style={{ background:"linear-gradient(90deg,transparent,rgba(196,181,253,0.7),transparent)" }}/>
 
+              {/* header */}
               <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background:"rgba(196,181,253,0.15)" }}>
@@ -204,6 +198,7 @@ export default function SubAdminBell() {
                 </button>
               </div>
 
+              {/* body */}
               {total === 0 ? (
                 <div className="px-4 py-8 text-center">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
@@ -249,6 +244,7 @@ export default function SubAdminBell() {
                 </div>
               )}
 
+              {/* footer */}
               <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop:"1px solid rgba(255,255,255,0.07)" }}>
                 <span className="text-[10px] font-medium" style={{ color:"#64748b" }}>
                   {t("প্রতি ৩০ সেকেন্ডে আপডেট","Updates every 30s")}
