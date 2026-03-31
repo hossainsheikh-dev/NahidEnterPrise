@@ -81,12 +81,13 @@ const SublinkAdd = ({
               initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}
               onSubmit={handleSubmit}
-              className="relative rounded-2xl overflow-hidden p-6 sm:p-8 space-y-5"
+              className="relative rounded-2xl p-6 sm:p-8 space-y-5"
               style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
 
-              {/* top line */}
-              <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: "linear-gradient(90deg,transparent,rgba(167,139,250,0.4) 40%,rgba(201,168,76,0.4) 70%,transparent)" }}/>
+              {/* top line — overflow-hidden ফর্মে নেই, তাই wrapper দিয়ে clip করা হচ্ছে */}
+              <div className="absolute top-0 left-0 right-0 h-px overflow-hidden rounded-t-2xl">
+                <div className="h-full" style={{ background: "linear-gradient(90deg,transparent,rgba(167,139,250,0.4) 40%,rgba(201,168,76,0.4) 70%,transparent)" }}/>
+              </div>
 
               {/* title */}
               <div className="flex items-center gap-3">
