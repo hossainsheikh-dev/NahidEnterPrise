@@ -105,7 +105,7 @@ export default function AdminDashboard() {
     localStorage.removeItem("adminInfo");
     localStorage.removeItem("token");
     localStorage.removeItem("adminToken");
-    setTimeout(() => navigate("/manage-x9k2/auth/login"), 1200);
+    setTimeout(() => navigate("/manage-x9k2/auth"), 1200);
   };
 
   const currentPage = menuItems.find(m => m.path === location.pathname);
