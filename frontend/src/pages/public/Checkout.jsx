@@ -196,10 +196,10 @@ function SearchDropdown({ value, onChange, options, placeholder, disabled, error
 }
 
 /* ── Field wrapper ── */
-function Field({ label, required, optional, error, children }) {
+function Field({ label, required, optional, error, children, fieldRef }) {
   const t = useT();
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5" ref={fieldRef}>
       <div className="flex items-center gap-1.5">
         <label className="text-[11px] font-black uppercase tracking-widest text-gray-500">{label}</label>
         {required && <span className="text-red-400 text-xs">*</span>}
@@ -277,9 +277,26 @@ export default function Checkout() {
   // saved address থেকে auto-fill হয়েছে কিনা
   const [addressAutoFilled, setAddressAutoFilled] = useState(false);
 
+  // field refs for scroll-to-error
+  const fieldRefs = {
+    name:         useRef(null),
+    phone:        useRef(null),
+    address:      useRef(null),
+    district:     useRef(null),
+    thana:        useRef(null),
+    senderNumber: useRef(null),
+    txnId:        useRef(null),
+    screenshot:   useRef(null),
+  };
+
   const districts = Object.keys(BD_LOCATIONS).sort();
   const thanas    = district ? (BD_LOCATIONS[district] || []).sort() : [];
   const selPM     = PAYMENT_METHODS.find(p => p.id === paymentMethod);
+
+  /* ── Scroll to top on mount ── */
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   /* ════════════════════════════════════════
      AUTO-FILL — customer info + saved address
@@ -337,11 +354,22 @@ export default function Checkout() {
       if (!screenshot)          e.screenshot   = t("Payment screenshot আপলোড করুন", "Upload payment screenshot");
     }
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return e;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    const e = validate();
+    if (Object.keys(e).length > 0) {
+      // প্রথম error field এ scroll করো
+      const order = ["name", "phone", "district", "thana", "address", "senderNumber", "txnId", "screenshot"];
+      for (const key of order) {
+        if (e[key] && fieldRefs[key]?.current) {
+          fieldRefs[key].current.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
+      return;
+    }
     setLoading(true);
     try {
       let screenshotUrl = "";
@@ -496,11 +524,11 @@ export default function Checkout() {
             {/* Customer Info */}
             <SectionCard icon={<User size={15}/>} title={t("গ্রাহকের তথ্য", "Customer Information")} step="1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label={t("পুরো নাম", "Full Name")} required error={errors.name}>
+                <Field label={t("পুরো নাম", "Full Name")} required error={errors.name} fieldRef={fieldRefs.name}>
                   <Input value={name} onChange={e => { setName(e.target.value); setErrors(p => ({...p, name:""})); }}
                     placeholder={t("আপনার পুরো নাম", "Your full name")} error={errors.name}/>
                 </Field>
-                <Field label={t("ফোন নম্বর", "Phone Number")} required error={errors.phone}>
+                <Field label={t("ফোন নম্বর", "Phone Number")} required error={errors.phone} fieldRef={fieldRefs.phone}>
                   <Input type="tel" value={phone} onChange={e => { setPhone(e.target.value); setErrors(p => ({...p, phone:""})); }}
                     placeholder="01XXXXXXXXX" error={errors.phone}/>
                 </Field>
@@ -530,12 +558,12 @@ export default function Checkout() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label={t("জেলা", "District")} required error={errors.district}>
+                <Field label={t("জেলা", "District")} required error={errors.district} fieldRef={fieldRefs.district}>
                   <SearchDropdown value={district}
                     onChange={v => { setDistrict(v); setThana(""); setErrors(p => ({...p, district:"", thana:""})); }}
                     options={districts} placeholder={t("জেলা সিলেক্ট করুন", "Select district")} error={errors.district}/>
                 </Field>
-                <Field label={t("উপজেলা / থানা", "Upazila / Thana")} required error={errors.thana}>
+                <Field label={t("উপজেলা / থানা", "Upazila / Thana")} required error={errors.thana} fieldRef={fieldRefs.thana}>
                   <SearchDropdown value={thana} onChange={v => { setThana(v); setErrors(p => ({...p, thana:""})); }}
                     options={thanas}
                     placeholder={district ? t("উপজেলা সিলেক্ট করুন", "Select upazila") : t("আগে জেলা বেছে নিন", "Select district first")}
@@ -563,7 +591,7 @@ export default function Checkout() {
                 </motion.div>
               )}
 
-              <Field label={t("পুরো ঠিকানা", "Full Address")} required error={errors.address}>
+              <Field label={t("পুরো ঠিকানা", "Full Address")} required error={errors.address} fieldRef={fieldRefs.address}>
                 <Input rows={3} value={address} onChange={e => { setAddress(e.target.value); setErrors(p => ({...p, address:""})); }}
                   placeholder={t("বাড়ি নং, রোড নং, এলাকার নাম...", "House no, road no, area name...")} error={errors.address}/>
               </Field>
@@ -629,7 +657,7 @@ export default function Checkout() {
                         </p>
                       </div>
 
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5" ref={fieldRefs.senderNumber}>
                         <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: selPM.color }}>
                           ② {t(`আপনার ${selPM.label} নম্বর *`, `Your ${selPM.label} number *`)}
                         </p>
@@ -647,7 +675,7 @@ export default function Checkout() {
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5" ref={fieldRefs.txnId}>
                         <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: selPM.color }}>
                           ③ Transaction ID *
                         </p>
@@ -665,7 +693,7 @@ export default function Checkout() {
                         )}
                       </div>
 
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5" ref={fieldRefs.screenshot}>
                         <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: selPM.color }}>
                           ④ Payment Screenshot *
                         </p>
