@@ -132,7 +132,7 @@ function DashboardInner() {
   /* Auth guard */
   useEffect(() => {
     if (!localStorage.getItem("subAdminToken") || !localStorage.getItem("subAdminInfo"))
-      navigate("/portal-v7m4/signup-login-page", { replace: true });
+      navigate("/portal-v7m4/access", { replace: true });
   }, [navigate]);
 
   /* Admin info */
@@ -172,7 +172,7 @@ function DashboardInner() {
     showLogoutToast(subAdminInfo?.name);
     localStorage.removeItem("subAdminToken");
     localStorage.removeItem("subAdminInfo");
-    setTimeout(() => navigate("/portal-v7m4/signup-login-page", { replace: true }), 1200);
+    setTimeout(() => navigate("/portal-v7m4/access", { replace: true }), 1200);
   };
 
   const activeItem  = MENU.find(i => i.path === location.pathname);
