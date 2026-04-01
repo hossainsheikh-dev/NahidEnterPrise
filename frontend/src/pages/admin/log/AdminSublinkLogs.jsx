@@ -1,712 +1,649 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Users, Search, Mail, Phone, ShoppingBag, Heart,
-  ChevronDown, ChevronUp, X, Shield, ShieldOff,
-  Calendar, Package, TrendingUp, RefreshCw,
-  MapPin, CreditCard, CheckCircle, XCircle,
-  UserCheck, UserX, ShoppingCart, Star,
+  Activity, Plus, Pencil, Trash2, Search,
+  RefreshCw, ChevronDown, Eye, X,
+  Layers, Clock, Loader2, ShieldCheck, User,
 } from "lucide-react";
-import { useAdminLang } from "../../context/AdminLangContext";
+import { useAdminLang } from "../../../context/AdminLangContext";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
+const getToken = () => localStorage.getItem("token") || "";
 
-const PER_PAGE = 10;
+const ACTION_CONFIG = {
+  created: { colorEn: "Created", colorBn: "তৈরি",   color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.25)",  icon: Plus   },
+  updated: { colorEn: "Updated", colorBn: "আপডেট",  color: "#818cf8", bg: "rgba(129,140,248,0.1)", border: "rgba(129,140,248,0.25)", icon: Pencil },
+  deleted: { colorEn: "Deleted", colorBn: "মুছেছে", color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)",  icon: Trash2 },
+};
 
-/* ══════════════════════════════
-   STAT CARD
-══════════════════════════════ */
-function StatCard({ icon, label, value, color, loading, trend }) {
+const ROLE_CONFIG = {
+  admin:    { labelEn: "Admin",    labelBn: "এডমিন",    color: "#c9a84c", bg: "rgba(201,168,76,0.1)",  icon: User       },
+  subadmin: { labelEn: "SubAdmin", labelBn: "সাবএডমিন", color: "#a78bfa", bg: "rgba(167,139,250,0.1)", icon: ShieldCheck },
+};
+
+const SORT_OPTIONS = [
+  { labelBn: "নতুন প্রথমে",   labelEn: "Newest First",  value: "newest"   },
+  { labelBn: "পুরনো প্রথমে",  labelEn: "Oldest First",  value: "oldest"   },
+  { labelBn: "শুধু তৈরি",     labelEn: "Created Only",  value: "created"  },
+  { labelBn: "শুধু আপডেট",    labelEn: "Updated Only",  value: "updated"  },
+  { labelBn: "শুধু মুছা",     labelEn: "Deleted Only",  value: "deleted"  },
+  { labelBn: "শুধু এডমিন",    labelEn: "Admin Only",    value: "admin"    },
+  { labelBn: "শুধু সাবএডমিন", labelEn: "SubAdmin Only", value: "subadmin" },
+];
+
+/* ── Confirm Modal ── */
+function ConfirmModal({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText, danger }) {
+  if (!isOpen) return null;
   return (
-    <motion.div
-      whileHover={{ y: -2 }}
-      transition={{ duration: 0.2 }}
-      className="rounded-2xl overflow-hidden relative"
-      style={{
-        background: "#0d1426",
-        border:     "1px solid rgba(255,255,255,0.06)",
-        boxShadow:  `0 2px 12px ${color}0f`,
-        padding:    "18px 16px 16px",
-      }}
-    >
-      {/* top color bar */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
-        style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}/>
-
-      {/* glow blob */}
-      <div className="absolute -top-5 -right-5 w-20 h-20 rounded-full pointer-events-none"
-        style={{ background: `radial-gradient(circle, ${color}18 0%, transparent 70%)` }}/>
-
-      <div className="flex items-start justify-between gap-2">
-        {/* value + label */}
-        <div className="flex-1 min-w-0">
-          {loading ? (
-            <>
-              <div className="h-7 w-3/5 rounded-lg mb-2 animate-pulse" style={{ background: `${color}12` }}/>
-              <div className="h-2.5 w-4/5 rounded-md" style={{ background: "rgba(255,255,255,0.04)" }}/>
-            </>
-          ) : (
-            <>
-              <p className="font-black leading-none" style={{
-                fontSize:      "clamp(22px, 5vw, 28px)",
-                color:         "#f1f5f9",
-                fontFamily:    "'Plus Jakarta Sans', sans-serif",
-                letterSpacing: "-0.03em",
-              }}>
-                {value}
-              </p>
-              <p className="mt-1.5 font-bold uppercase tracking-wider truncate" style={{
-                fontSize: "10px",
-                color:    "#475569",
-              }}>
-                {label}
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* icon */}
-        <div className="flex-shrink-0 flex items-center justify-center rounded-xl"
-          style={{
-            width:     40,
-            height:    40,
-            background: `${color}12`,
-            border:    `1.5px solid ${color}28`,
-            boxShadow: `0 4px 12px ${color}18`,
-          }}>
-          <span style={{ color, display: "flex" }}>{icon}</span>
-        </div>
-      </div>
-
-      {/* footer */}
-      {!loading && (
-        <div className="flex items-center gap-1.5 mt-3 pt-2.5"
-          style={{ borderTop: `1px solid ${color}12` }}>
-          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{ background: color, boxShadow: `0 0 0 2px ${color}28` }}/>
-          <span className="text-[10px] font-semibold truncate" style={{ color: `${color}cc` }}>
-            {trend || "\u00a0"}
-          </span>
-        </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}/>
+          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <motion.div initial={{ scale: 0.92, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 10 }}
+              transition={{ type: "spring", damping: 26, stiffness: 300 }}
+              className="w-full max-w-sm pointer-events-auto p-7"
+              style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "22px", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                <Trash2 size={20} style={{ color: "#f87171" }}/>
+              </div>
+              <h3 className="text-base font-bold text-center mb-2" style={{ color: "#f1f5f9", letterSpacing: "-0.01em" }}>{title}</h3>
+              <p className="text-sm text-center mb-7" style={{ color: "#64748b" }}>{message}</p>
+              <div className="flex gap-3">
+                <button onClick={onClose} className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}>
+                  {cancelText}
+                </button>
+                <button onClick={onConfirm} className="flex-1 py-3 rounded-xl text-sm font-bold transition"
+                  style={{ background: "linear-gradient(135deg,#f87171,#ef4444)", color: "#fff", boxShadow: "0 4px 16px rgba(248,113,113,0.3)" }}>
+                  {confirmText}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
       )}
-    </motion.div>
+    </AnimatePresence>
   );
 }
 
-/* ══════════════════════════════
-   ORDER ROW
-══════════════════════════════ */
-function OrderRow({ order }) {
-  const STATUS_COLOR = {
-    pending:    "#f59e0b",
-    confirmed:  "#3b82f6",
-    processing: "#8b5cf6",
-    shipped:    "#06b6d4",
-    delivered:  "#22c55e",
-    cancelled:  "#ef4444",
-  };
-  const PAY_STATUS_COLOR = {
-    pending:               "#f59e0b",
-    awaiting_confirmation: "#8b5cf6",
-    paid:                  "#22c55e",
-    failed:                "#ef4444",
-  };
-  const color    = STATUS_COLOR[order.status]            || "#64748b";
-  const payColor = PAY_STATUS_COLOR[order.paymentStatus] || "#64748b";
+/* ── Detail Modal ── */
+function DetailModal({ log, onClose, onDelete, t }) {
+  if (!log) return null;
+  const ac = ACTION_CONFIG[log.action] || ACTION_CONFIG.updated;
+  const rc = ROLE_CONFIG[log.performedByRole] || ROLE_CONFIG.admin;
+  const ActionIcon = ac.icon;
+  const RoleIcon   = rc.icon;
+
+  const fmtDateFull = (d) => new Date(d).toLocaleDateString("en-BD", {
+    day: "numeric", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
 
   return (
-    <div className="rounded-xl overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="flex items-center px-3 py-2.5 gap-2">
-        {/* বাম */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-          <span className="font-black text-[11px] flex-shrink-0" style={{ color: "#c9a84c" }}>
-            {order.orderId}
-          </span>
-          <span className="text-[11px] flex-shrink-0" style={{ color: "#475569" }}>
-            {order.items?.length}x
-          </span>
-          <span className="text-[11px] hidden sm:block capitalize px-2 py-0.5 rounded-lg flex-shrink-0"
-            style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
-            {order.status}
-          </span>
-        </div>
-        {/* ডান */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-[10px] capitalize px-1.5 py-0.5 rounded-md hidden sm:block flex-shrink-0"
-            style={{ background: `${payColor}18`, color: payColor, border: `1px solid ${payColor}30` }}>
-            {order.paymentMethod?.toUpperCase()}
-          </span>
-          <span className="font-black text-[12px] whitespace-nowrap flex-shrink-0" style={{ color: "#f1f5f9" }}>
-            ৳{order.total?.toLocaleString()}
-          </span>
-        </div>
-      </div>
+    <AnimatePresence>
+      {log && (
+        <>
+          <motion.div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={onClose}/>
+          <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none">
+            <motion.div
+              initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="w-full sm:max-w-md pointer-events-auto overflow-hidden"
+              style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "22px 22px 0 0", boxShadow: "0 -20px 60px rgba(0,0,0,0.5)", maxHeight: "90vh" }}>
 
-      {/* items */}
-      {order.items?.length > 0 && (
-        <div className="px-3 pb-2.5 flex gap-2 overflow-x-auto">
-          {order.items.slice(0, 4).map((item, i) => (
-            <div key={i} className="flex items-center gap-1.5 flex-shrink-0 rounded-lg px-2 py-1"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" }}>
-              {item.image
-                ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white"/>
-                : <Package size={12} style={{ color: "#334155" }}/>
-              }
-              <span className="text-[10px] max-w-[70px] truncate" style={{ color: "#64748b" }}>{item.name}</span>
-              <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#c9a84c" }}>×{item.quantity}</span>
-            </div>
-          ))}
-          {order.items.length > 4 && (
-            <span className="text-[10px] self-center flex-shrink-0" style={{ color: "#475569" }}>
-              +{order.items.length - 4}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════
-   USER CARD
-══════════════════════════════ */
-function UserCard({ user, index }) {
-  const { t } = useAdminLang();
-  const [expanded,    setExpanded   ] = useState(false);
-  const [orders,      setOrders     ] = useState([]);
-  const [loadingOrds, setLoadingOrds] = useState(false);
-  const [blocking,    setBlocking   ] = useState(false);
-  const [isBlocked,   setIsBlocked  ] = useState(user.isBlocked);
-  const [fetched,     setFetched    ] = useState(false);
-
-  const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
-
-  const loadOrders = async () => {
-    if (fetched) return;
-    setLoadingOrds(true);
-    try {
-      const identifier = user.email || user.phone;
-      const field      = user.email ? "email" : "phone";
-      const res  = await fetch(`${API}/api/auth/users/${encodeURIComponent(identifier)}/orders?field=${field}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.success) { setOrders(data.orders); setFetched(true); }
-    } catch {}
-    finally { setLoadingOrds(false); }
-  };
-
-  const handleExpand = () => {
-    if (!expanded) loadOrders();
-    setExpanded(p => !p);
-  };
-
-  const handleBlock = async () => {
-    if (user.isGuest) return;
-    setBlocking(true);
-    try {
-      const res  = await fetch(`${API}/api/auth/users/${user._id}/block`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.success) setIsBlocked(data.isBlocked);
-    } catch {}
-    finally { setBlocking(false); }
-  };
-
-  const totalSpent   = orders.reduce((s, o) => s + (o.total || 0), 0);
-  const deliveredCnt = orders.filter(o => o.status === "delivered").length;
-  const cancelledCnt = orders.filter(o => o.status === "cancelled").length;
-  const initials     = user.name?.trim().split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??";
-
-  const providerColor = { local: "#c9a84c", google: "#ef4444", facebook: "#3b82f6", guest: "#64748b" };
-  const providerLabel = { local: "Local", google: "Google", facebook: "Facebook", guest: "Guest" };
-  const joined        = user.createdAt ? new Date(user.createdAt).toLocaleDateString("bn-BD") : "—";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.3 }}
-      className="rounded-2xl overflow-hidden w-full"
-      style={{
-        background: "#0d1426",
-        border:     `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`,
-        boxShadow:  expanded ? "0 4px 24px rgba(201,168,76,0.08)" : "0 1px 6px rgba(0,0,0,0.2)",
-        transition: "border-color 0.2s, box-shadow 0.2s",
-      }}>
-
-      {/* header */}
-      <div className="flex items-center gap-2 px-3 py-3 w-full overflow-hidden">
-
-        {/* avatar */}
-        <div className="relative flex-shrink-0">
-          {user.avatar
-            ? <img src={user.avatar} alt={user.name}
-                className="w-10 h-10 rounded-xl object-cover border-2"
-                style={{ borderColor: "rgba(201,168,76,0.25)" }}/>
-            : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[12px] font-black"
-                style={{
-                  background: user.isGuest ? "linear-gradient(135deg,#1e293b,#334155)" : "linear-gradient(135deg,#1e3a5f,#1e40af)",
-                  color: "#c9a84c", border: "2px solid rgba(201,168,76,0.2)",
-                }}>
-                {initials}
-              </div>
-          }
-          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-            style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }}/>
-        </div>
-
-        {/* info */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-1 flex-wrap">
-            <p className="text-[13px] font-bold truncate" style={{ color: "#f1f5f9" }}>{user.name}</p>
-            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0"
-              style={{
-                background: `${providerColor[user.provider] || "#64748b"}18`,
-                color:       providerColor[user.provider] || "#64748b",
-                border:      `1px solid ${providerColor[user.provider] || "#64748b"}30`,
-              }}>
-              {providerLabel[user.provider] || user.provider}
-            </span>
-            {user.isVerified && !user.isGuest && (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5 flex-shrink-0"
-                style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
-                <CheckCircle size={8}/> {t("ভেরিফাইড", "Verified")}
-              </span>
-            )}
-            {isBlocked && (
-              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
-                style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
-                {t("ব্লকড", "Blocked")}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            {user.email && (
-              <span className="flex items-center gap-1 text-[10px] min-w-0" style={{ color: "#64748b" }}>
-                <Mail size={9} className="flex-shrink-0"/>
-                <span className="truncate max-w-[110px] sm:max-w-[180px]">{user.email}</span>
-              </span>
-            )}
-            {user.phone && (
-              <span className="flex items-center gap-1 text-[10px] flex-shrink-0" style={{ color: "#64748b" }}>
-                <Phone size={9}/> {user.phone}
-              </span>
-            )}
-            <span className="flex items-center gap-1 text-[10px] flex-shrink-0" style={{ color: "#475569" }}>
-              <Calendar size={9}/> {joined}
-            </span>
-          </div>
-        </div>
-
-        {/* quick stats — শুধু md+ */}
-        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-          <div className="text-center">
-            <p className="text-[15px] font-black" style={{ color: "#c9a84c" }}>{fetched ? orders.length : "—"}</p>
-            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("অর্ডার", "Orders")}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-[15px] font-black whitespace-nowrap" style={{ color: "#22c55e" }}>
-              {fetched ? `৳${totalSpent.toLocaleString()}` : "—"}
-            </p>
-            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("মোট খরচ", "Spent")}</p>
-          </div>
-          {!user.isGuest && (
-            <div className="text-center">
-              <p className="text-[15px] font-black" style={{ color: "#f43f5e" }}>{user.wishlist?.length || 0}</p>
-              <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("উইশলিস্ট", "Wishlist")}</p>
-            </div>
-          )}
-        </div>
-
-        {/* actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {!user.isGuest && (
-            <button onClick={handleBlock} disabled={blocking}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-              style={{
-                background: isBlocked ? "rgba(34,197,94,0.1)"  : "rgba(239,68,68,0.08)",
-                border:     isBlocked ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(239,68,68,0.15)",
-                color:      isBlocked ? "#22c55e" : "#f87171",
-              }}>
-              {blocking ? <RefreshCw size={12} className="animate-spin"/> : isBlocked ? <Shield size={12}/> : <ShieldOff size={12}/>}
-            </button>
-          )}
-          <button onClick={handleExpand}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
-            style={{
-              background: expanded ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
-              border:     expanded ? "1px solid rgba(201,168,76,0.25)" : "1px solid rgba(255,255,255,0.08)",
-              color:      expanded ? "#c9a84c" : "#64748b",
-            }}>
-            {expanded ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
-          </button>
-        </div>
-      </div>
-
-      {/* expanded */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden">
-            <div className="px-3 pb-4 space-y-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-
-              {/* summary */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
-                {[
-                  { label: t("মোট অর্ডার",  "Total Orders"),  value: orders.length,                    color: "#c9a84c", icon: <ShoppingBag size={13}/> },
-                  { label: t("মোট খরচ",     "Total Spent"),   value: `৳${totalSpent.toLocaleString()}`, color: "#22c55e", icon: <TrendingUp size={13}/> },
-                  { label: t("ডেলিভার্ড",   "Delivered"),     value: deliveredCnt,                     color: "#06b6d4", icon: <CheckCircle size={13}/> },
-                  { label: t("বাতিল",        "Cancelled"),     value: cancelledCnt,                     color: "#ef4444", icon: <XCircle size={13}/> },
-                ].map(s => (
-                  <div key={s.label} className="rounded-xl p-3 text-center"
-                    style={{ background: `${s.color}08`, border: `1px solid ${s.color}18` }}>
-                    <div className="flex items-center justify-center mb-1" style={{ color: s.color }}>{s.icon}</div>
-                    <p className="text-[16px] font-black" style={{ color: "#f1f5f9" }}>{s.value}</p>
-                    <p className="text-[10px] mt-0.5" style={{ color: "#475569" }}>{s.label}</p>
-                  </div>
-                ))}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}/>
               </div>
 
-              {/* account + extra info */}
-              {!user.isGuest && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl p-3.5 space-y-2"
-                    style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#334155" }}>
-                      {t("অ্যাকাউন্ট তথ্য", "Account Info")}
-                    </p>
-                    {[
-                      { icon: <Mail size={11}/>,        label: t("ইমেইল",      "Email"),    value: user.email    || "—" },
-                      { icon: <Phone size={11}/>,       label: t("ফোন",        "Phone"),    value: user.phone    || "—" },
-                      { icon: <Calendar size={11}/>,    label: t("যোগ দিয়েছেন","Joined"),  value: joined               },
-                      { icon: <CreditCard size={11}/>,  label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
-                      { icon: <CheckCircle size={11}/>, label: t("ভেরিফাইড",   "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="flex items-center gap-1.5 flex-shrink-0" style={{ color: "#475569" }}>
-                          <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
-                        </span>
-                        <span className="font-semibold truncate text-right ml-2" style={{ color: "#94a3b8" }}>{row.value}</span>
-                      </div>
-                    ))}
+              {/* header */}
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ background: ac.bg, border: `1px solid ${ac.border}` }}>
+                    <ActionIcon size={16} style={{ color: ac.color }}/>
                   </div>
-                  <div className="rounded-xl p-3.5 space-y-2"
-                    style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#334155" }}>
-                      {t("অতিরিক্ত তথ্য", "Extra Info")}
-                    </p>
-                    {[
-                      { icon: <Heart size={11}/>,  label: t("উইশলিস্ট",    "Wishlist"),   value: `${user.wishlist?.length || 0} টি পণ্য` },
-                      { icon: <MapPin size={11}/>, label: t("জেলা",        "District"),   value: user.address?.district || "—" },
-                      { icon: <MapPin size={11}/>, label: t("থানা",        "Thana"),      value: user.address?.thana    || "—" },
-                      { icon: <Star size={11}/>,   label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label    || "—" },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="flex items-center gap-1.5 flex-shrink-0" style={{ color: "#475569" }}>
-                          <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
-                        </span>
-                        <span className="font-semibold truncate text-right ml-2" style={{ color: "#94a3b8" }}>{row.value}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="text-sm font-bold" style={{ color: "#f1f5f9" }}>{t("কার্যক্রমের বিবরণ","Activity Detail")}</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                      style={{ background: ac.bg, color: ac.color }}>
+                      {t(ac.colorBn, ac.colorEn)}
+                    </span>
                   </div>
                 </div>
-              )}
+                <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center transition"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "#64748b" }}>
+                  <X size={15}/>
+                </button>
+              </div>
 
-              {/* guest */}
-              {user.isGuest && (
-                <div className="rounded-xl p-3.5"
-                  style={{ background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.15)" }}>
-                  <p className="text-[11px] font-bold" style={{ color: "#64748b" }}>
-                    ℹ️ {t("এই কাস্টমার রেজিস্ট্রেশন করেননি — অর্ডার তথ্য থেকে নেওয়া হয়েছে।",
-                         "This customer is not registered — info taken from order data.")}
+              {/* body */}
+              <div className="px-5 py-4 space-y-3 overflow-y-auto" style={{ maxHeight: "55vh" }}>
+                {/* sublink info */}
+                <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "#475569" }}>
+                    {t("সাবলিংক","Sublink")}
                   </p>
+                  <div className="flex items-center gap-2">
+                    <Layers size={14} style={{ color: "#475569" }} className="flex-shrink-0"/>
+                    <p className="text-sm font-semibold break-all" style={{ color: "#e2e8f0" }}>{log.sublinkName}</p>
+                  </div>
+                  {log.sublinkSlug && (
+                    <p className="text-xs mt-1 ml-5" style={{ color: "#475569" }}>/{log.sublinkSlug}</p>
+                  )}
+                  {log.parentName && (
+                    <div className="mt-2 ml-5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-semibold"
+                        style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa" }}>
+                        {t("প্যারেন্ট:","Parent:")} {log.parentName}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* orders */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: "#334155" }}>
-                  {t("অর্ডার ইতিহাস", "Order History")}
-                </p>
-                {loadingOrds ? (
-                  <div className="space-y-2">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="h-10 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }}/>
-                    ))}
+                {/* performer */}
+                <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "#475569" }}>
+                    {t("সম্পাদনকারী","Performed By")}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: rc.bg }}>
+                      <RoleIcon size={13} style={{ color: rc.color }}/>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: "#e2e8f0" }}>{log.performedByName}</p>
+                      <p className="text-xs truncate" style={{ color: "#64748b" }}>{log.performedByEmail}</p>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase px-2 py-1 rounded-lg flex-shrink-0"
+                      style={{ background: rc.bg, color: rc.color }}>
+                      {t(rc.labelBn, rc.labelEn)}
+                    </span>
                   </div>
-                ) : orders.length === 0 ? (
-                  <div className="flex flex-col items-center py-5 gap-2">
-                    <ShoppingCart size={26} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
-                    <p className="text-[11px]" style={{ color: "#334155" }}>{t("কোনো অর্ডার নেই", "No orders found")}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {orders.map(order => <OrderRow key={order._id} order={order}/>)}
+                </div>
+
+                {/* time */}
+                <div className="flex items-center gap-2 text-xs px-1" style={{ color: "#64748b" }}>
+                  <Clock size={12} className="flex-shrink-0" style={{ color: "#475569" }}/>
+                  <span>{fmtDateFull(log.createdAt)}</span>
+                </div>
+
+                {/* changes */}
+                {log.changes && Object.keys(log.changes).length > 0 && (
+                  <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3" style={{ color: "#475569" }}>
+                      {t("যা পরিবর্তিত হয়েছে","What Changed")}
+                    </p>
+                    <div className="space-y-2">
+                      {Object.entries(log.changes).map(([key, val]) => (
+                        <div key={key} className="flex items-start gap-2 text-xs flex-wrap">
+                          <span className="px-2 py-0.5 rounded-lg font-bold flex-shrink-0"
+                            style={{ background: "rgba(129,140,248,0.1)", color: "#818cf8" }}>
+                            {key}
+                          </span>
+                          {typeof val === "object" && val.from !== undefined ? (
+                            <span className="break-all" style={{ color: "#94a3b8" }}>
+                              <span style={{ color: "#f87171", textDecoration: "line-through" }}>{String(val.from)}</span>
+                              {" → "}
+                              <span style={{ color: "#34d399", fontWeight: 600 }}>{String(val.to)}</span>
+                            </span>
+                          ) : (
+                            <span className="break-all" style={{ color: "#94a3b8" }}>{String(val)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-            </div>
+              {/* footer */}
+              <div className="px-5 py-4 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+                  {t("বন্ধ করুন","Close")}
+                </button>
+                <button onClick={() => { onDelete(log); onClose(); }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition"
+                  style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}>
+                  <Trash2 size={14}/> {t("লগ মুছুন","Delete Log")}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 
-/* ══════════════════════════════
-   MAIN PAGE
-══════════════════════════════ */
-export default function AdminUsers() {
+/* ════════════════════════════════════════
+   MAIN
+════════════════════════════════════════ */
+export default function AdminSublinkLogs() {
   const { t } = useAdminLang();
-  const [users,   setUsers  ] = useState([]);
+
+  const [logs,    setLogs]    = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search,  setSearch ] = useState("");
-  const [filter,  setFilter ] = useState("all");
-  const [stats,   setStats  ] = useState({ total: 0, registered: 0, guest: 0, blocked: 0 });
-  const [page,    setPage   ] = useState(1);
+  const [total,   setTotal]   = useState(0);
+  const [pages,   setPages]   = useState(1);
+  const [page,    setPage]    = useState(1);
 
-  const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
+  const [search,   setSearch]   = useState("");
+  const [sort,     setSort]     = useState("newest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef(null);
 
-  const fetchUsers = async () => {
-    setLoading(true);
+  const [detailLog,  setDetailLog]  = useState(null);
+  const [deleteId,   setDeleteId]   = useState(null);
+  const [deleteName, setDeleteName] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [clearOpen,  setClearOpen]  = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!sortRef.current?.contains(e.target)) setSortOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const fetchLogs = useCallback(async () => {
     try {
-      const res  = await fetch(`${API}/api/auth/users`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      if (data.success) {
-        setUsers(data.users);
-        setStats({
-          total:      data.users.length,
-          registered: data.users.filter(u => !u.isGuest).length,
-          guest:      data.users.filter(u =>  u.isGuest).length,
-          blocked:    data.users.filter(u =>  u.isBlocked).length,
-        });
-      }
-    } catch {}
+      setLoading(true);
+      const params = new URLSearchParams({ page, limit: 15 });
+      if (search) params.append("search", search);
+      if (["created","updated","deleted"].includes(sort)) params.append("action", sort);
+      if (["admin","subadmin"].includes(sort))            params.append("role",   sort);
+      const r = await fetch(`${API}/api/sublinks/logs?${params}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message);
+      setLogs(d.data);
+      setTotal(d.total);
+      setPages(d.pages);
+    } catch (err) { console.error(err); }
     finally { setLoading(false); }
+  }, [page, search, sort]);
+
+  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  useEffect(() => {
+    const timer = setTimeout(() => { setPage(1); }, 400);
+    return () => clearTimeout(timer);
+  }, [search, sort]);
+
+  const handleDeleteTrigger = (log) => {
+    setDeleteId(log._id);
+    setDeleteName(log.sublinkName);
+    setDeleteOpen(true);
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  const confirmDelete = async () => {
+    try {
+      await fetch(`${API}/api/sublinks/logs/${deleteId}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      setLogs(prev => prev.filter(l => l._id !== deleteId));
+      setTotal(n => n - 1);
+    } catch (err) { console.error(err); }
+    setDeleteOpen(false);
+  };
 
-  const filtered = useMemo(() => {
-    let list = [...users];
-    if (filter === "registered") list = list.filter(u => !u.isGuest);
-    if (filter === "guest")      list = list.filter(u =>  u.isGuest);
-    if (filter === "local")      list = list.filter(u => u.provider === "local");
-    if (filter === "google")     list = list.filter(u => u.provider === "google");
-    if (filter === "blocked")    list = list.filter(u =>  u.isBlocked);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(u =>
-        u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.includes(q)
-      );
-    }
-    return list;
-  }, [users, filter, search]);
+  const confirmClearAll = async () => {
+    try {
+      await fetch(`${API}/api/sublinks/logs`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      setLogs([]); setTotal(0); setPages(1);
+    } catch (err) { console.error(err); }
+    setClearOpen(false);
+  };
 
-  useEffect(() => { setPage(1); }, [filtered.length]);
-
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-
-  const FILTERS = [
-    { key: "all",        labelBn: "সব",            labelEn: "All"        },
-    { key: "registered", labelBn: "রেজিস্টার্ড",  labelEn: "Registered" },
-    { key: "guest",      labelBn: "গেস্ট",         labelEn: "Guest"      },
-    { key: "local",      labelBn: "লোকাল",         labelEn: "Local"      },
-    { key: "google",     labelBn: "গুগল",          labelEn: "Google"     },
-    { key: "blocked",    labelBn: "ব্লকড",         labelEn: "Blocked"    },
-  ];
+  const fmtShort = (d) => new Date(d).toLocaleDateString("en-BD", {
+    day: "numeric", month: "short", year: "2-digit",
+  });
 
   return (
-    <div className="space-y-5 w-full overflow-x-hidden">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+        .ll-wrap * { box-sizing: border-box; }
+        .ll-wrap { font-family: 'DM Sans', sans-serif; }
 
-      {/* header */}
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg,#0d1426,#111827)",
-          border:     "1px solid rgba(255,255,255,0.07)",
-          boxShadow:  "0 8px 32px rgba(0,0,0,0.3)",
-        }}>
-        <div className="absolute top-0 left-0 right-0 h-px"
-          style={{ background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.5) 40%,rgba(59,130,246,0.5) 70%,transparent)" }}/>
-        <div className="p-5 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <Users size={20} style={{ color: "#c9a84c" }}/>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="truncate" style={{ fontFamily: "'Instrument Serif',serif", fontSize: "20px", color: "#f1f5f9" }}>
-              {t("ব্যবহারকারী", "Users")}
-            </h1>
-            <p className="text-[11px] mt-0.5 truncate" style={{ color: "#475569" }}>
-              {t("রেজিস্টার্ড + গেস্ট সকল কাস্টমার", "Registered + Guest all customers")}
-            </p>
-          </div>
-          <button onClick={fetchUsers}
-            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}>
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""}/>
-          </button>
-        </div>
-      </motion.div>
+        .ll-search-input {
+          width: 100%; background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+          padding: 11px 16px 11px 40px; font-size: 13px; color: #e2e8f0;
+          outline: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+        }
+        .ll-search-input::placeholder { color: #475569; }
+        .ll-search-input:focus { border-color: rgba(201,168,76,0.35); background: rgba(201,168,76,0.03); }
 
-      {/* stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { icon: <Users size={17}/>,     label: t("মোট কাস্টমার", "Total Customers"), value: stats.total,      color: "#c9a84c", trend: t("সকল ব্যবহারকারী", "All users")       },
-          { icon: <UserCheck size={17}/>, label: t("রেজিস্টার্ড",  "Registered"),      value: stats.registered, color: "#22c55e", trend: t("অ্যাকাউন্টধারী",  "Account holders") },
-          { icon: <UserX size={17}/>,     label: t("গেস্ট",        "Guest"),            value: stats.guest,      color: "#64748b", trend: t("অ-রেজিস্টার্ড",   "Non-registered")  },
-          { icon: <ShieldOff size={17}/>, label: t("ব্লকড",        "Blocked"),          value: stats.blocked,    color: "#ef4444", trend: t("অ্যাক্সেস বন্ধ",  "Access disabled") },
-        ].map((s, i) => (
-          <StatCard key={i} icon={s.icon} label={s.label} value={s.value} color={s.color} loading={loading} trend={s.trend}/>
-        ))}
-      </div>
+        .ll-sort-btn {
+          display: flex; align-items: center; justify-content: space-between; gap: 8px;
+          width: 100%; background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08); border-radius: 11px;
+          padding: 10px 13px; font-size: 12px; color: #94a3b8;
+          cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+        }
+        .ll-sort-btn:hover { border-color: rgba(255,255,255,0.15); color: #cbd5e1; }
 
-      {/* search + filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 min-w-0">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}/>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={t("নাম, ইমেইল বা ফোন...", "Search by name, email or phone...")}
-            className="w-full pl-8 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
-            style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'DM Sans',sans-serif" }}
-          />
-          {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}>
-              <X size={12}/>
-            </button>
-          )}
-        </div>
-        <div className="flex gap-1 p-1 rounded-xl overflow-x-auto flex-shrink-0"
-          style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
-          {FILTERS.map(f => (
-            <button key={f.key} onClick={() => setFilter(f.key)}
-              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex-shrink-0 whitespace-nowrap"
-              style={filter === f.key
-                ? { background: "rgba(201,168,76,0.15)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.25)" }
-                : { color: "#475569", border: "1px solid transparent" }
-              }>
-              {t(f.labelBn, f.labelEn)}
-            </button>
-          ))}
-        </div>
-      </div>
+        .ll-sort-dropdown {
+          background: #1a2235; border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 14px; overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+        }
+        .ll-sort-item { padding: 10px 16px; font-size: 12px; color: #94a3b8; cursor: pointer; transition: all 0.12s; }
+        .ll-sort-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+        .ll-sort-item.active { background: rgba(201,168,76,0.08); color: #c9a84c; font-weight: 600; }
 
-      {/* count */}
-      {!loading && (
-        <p className="text-[11px]" style={{ color: "#334155" }}>
-          {t(`${filtered.length}জন কাস্টমার`, `${filtered.length} customer${filtered.length !== 1 ? "s" : ""}`)}
-          {totalPages > 1 && <span style={{ marginLeft: 8 }}>— {t(`পেজ ${page}/${totalPages}`, `Page ${page}/${totalPages}`)}</span>}
-        </p>
-      )}
+        .ll-btn {
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 9px 15px; border-radius: 10px;
+          font-size: 12px; font-weight: 600; cursor: pointer;
+          transition: all 0.15s; border: 1px solid transparent;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .ll-btn:hover { transform: translateY(-1px); }
 
-      {/* list */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="rounded-2xl p-4 animate-pulse"
-              style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}/>
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 rounded-lg w-1/3" style={{ background: "rgba(255,255,255,0.06)" }}/>
-                  <div className="h-2.5 rounded-lg w-1/2" style={{ background: "rgba(255,255,255,0.04)" }}/>
+        .ll-col-header {
+          display: grid; align-items: center;
+          padding: 11px 20px;
+          grid-template-columns: 28px 1fr 84px 84px 56px;
+          gap: 8px;
+          background: #0f1929;
+          border-bottom: 1px solid rgba(255,255,255,0.07);
+          position: sticky; top: 0; z-index: 10;
+        }
+
+        .ll-row {
+          display: grid; align-items: center;
+          padding: 15px 20px;
+          grid-template-columns: 28px 1fr 84px 84px 56px;
+          gap: 8px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+          transition: background 0.15s;
+        }
+        .ll-row:last-child { border-bottom: none; }
+        .ll-row:hover { background: rgba(255,255,255,0.025); }
+
+        .ll-icon-btn {
+          width: 28px; height: 28px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: all 0.15s; border: none;
+          font-family: 'DM Sans', sans-serif;
+        }
+        .ll-icon-btn:hover { transform: translateY(-1px); }
+
+        .ll-page-btn {
+          display: flex; align-items: center; justify-content: center;
+          padding: 7px 14px; border-radius: 10px; font-size: 12px; font-weight: 600;
+          cursor: pointer; transition: all 0.15s;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+          color: #64748b; font-family: 'DM Sans', sans-serif;
+        }
+        .ll-page-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.15); color: #94a3b8; }
+        .ll-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .ll-page-num {
+          width: 32px; height: 32px; border-radius: 9px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+          font-family: 'DM Sans', sans-serif;
+        }
+      `}</style>
+
+      <div className="ll-wrap max-w-5xl mx-auto pb-10">
+
+        <DetailModal log={detailLog} t={t} onClose={() => setDetailLog(null)} onDelete={handleDeleteTrigger}/>
+        <ConfirmModal isOpen={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={confirmDelete} danger
+          title={t("লগ মুছবেন?","Delete Log?")}
+          message={`"${deleteName}" ${t("এর লগ মুছে যাবে।","log will be permanently deleted.")}`}
+          confirmText={t("মুছুন","Delete")} cancelText={t("বাতিল","Cancel")}/>
+        <ConfirmModal isOpen={clearOpen} onClose={() => setClearOpen(false)} onConfirm={confirmClearAll} danger
+          title={t("সব লগ মুছবেন?","Clear All Logs?")}
+          message={t("সব সাবলিংক লগ স্থায়ীভাবে মুছে যাবে।","This will permanently delete all sublink logs.")}
+          confirmText={t("সব মুছুন","Clear All")} cancelText={t("বাতিল","Cancel")}/>
+
+        {/* ══ HEADER ══ */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative rounded-2xl overflow-hidden mb-6"
+          style={{ background: "linear-gradient(135deg,#0d1426 0%,#111827 50%,#0f172a 100%)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+
+          <div className="absolute top-0 left-0 right-0 h-px"
+            style={{ background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.6) 30%,rgba(139,92,246,0.6) 70%,transparent)" }}/>
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)",
+            backgroundSize: "32px 32px",
+          }}/>
+          <div className="absolute pointer-events-none" style={{ top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.07) 0%,transparent 70%)" }}/>
+          <div className="absolute pointer-events-none" style={{ bottom: "-40px", left: "-20px", width: "160px", height: "160px", borderRadius: "50%", background: "radial-gradient(circle,rgba(129,140,248,0.06) 0%,transparent 70%)" }}/>
+
+          <div className="relative p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border: "1px solid rgba(201,168,76,0.2)" }}>
+                  <Activity size={22} style={{ color: "#c9a84c" }}/>
+                </div>
+                <div>
+                  <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: "22px", color: "#f1f5f9", letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+                    {t("সাবলিংক লগ","Sublink Logs")}
+                  </h1>
+                  <p className="text-xs mt-1" style={{ color: "#475569" }}>
+                    {t("এডমিন ও সাবএডমিনের সাবলিংক কার্যক্রম ট্র্যাক করুন।","Track all sublink activity by admin and subadmin.")}
+                  </p>
                 </div>
               </div>
+              <button onClick={fetchLogs} className="ll-btn self-start sm:self-auto"
+                style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+                <RefreshCw size={13}/> {t("রিফ্রেশ","Refresh")}
+              </button>
             </div>
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center py-20 gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <Users size={26} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
-          </div>
-          <p className="text-[13px] font-bold" style={{ color: "#334155" }}>
-            {t("কোনো কাস্টমার পাওয়া যায়নি", "No customers found")}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-3">
-            {paginated.map((user, i) => <UserCard key={user._id} user={user} index={i}/>)}
-          </div>
 
-          {/* pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-5 flex-wrap gap-3">
-              <p className="text-xs font-medium" style={{ color: "#475569" }}>
-                {t("পেজ", "Page")}{" "}
-                <span style={{ color: "#94a3b8" }}>{page}</span>{" "}
-                {t("এর মধ্যে", "of")}{" "}
-                <span style={{ color: "#94a3b8" }}>{totalPages}</span>
-                {" · "}
-                <span style={{ color: "#64748b" }}>{filtered.length} {t("মোট", "total")}</span>
-              </p>
-              <div className="flex items-center gap-1.5">
-                <button
-                  disabled={page === 1}
-                  onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600,
-                    cursor: page === 1 ? "not-allowed" : "pointer", transition: "all 0.15s",
-                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                    color: "#64748b", opacity: page === 1 ? 0.35 : 1, fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                  ← {t("আগে", "Prev")}
-                </button>
-
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const p = page <= 3 ? i + 1 : page - 2 + i;
-                  if (p > totalPages) return null;
-                  return (
-                    <button key={p}
-                      onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      style={{
-                        width: 32, height: 32, borderRadius: "9px",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
-                        background: page === p ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
-                        color: page === p ? "#0a0f1e" : "#64748b",
-                        boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
-                        fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      }}>
-                      {p}
-                    </button>
-                  );
-                })}
-
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600,
-                    cursor: page === totalPages ? "not-allowed" : "pointer", transition: "all 0.15s",
-                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                    color: "#64748b", opacity: page === totalPages ? 0.35 : 1, fontFamily: "'DM Sans', sans-serif",
-                  }}>
-                  {t("পরে", "Next")} →
-                </button>
-              </div>
+            {/* stat cards */}
+            <div className="flex gap-3 flex-wrap sm:flex-nowrap">
+              {[
+                { labelBn: "মোট লগ", labelEn: "Total",   count: total,                                       color: "#c9a84c" },
+                { labelBn: "তৈরি",   labelEn: "Created", count: logs.filter(l=>l.action==="created").length, color: "#34d399" },
+                { labelBn: "আপডেট",  labelEn: "Updated", count: logs.filter(l=>l.action==="updated").length, color: "#818cf8" },
+                { labelBn: "মুছেছে", labelEn: "Deleted", count: logs.filter(l=>l.action==="deleted").length, color: "#f87171" },
+              ].map(({ labelBn, labelEn, count, color }) => (
+                <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-4"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="text-2xl font-bold" style={{ color, lineHeight: 1 }}>{count}</div>
+                  <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
+                </div>
+              ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* ══ CONTROLS ══ */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#475569" }}/>
+            <input type="text"
+              placeholder={t("সাবলিংক বা ব্যবহারকারী খুঁজুন...","Search sublink or user...")}
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="ll-search-input"/>
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 transition" style={{ color: "#475569" }}>
+                <X size={13}/>
+              </button>
+            )}
+          </div>
+
+          <div className="relative sm:w-48" ref={sortRef}>
+            <button className="ll-sort-btn" onClick={() => setSortOpen(!sortOpen)}>
+              <span style={{ color: "#cbd5e1" }}>
+                {SORT_OPTIONS.find(o => o.value === sort) &&
+                  t(SORT_OPTIONS.find(o => o.value === sort).labelBn,
+                    SORT_OPTIONS.find(o => o.value === sort).labelEn)}
+              </span>
+              <ChevronDown size={13}/>
+            </button>
+            <AnimatePresence>
+              {sortOpen && (
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+                  className="ll-sort-dropdown absolute right-0 mt-2 w-full z-50">
+                  {SORT_OPTIONS.map(option => (
+                    <div key={option.value}
+                      className={`ll-sort-item ${sort === option.value ? "active" : ""}`}
+                      onClick={() => { setSort(option.value); setSortOpen(false); setPage(1); }}>
+                      {t(option.labelBn, option.labelEn)}
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {logs.length > 0 && (
+            <button onClick={() => setClearOpen(true)} className="ll-btn"
+              style={{ background: "rgba(248,113,113,0.08)", borderColor: "rgba(248,113,113,0.15)", color: "#f87171" }}>
+              <Trash2 size={13}/> <span className="hidden sm:inline">{t("সব মুছুন","Clear All")}</span>
+            </button>
           )}
-        </>
-      )}
-    </div>
+        </div>
+
+        {/* ══ TABLE ══ */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
+
+          <div className="ll-col-header">
+            {["#", t("সাবলিংক","Sublink"), t("কার্যক্রম","Action"), t("কে করেছে","By"), ""].map((h, i) => (
+              <div key={i} className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#2d3f55" }}>{h}</div>
+            ))}
+          </div>
+
+          <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.15)" }}>
+                  <Loader2 size={20} className="animate-spin" style={{ color: "#c9a84c" }}/>
+                </div>
+                <p className="text-xs font-medium" style={{ color: "#475569" }}>{t("লোড হচ্ছে…","Loading…")}</p>
+              </div>
+            ) : logs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <Activity size={24} style={{ color: "#1e293b" }}/>
+                </div>
+                <p className="text-sm font-medium" style={{ color: "#475569" }}>{t("কোনো লগ নেই।","No logs found.")}</p>
+              </div>
+            ) : (
+              logs.map((log, index) => {
+                const ac = ACTION_CONFIG[log.action] || ACTION_CONFIG.updated;
+                const rc = ROLE_CONFIG[log.performedByRole] || ROLE_CONFIG.admin;
+                const ActionIcon = ac.icon;
+                const RoleIcon   = rc.icon;
+                return (
+                  <motion.div key={log._id} className="ll-row"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.02 }}>
+
+                    <div className="text-xs font-medium" style={{ color: "#2d3f55" }}>
+                      {(page - 1) * 15 + index + 1}
+                    </div>
+
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Layers size={11} className="flex-shrink-0" style={{ color: "#334155" }}/>
+                        <span className="truncate text-sm font-medium" style={{ color: "#e2e8f0" }}>
+                          {log.sublinkName}
+                        </span>
+                      </div>
+                      {log.parentName && (
+                        <span className="hidden sm:inline-flex ml-4 text-[9px] px-1.5 py-0.5 rounded font-semibold"
+                          style={{ background: "rgba(167,139,250,0.1)", color: "#a78bfa" }}>
+                          {log.parentName}
+                        </span>
+                      )}
+                      <p className="text-[10px] mt-0.5 sm:hidden pl-4" style={{ color: "#334155" }}>
+                        {fmtShort(log.createdAt)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase"
+                        style={{ background: ac.bg, color: ac.color, border: `1px solid ${ac.border}` }}>
+                        <ActionIcon size={8}/>
+                        <span className="hidden sm:inline">{t(ac.colorBn, ac.colorEn)}</span>
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: rc.bg }}>
+                        <RoleIcon size={10} style={{ color: rc.color }}/>
+                      </div>
+                      <span className="truncate text-xs font-medium" style={{ color: "#94a3b8" }}>
+                        {log.performedByName}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end items-center gap-1.5">
+                      <button className="ll-icon-btn"
+                        style={{ background: "rgba(129,140,248,0.08)", color: "#818cf8" }}
+                        onClick={() => setDetailLog(log)}>
+                        <Eye size={13}/>
+                      </button>
+                      <button className="ll-icon-btn hidden sm:flex"
+                        style={{ background: "rgba(248,113,113,0.08)", color: "#f87171" }}
+                        onClick={() => handleDeleteTrigger(log)}>
+                        <Trash2 size={12}/>
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* ══ PAGINATION ══ */}
+        {pages > 1 && (
+          <div className="flex items-center justify-between mt-5 flex-wrap gap-3">
+            <p className="text-xs font-medium" style={{ color: "#475569" }}>
+              {t("পেজ","Page")} <span style={{ color: "#94a3b8" }}>{page}</span> {t("এর মধ্যে","of")} <span style={{ color: "#94a3b8" }}>{pages}</span>
+              {" · "}<span style={{ color: "#64748b" }}>{total} {t("মোট","total")}</span>
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button className="ll-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                ← {t("আগে","Prev")}
+              </button>
+              {Array.from({ length: Math.min(5, pages) }, (_, i) => {
+                const p = page <= 3 ? i + 1 : page - 2 + i;
+                if (p > pages) return null;
+                return (
+                  <button key={p} className="ll-page-num" onClick={() => setPage(p)}
+                    style={{
+                      background: page === p ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+                      border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
+                      color: page === p ? "#0a0f1e" : "#64748b",
+                      boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                    }}>
+                    {p}
+                  </button>
+                );
+              })}
+              <button className="ll-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>
+                {t("পরে","Next")} →
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

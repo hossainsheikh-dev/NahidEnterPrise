@@ -259,7 +259,7 @@ function UserCard({ user, index }) {
             style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }}/>
         </div>
 
-        {/* info — flex-1 + min-w-0 ছাড়া overflow হবে */}
+        {/* info */}
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1 flex-wrap">
             <p className="text-[13px] font-bold truncate" style={{ color: "#f1f5f9" }}>{user.name}</p>
@@ -562,7 +562,7 @@ export default function AdminUsers() {
         </div>
       </motion.div>
 
-      {/* stats — Tailwind grid, inline style নেই */}
+      {/* stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { icon: <Users size={17}/>,     label: t("মোট কাস্টমার", "Total Customers"), value: stats.total,      color: "#c9a84c", trend: t("সকল ব্যবহারকারী", "All users")       },
@@ -646,27 +646,63 @@ export default function AdminUsers() {
 
           {/* pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1.5 pt-4 pb-1 flex-wrap">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                <motion.button
-                  key={p}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  className="w-8 h-8 rounded-lg text-[12px] font-bold flex-shrink-0"
+            <div className="flex items-center justify-between mt-5 flex-wrap gap-3">
+              <p className="text-xs font-medium" style={{ color: "#475569" }}>
+                {t("পেজ", "Page")}{" "}
+                <span style={{ color: "#94a3b8" }}>{page}</span>{" "}
+                {t("এর মধ্যে", "of")}{" "}
+                <span style={{ color: "#94a3b8" }}>{totalPages}</span>
+                {" · "}
+                <span style={{ color: "#64748b" }}>{filtered.length} {t("মোট", "total")}</span>
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  disabled={page === 1}
+                  onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   style={{
-                    border:      "1px solid",
-                    borderColor: page === p ? "#c9a84c" : "rgba(255,255,255,0.08)",
-                    background:  page === p ? "linear-gradient(135deg,#c9a84c,#a07c2e)" : "#0d1426",
-                    color:       page === p ? "#0d1426" : "#c9a84c",
-                    boxShadow:   page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
-                    cursor:      "pointer",
-                    fontFamily:  "'Plus Jakarta Sans', sans-serif",
-                  }}
-                >
-                  {p}
-                </motion.button>
-              ))}
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600,
+                    cursor: page === 1 ? "not-allowed" : "pointer", transition: "all 0.15s",
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#64748b", opacity: page === 1 ? 0.35 : 1, fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                  ← {t("আগে", "Prev")}
+                </button>
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const p = page <= 3 ? i + 1 : page - 2 + i;
+                  if (p > totalPages) return null;
+                  return (
+                    <button key={p}
+                      onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                      style={{
+                        width: 32, height: 32, borderRadius: "9px",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+                        background: page === p ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${page === p ? "transparent" : "rgba(255,255,255,0.08)"}`,
+                        color: page === p ? "#0a0f1e" : "#64748b",
+                        boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                        fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      }}>
+                      {p}
+                    </button>
+                  );
+                })}
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: "7px 14px", borderRadius: "10px", fontSize: "12px", fontWeight: 600,
+                    cursor: page === totalPages ? "not-allowed" : "pointer", transition: "all 0.15s",
+                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#64748b", opacity: page === totalPages ? 0.35 : 1, fontFamily: "'DM Sans', sans-serif",
+                  }}>
+                  {t("পরে", "Next")} →
+                </button>
+              </div>
             </div>
           )}
         </>
