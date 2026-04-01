@@ -182,7 +182,7 @@ export default function SubAdminAuth() {
   useEffect(() => {
     const token = localStorage.getItem("subAdminToken");
     const info = localStorage.getItem("subAdminInfo");
-    if (token && info) navigate("/subadmin/dashboard", { replace: true });
+    if (token && info) navigate("/portal-v7m4/dashboard", { replace: true });
   }, [navigate]);
 
   useEffect(() => {
@@ -241,7 +241,7 @@ export default function SubAdminAuth() {
       localStorage.setItem("subAdminToken", data.token);
       localStorage.setItem("subAdminInfo", JSON.stringify({ _id: data._id, name: data.name, email: data.email, phone: data.phone, role: data.role, status: data.status }));
       showLoginToast(data.name);
-      navigate("/subadmin/dashboard", { replace: true });
+      navigate("/portal-v7m4/dashboard", { replace: true });
     } catch (err) { setServerError(err.message); triggerShake(); }
     finally { setLoading(false); }
   };

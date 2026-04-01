@@ -282,7 +282,7 @@ function OrderBreakdown({ stats, loading, t }) {
         <Link to="/manage-x9k2/orders"
           className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition"
           style={{ background:"rgba(129,140,248,0.08)", color:"#818cf8" }}>
-          {t("সব দেখুন","View All")} <ArrowRight size={10}/>
+          {t("সব দেখুন","View All")} <ArrowRight sizse={10}/>
         </Link>
       </div>
 

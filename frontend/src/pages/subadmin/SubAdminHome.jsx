@@ -177,7 +177,7 @@ function OrderBreakdown({ stats, loading, t }) {
               <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>{stats.totalOrders} {t("টি মোট", "total orders")}</div>
             </div>
           </div>
-          <Link to="/subadmin/orders" style={{ textDecoration: "none" }}>
+          <Link to="/portal-v7m4/orders" style={{ textDecoration: "none" }}>
             <div className="sa-chip-btn" style={{ "--chip-color": T.accent, "--chip-soft": T.accentSoft, "--chip-border": T.accentBorder }}>
               {t("সব দেখুন", "View All")} <ArrowRight size={10} />
             </div>
@@ -241,7 +241,7 @@ function RecentOrders({ orders, loading, t }) {
               <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>{t("সর্বশেষ ৫টি", "Latest 5 orders")}</div>
             </div>
           </div>
-          <Link to="/subadmin/delivery" style={{ textDecoration: "none" }}>
+          <Link to="/portal-v7m4/delivery" style={{ textDecoration: "none" }}>
             <div className="sa-chip-btn" style={{ "--chip-color": T.amber, "--chip-soft": T.amberSoft, "--chip-border": "rgba(245,166,35,0.22)" }}>
               {t("সব দেখুন", "View All")} <ArrowRight size={10} />
             </div>
@@ -352,12 +352,12 @@ function PerformanceSummary({ stats, loading, t }) {
 /* ── Quick Actions ── */
 function QuickActions({ t }) {
   const actions = [
-    { to: "/subadmin/orders",   icon: ShoppingBag, label: t("অর্ডার", "Orders"),     color: T.amber,  grad: "linear-gradient(135deg,#fbbf24,#f59e0b)" },
-    { to: "/subadmin/products", icon: Package,     label: t("পণ্য", "Products"),      color: T.accent, grad: "linear-gradient(135deg,#818cf8,#5c60f5)" },
-    { to: "/subadmin/delivery", icon: Truck,       label: t("ডেলিভারি", "Delivery"),  color: T.green,  grad: "linear-gradient(135deg,#34d399,#00b96b)" },
-    { to: "/subadmin/links",    icon: Link2,       label: t("লিংক", "Links"),         color: T.cyan,   grad: "linear-gradient(135deg,#38bdf8,#06b6d4)" },
-    { to: "/subadmin/sublinks", icon: Layers,      label: t("সাবলিংক", "Sublinks"),   color: T.violet, grad: "linear-gradient(135deg,#a78bfa,#8b5cf6)" },
-    { to: "/subadmin/users",    icon: ShieldCheck, label: t("কাস্টমার", "Customers"), color: T.teal,   grad: "linear-gradient(135deg,#2dd4bf,#0d9488)"  },
+    { to: "/portal-v7m4/orders",   icon: ShoppingBag, label: t("অর্ডার", "Orders"),     color: T.amber,  grad: "linear-gradient(135deg,#fbbf24,#f59e0b)" },
+    { to: "/portal-v7m4/products", icon: Package,     label: t("পণ্য", "Products"),      color: T.accent, grad: "linear-gradient(135deg,#818cf8,#5c60f5)" },
+    { to: "/portal-v7m4/delivery", icon: Truck,       label: t("ডেলিভারি", "Delivery"),  color: T.green,  grad: "linear-gradient(135deg,#34d399,#00b96b)" },
+    { to: "/portal-v7m4/links",    icon: Link2,       label: t("লিংক", "Links"),         color: T.cyan,   grad: "linear-gradient(135deg,#38bdf8,#06b6d4)" },
+    { to: "/portal-v7m4/sublinks", icon: Layers,      label: t("সাবলিংক", "Sublinks"),   color: T.violet, grad: "linear-gradient(135deg,#a78bfa,#8b5cf6)" },
+    { to: "/portal-v7m4/users",    icon: ShieldCheck, label: t("কাস্টমার", "Customers"), color: T.teal,   grad: "linear-gradient(135deg,#2dd4bf,#0d9488)"  },
   ];
 
   return (

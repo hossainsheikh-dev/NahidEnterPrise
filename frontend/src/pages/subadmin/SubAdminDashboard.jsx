@@ -42,15 +42,15 @@ const FULL = 256;
 const SLIM = 68;
 
 const MENU = [
-  { key:"dashboard", icon:LayoutDashboard, path:"/subadmin/dashboard", color:"#818cf8", grad:"linear-gradient(135deg,#818cf8,#6366f1)", bn:"ড্যাশবোর্ড", en:"Dashboard" },
-  { key:"products",  icon:Package,         path:"/subadmin/products",  color:"#a78bfa", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)", bn:"পণ্য",        en:"Products"  },
-  { key:"orders",    icon:ShoppingCart,    path:"/subadmin/orders",    color:"#38bdf8", grad:"linear-gradient(135deg,#38bdf8,#0284c7)", bn:"অর্ডার",      en:"Orders"    },
-  { key:"delivery",  icon:Truck,           path:"/subadmin/delivery",  color:"#34d399", grad:"linear-gradient(135deg,#34d399,#059669)", bn:"ডেলিভারি",    en:"Delivery"  },
-  { key:"users",     icon:Users,           path:"/subadmin/users",     color:"#fbbf24", grad:"linear-gradient(135deg,#fbbf24,#d97706)", bn:"ব্যবহারকারী", en:"Users"     },
-  { key:"analytics", icon:BarChart3,       path:"/subadmin/analytics", color:"#f87171", grad:"linear-gradient(135deg,#f87171,#dc2626)", bn:"বিশ্লেষণ",    en:"Analytics" },
-  { key:"links",     icon:LinkIcon,        path:"/subadmin/links",     color:"#f472b6", grad:"linear-gradient(135deg,#f472b6,#db2777)", bn:"লিংক",        en:"Links"     },
-  { key:"sublinks",  icon:Layers,          path:"/subadmin/sublinks",  color:"#2dd4bf", grad:"linear-gradient(135deg,#2dd4bf,#0d9488)", bn:"সাবলিংক",     en:"SubLinks"  },
-  { key:"settings",  icon:Settings,        path:"/subadmin/settings",  color:"#94a3b8", grad:"linear-gradient(135deg,#94a3b8,#64748b)", bn:"সেটিংস",      en:"Settings"  },
+  { key:"dashboard", icon:LayoutDashboard, path:"/portal-v7m4/dashboard", color:"#818cf8", grad:"linear-gradient(135deg,#818cf8,#6366f1)", bn:"ড্যাশবোর্ড", en:"Dashboard" },
+  { key:"products",  icon:Package,         path:"/portal-v7m4/products",  color:"#a78bfa", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)", bn:"পণ্য",        en:"Products"  },
+  { key:"orders",    icon:ShoppingCart,    path:"/portal-v7m4/orders",    color:"#38bdf8", grad:"linear-gradient(135deg,#38bdf8,#0284c7)", bn:"অর্ডার",      en:"Orders"    },
+  { key:"delivery",  icon:Truck,           path:"/portal-v7m4/delivery",  color:"#34d399", grad:"linear-gradient(135deg,#34d399,#059669)", bn:"ডেলিভারি",    en:"Delivery"  },
+  { key:"users",     icon:Users,           path:"/portal-v7m4/users",     color:"#fbbf24", grad:"linear-gradient(135deg,#fbbf24,#d97706)", bn:"ব্যবহারকারী", en:"Users"     },
+  { key:"analytics", icon:BarChart3,       path:"/portal-v7m4/analytics", color:"#f87171", grad:"linear-gradient(135deg,#f87171,#dc2626)", bn:"বিশ্লেষণ",    en:"Analytics" },
+  { key:"links",     icon:LinkIcon,        path:"/portal-v7m4/links",     color:"#f472b6", grad:"linear-gradient(135deg,#f472b6,#db2777)", bn:"লিংক",        en:"Links"     },
+  { key:"sublinks",  icon:Layers,          path:"/portal-v7m4/sublinks",  color:"#2dd4bf", grad:"linear-gradient(135deg,#2dd4bf,#0d9488)", bn:"সাবলিংক",     en:"SubLinks"  },
+  { key:"settings",  icon:Settings,        path:"/portal-v7m4/settings",  color:"#94a3b8", grad:"linear-gradient(135deg,#94a3b8,#64748b)", bn:"সেটিংস",      en:"Settings"  },
 ];
 
 /* ══════════════════════════════
@@ -132,7 +132,7 @@ function DashboardInner() {
   /* Auth guard */
   useEffect(() => {
     if (!localStorage.getItem("subAdminToken") || !localStorage.getItem("subAdminInfo"))
-      navigate("/subadmin/signup-login-page", { replace: true });
+      navigate("/portal-v7m4/signup-login-page", { replace: true });
   }, [navigate]);
 
   /* Admin info */
@@ -172,7 +172,7 @@ function DashboardInner() {
     showLogoutToast(subAdminInfo?.name);
     localStorage.removeItem("subAdminToken");
     localStorage.removeItem("subAdminInfo");
-    setTimeout(() => navigate("/subadmin/signup-login-page", { replace: true }), 1200);
+    setTimeout(() => navigate("/portal-v7m4/signup-login-page", { replace: true }), 1200);
   };
 
   const activeItem  = MENU.find(i => i.path === location.pathname);
@@ -547,8 +547,8 @@ function DashboardInner() {
                         </div>
                         <div style={{ padding: 8 }}>
                           {[
-                            { icon: User,     bn: "আমার প্রোফাইল", en: "My Profile", path: "/subadmin/profile",  color: "#818cf8" },
-                            { icon: Settings, bn: "সেটিংস",        en: "Settings",   path: "/subadmin/settings", color: "#94a3b8" },
+                            { icon: User,     bn: "আমার প্রোফাইল", en: "My Profile", path: "/portal-v7m4/profile",  color: "#818cf8" },
+                            { icon: Settings, bn: "সেটিংস",        en: "Settings",   path: "/portal-v7m4/settings", color: "#94a3b8" },
                           ].map(({ icon: Icon, bn, en, path, color }) => (
                             <motion.div key={path} className="dd-item" whileHover={{ x: 3 }}
                               onClick={() => { navigate(path); setDropdownOpen(false); }}>

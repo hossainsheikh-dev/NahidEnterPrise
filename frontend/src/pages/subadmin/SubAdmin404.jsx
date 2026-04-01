@@ -46,7 +46,7 @@ const SubAdmin404 = () => {
         <motion.button
           whileHover={{ scale: 1.04, y: -2 }}
           whileTap={{ scale: 0.97 }}
-          onClick={() => navigate("/subadmin/dashboard")}
+          onClick={() => navigate("/portal-v7m4/dashboard")}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
           style={{
             background: "linear-gradient(135deg,#6366f1,#4f46e5)",
