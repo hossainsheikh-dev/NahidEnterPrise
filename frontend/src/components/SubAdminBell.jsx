@@ -70,7 +70,7 @@ export default function SubAdminBell() {
       sub:   t("পর্যালোচনা ও অনুমোদন করতে ক্লিক করুন","Click to review and approve"),
       dot:   "#a78bfa", dotBorder:"#0f172a",
       bg:    "rgba(196,181,253,0.15)", border:"rgba(196,181,253,0.3)", color:"#c4b5fd",
-      route: "/admin/subadmins",
+      route: "/manage-x9k2/subadmins",
     },
     changeReqCount > 0 && {
       icon: UserCog,
@@ -79,7 +79,7 @@ export default function SubAdminBell() {
       sub:   t("ইমেইল/ফোন পরিবর্তনের অনুরোধ অপেক্ষমাণ","Email/phone change requests pending"),
       dot:   "#38bdf8", dotBorder:"#0f172a",
       bg:    "rgba(56,189,248,0.12)", border:"rgba(56,189,248,0.28)", color:"#38bdf8",
-      route: "/admin/subadmins",
+      route: "/manage-x9k2/subadmins",
     },
     orderCount > 0 && {
       icon: ShoppingCart,
@@ -88,7 +88,7 @@ export default function SubAdminBell() {
       sub:   t("অর্ডার পরিচালনা করতে ক্লিক করুন","Click to manage orders"),
       dot:   "#fb923c", dotBorder:"#0f172a",
       bg:    "rgba(251,146,60,0.15)", border:"rgba(251,146,60,0.3)", color:"#fb923c",
-      route: "/admin/orders",
+      route: "/manage-x9k2/orders",
     },
   ].filter(Boolean);
 
