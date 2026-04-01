@@ -138,6 +138,7 @@ export default function AdminDashboard() {
           align-items: center;
           padding: 0 20px;
           gap: 14px;
+          overflow: hidden;
         }
 
         .adm-brand {
@@ -149,6 +150,7 @@ export default function AdminDashboard() {
           display: flex;
           align-items: center;
           gap: 8px;
+          flex-shrink: 0;
         }
         .adm-brand-dot {
           width: 6px; height: 6px;
@@ -161,6 +163,7 @@ export default function AdminDashboard() {
         .adm-search-wrap {
           flex: 1;
           max-width: 340px;
+          min-width: 0;
           position: relative;
         }
         .adm-search-wrap svg {

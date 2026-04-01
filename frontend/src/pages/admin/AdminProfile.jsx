@@ -465,7 +465,7 @@ export default function AdminProfile() {
           <div className="grid grid-cols-2 gap-3">
             <motion.button whileHover={{ y:-2, transition:{ duration:0.15 } }} whileTap={{ scale:0.97 }}
               onClick={() => setModal("edit")}
-              className="flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold"
+              className="flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold px-2"
               style={{
                 background:"linear-gradient(135deg,rgba(201,168,76,0.2),rgba(201,168,76,0.1))",
                 color:"#e8c876",
@@ -476,7 +476,7 @@ export default function AdminProfile() {
             </motion.button>
             <motion.button whileHover={{ y:-2, transition:{ duration:0.15 } }} whileTap={{ scale:0.97 }}
               onClick={() => setModal("password")}
-              className="flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold"
+              className="flex items-center justify-center gap-2.5 py-3.5 rounded-2xl text-sm font-bold px-2"
               style={{
                 background:"rgba(255,255,255,0.04)",
                 color:"#94a3b8",
@@ -582,12 +582,12 @@ export default function AdminProfile() {
 
             <div className="grid grid-cols-2 gap-3 pt-1">
               <button onClick={() => { setModal(null); setCurPass(""); setNewPass(""); setConPass(""); }}
-                className="py-3 rounded-xl text-sm font-semibold transition"
+                className="py-3 px-2 rounded-xl text-sm font-semibold transition"
                 style={{ background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,0.09)", color:"#64748b" }}>
                 {t("বাতিল","Cancel")}
               </button>
               <button onClick={handleSavePassword} disabled={saving}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold disabled:opacity-60 transition"
+                className="flex items-center justify-center gap-2 py-3 px-2 rounded-xl text-sm font-bold disabled:opacity-60 transition"
                 style={{ background:"linear-gradient(135deg,#f87171,#ef4444)", color:"#fff", boxShadow:"0 4px 14px rgba(248,113,113,0.3)" }}>
                 {saving ? <Loader size={14} className="animate-spin"/> : <Lock size={14}/>}
                 {saving ? t("সংরক্ষণ হচ্ছে…","Saving…") : t("পাসওয়ার্ড পরিবর্তন","Change Password")}
