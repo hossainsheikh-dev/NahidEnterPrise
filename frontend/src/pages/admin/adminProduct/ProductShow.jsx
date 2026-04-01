@@ -5,6 +5,21 @@ import {
   Loader2, X, Star, Package, RefreshCw,
 } from "lucide-react";
 
+/* ── simple window-width hook ── */
+function useWindowWidth() {
+  const [width, setWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
+  useEffect(() => {
+    const fn = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, []);
+  return width;
+}
+
+const PER_PAGE = 10;
+
 const ProductShow = ({
   products, loading,
   search, setSearch,
@@ -14,10 +29,15 @@ const ProductShow = ({
   parentLinks, allSublinks,
   onRefresh, t,
 }) => {
+  const screenW = useWindowWidth();
+  const isMobile = screenW < 640;
+
   const [filterParent,    setFilterParent   ] = useState("");
   const [filterSublink,   setFilterSublink  ] = useState("");
   const [parentDropdown,  setParentDropdown ] = useState(false);
   const [sublinkDropdown, setSublinkDropdown] = useState(false);
+  const [page,            setPage           ] = useState(1);
+
   const parentRef  = useRef(null);
   const sublinkRef = useRef(null);
 
@@ -42,20 +62,36 @@ const ProductShow = ({
     return true;
   });
 
+  /* reset page on filter/search change */
+  useEffect(() => { setPage(1); }, [displayedProducts.length]);
+
+  const totalPages = Math.ceil(displayedProducts.length / PER_PAGE);
+  const paginated  = displayedProducts.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   const clearFilters = () => { setFilterParent(""); setFilterSublink(""); };
 
   const stockBadge = (stock) => {
-    if (stock === 0) return { label: t("শেষ","Out"), color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" };
-    if (stock <= 5)  return { label: `${stock} ${t("বাকি","left")}`, color: "#fb923c", bg: "rgba(251,146,60,0.1)", border: "rgba(251,146,60,0.2)" };
-    return { label: String(stock), color: "#34d399", bg: "rgba(52,211,153,0.1)", border: "rgba(52,211,153,0.2)" };
+    if (stock === 0) return { label: String(stock), color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.2)" };
+    if (stock <= 5)  return { label: String(stock), color: "#fb923c", bg: "rgba(251,146,60,0.1)",  border: "rgba(251,146,60,0.2)"  };
+    return                 { label: String(stock), color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.2)"  };
   };
+
+  /*
+    Desktop: 28px  44px  1fr   72px    80px      80px
+             #     Img   Name  Stock   Status    Actions
+    Mobile:  28px  1fr   70px  76px
+             #     Name  Stock Actions
+  */
+  const gridCols = isMobile
+    ? "28px 1fr 70px 76px"
+    : "28px 44px 1fr 72px 80px 80px";
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
         .ps-wrap * { box-sizing: border-box; }
-        .ps-wrap { font-family: 'DM Sans', sans-serif; }
+        .ps-wrap { font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
         .ps-search-input {
           width: 100%; background: rgba(255,255,255,0.04);
@@ -89,37 +125,20 @@ const ProductShow = ({
           padding: 9px 16px; border-radius: 10px;
           font-size: 12px; font-weight: 600; cursor: pointer;
           transition: all 0.15s; border: 1px solid transparent;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'DM Sans', sans-serif; white-space: nowrap;
         }
         .ps-btn:hover { transform: translateY(-1px); }
-
-        .ps-col-header {
-          display: grid; align-items: center; padding: 11px 20px;
-          grid-template-columns: 28px 44px 1fr 72px 80px 56px;
-          gap: 8px; background: #0f1929;
-          border-bottom: 1px solid rgba(255,255,255,0.07);
-          position: sticky; top: 0; z-index: 10;
-        }
-
-        .ps-row {
-          display: grid; align-items: center; padding: 12px 20px;
-          grid-template-columns: 28px 44px 1fr 72px 80px 56px;
-          gap: 8px;
-          border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;
-        }
-        .ps-row:last-child { border-bottom: none; }
-        .ps-row:hover { background: rgba(255,255,255,0.025); }
 
         .ps-icon-btn {
           width: 28px; height: 28px; border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; transition: all 0.15s; border: none;
-          font-family: 'DM Sans', sans-serif;
+          font-family: 'DM Sans', sans-serif; flex-shrink: 0;
         }
         .ps-icon-btn:hover { transform: translateY(-1px); }
       `}</style>
 
-      <div className="ps-wrap">
+      <div className="ps-wrap" style={{ maxWidth: "100%", overflowX: "hidden" }}>
         <AnimatePresence mode="wait">
           <motion.div key="home" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="space-y-4">
@@ -138,7 +157,7 @@ const ProductShow = ({
               }}/>
               <div className="absolute pointer-events-none" style={{ top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle,rgba(201,168,76,0.07) 0%,transparent 70%)" }}/>
 
-              <div className="relative p-6 sm:p-7">
+              <div className="relative p-5 sm:p-7">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                   <div className="flex items-center gap-4">
                     <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -154,7 +173,7 @@ const ProductShow = ({
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                     <button onClick={onRefresh} disabled={loading} className="ps-btn"
                       style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", color: "#94a3b8" }}>
                       <RefreshCw size={13} className={loading ? "animate-spin" : ""}/>
@@ -170,10 +189,10 @@ const ProductShow = ({
                 {/* stat cards */}
                 <div className="flex gap-3 flex-wrap sm:flex-nowrap">
                   {[
-                    { labelBn: "মোট",     labelEn: "Total",    count: products.length,                          color: "#c9a84c" },
-                    { labelBn: "সক্রিয়",  labelEn: "Active",   count: products.filter(p=>p.isActive).length,   color: "#34d399" },
-                    { labelBn: "ফিচার্ড", labelEn: "Featured", count: products.filter(p=>p.isFeatured).length, color: "#fbbf24" },
-                    { labelBn: "স্টক শেষ",labelEn: "Out",      count: products.filter(p=>(p.stock??0)===0).length, color: "#f87171" },
+                    { labelBn: "মোট",     labelEn: "Total",    count: products.length,                             color: "#c9a84c" },
+                    { labelBn: "সক্রিয়",  labelEn: "Active",   count: products.filter(p => p.isActive).length,    color: "#34d399" },
+                    { labelBn: "ফিচার্ড", labelEn: "Featured", count: products.filter(p => p.isFeatured).length,  color: "#fbbf24" },
+                    { labelBn: "স্টক শেষ",labelEn: "Out",      count: products.filter(p => (p.stock ?? 0) === 0).length, color: "#f87171" },
                   ].map(({ labelBn, labelEn, count, color }) => (
                     <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-3"
                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
@@ -186,7 +205,7 @@ const ProductShow = ({
             </motion.div>
 
             {/* ══ CONTROLS ══ */}
-            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap" style={{ overflowX: "hidden" }}>
               {/* search */}
               <div className="relative flex-1 min-w-0">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#475569" }}/>
@@ -201,12 +220,12 @@ const ProductShow = ({
               </div>
 
               {/* parent filter */}
-              <div className="relative sm:w-44" ref={parentRef}>
+              <div className="relative sm:w-44 w-full" ref={parentRef}>
                 <button className={`ps-dd-btn ${filterParent ? "active" : ""}`} onClick={() => setParentDropdown(!parentDropdown)}>
-                  <span style={{ color: filterParent ? "#c9a84c" : "#64748b" }}>
+                  <span style={{ color: filterParent ? "#c9a84c" : "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {selectedParentName || t("লিংক ফিল্টার","Filter by Link")}
                   </span>
-                  <ChevronDown size={13}/>
+                  <ChevronDown size={13} style={{ flexShrink: 0 }}/>
                 </button>
                 <AnimatePresence>
                   {parentDropdown && (
@@ -232,12 +251,12 @@ const ProductShow = ({
 
               {/* sublink filter */}
               {filterParent && (
-                <div className="relative sm:w-44" ref={sublinkRef}>
+                <div className="relative sm:w-44 w-full" ref={sublinkRef}>
                   <button className={`ps-dd-btn ${filterSublink ? "active" : ""}`} onClick={() => setSublinkDropdown(!sublinkDropdown)}>
-                    <span style={{ color: filterSublink ? "#c9a84c" : "#64748b" }}>
+                    <span style={{ color: filterSublink ? "#c9a84c" : "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {selectedSublinkName || t("সাবলিংক ফিল্টার","Filter by Sublink")}
                     </span>
-                    <ChevronDown size={13}/>
+                    <ChevronDown size={13} style={{ flexShrink: 0 }}/>
                   </button>
                   <AnimatePresence>
                     {sublinkDropdown && (
@@ -262,10 +281,12 @@ const ProductShow = ({
               )}
 
               {/* sort */}
-              <div className="relative sm:w-44" ref={dropdownRef}>
+              <div className="relative sm:w-44 w-full" ref={dropdownRef}>
                 <button className="ps-dd-btn" onClick={() => setDropdownOpen(!dropdownOpen)}>
-                  <span style={{ color: "#cbd5e1" }}>{sortOptions.find(o => o.value === sort)?.label}</span>
-                  <ChevronDown size={13}/>
+                  <span style={{ color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {sortOptions.find(o => o.value === sort)?.label}
+                  </span>
+                  <ChevronDown size={13} style={{ flexShrink: 0 }}/>
                 </button>
                 <AnimatePresence>
                   {dropdownOpen && (
@@ -294,15 +315,43 @@ const ProductShow = ({
 
             {/* ══ TABLE ══ */}
             <div className="rounded-2xl overflow-hidden"
-              style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
+              style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)", maxWidth: "100%" }}>
 
-              <div className="ps-col-header">
-                {["#", t("ছবি","Img"), t("নাম","Name"), t("স্টক","Stock"), t("স্ট্যাটাস","Status"), ""].map((h, i) => (
-                  <div key={i} className={`text-[10px] font-semibold uppercase tracking-wider ${i === 2 ? "" : ""}`} style={{ color: "#2d3f55" }}>{h}</div>
-                ))}
+              {/* Column headers */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: gridCols,
+                alignItems: "center",
+                padding: "11px 16px",
+                gap: 8,
+                background: "#0f1929",
+                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                position: "sticky", top: 0, zIndex: 10,
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em" }}>#</div>
+                {!isMobile && (
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em" }}>
+                    {t("ছবি","Img")}
+                  </div>
+                )}
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em" }}>
+                  {t("নাম","Name")}
+                </div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em", textAlign: "center" }}>
+                  {t("স্টক","Stock")}
+                </div>
+                {!isMobile && (
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em" }}>
+                    {t("স্ট্যাটাস","Status")}
+                  </div>
+                )}
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#2d3f55", textTransform: "uppercase", letterSpacing: ".07em", textAlign: "right" }}>
+                  {t("কাজ","Act.")}
+                </div>
               </div>
 
-              <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+              {/* Rows */}
+              <div>
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
@@ -322,56 +371,99 @@ const ProductShow = ({
                     </p>
                   </div>
                 ) : (
-                  displayedProducts.map((product, index) => {
+                  paginated.map((product, index) => {
                     const sb = stockBadge(product.stock ?? 0);
                     return (
-                      <motion.div key={product._id} className="ps-row"
+                      <motion.div key={product._id}
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.02 }}>
+                        transition={{ delay: index * 0.02 }}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: gridCols,
+                          alignItems: "center",
+                          padding: "11px 16px",
+                          gap: 8,
+                          borderBottom: "1px solid rgba(255,255,255,0.05)",
+                          transition: "background 0.15s",
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.025)"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
 
-                        <div className="flex items-center gap-1" style={{ color: "#2d3f55", fontSize: "12px", fontWeight: 500 }}>
-                          {index + 1}
-                          {product.isFeatured && <Star size={9} style={{ color: "#fbbf24", fill: "#fbbf24" }}/>}
+                        {/* # */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 3, color: "#2d3f55", fontSize: 12, fontWeight: 500 }}>
+                          {(page - 1) * PER_PAGE + index + 1}
+                          {product.isFeatured && <Star size={8} style={{ color: "#fbbf24", fill: "#fbbf24", flexShrink: 0 }}/>}
                         </div>
 
-                        <div>
-                          {product.images?.[0] ? (
-                            <img src={product.images[0].url} alt={product.name}
-                              className="w-9 h-9 object-contain rounded-lg p-0.5"
-                              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}/>
-                          ) : (
-                            <div className="w-9 h-9 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}/>
-                          )}
-                        </div>
+                        {/* Image — desktop only */}
+                        {!isMobile && (
+                          <div>
+                            {product.images?.[0] ? (
+                              <img src={product.images[0].url} alt={product.name}
+                                style={{ width: 36, height: 36, objectFit: "contain", borderRadius: 9, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.05)", padding: 2, display: "block" }}/>
+                            ) : (
+                              <div style={{ width: 36, height: 36, borderRadius: 9, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}/>
+                            )}
+                          </div>
+                        )}
 
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium" style={{ color: "#e2e8f0" }}>{product.name}</div>
-                          {product.discountType && product.discountType !== "none" && (
-                            <div className="text-[10px] mt-0.5" style={{ color: "#34d399" }}>
+                        {/* Name */}
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{
+                            fontSize: isMobile ? 12 : 13,
+                            fontWeight: 600,
+                            color: "#e2e8f0",
+                            lineHeight: 1.45,
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}>
+                            <span style={{ color: "#e2e8f0" }}>
+                              {product.name.split(" ")[0]}
+                            </span>
+                            {product.name.split(" ").length > 1 && (
+                              <span style={{ color: "#38bdf8" }}>
+                                {" " + product.name.split(" ").slice(1).join(" ")}
+                              </span>
+                            )}
+                          </p>
+                          {!isMobile && product.discountType && product.discountType !== "none" && (
+                            <div style={{ fontSize: 10, marginTop: 2, color: "#34d399" }}>
                               {product.discountType === "percent" ? `${product.discountValue}% off` : `৳${product.discountValue} off`}
                             </div>
                           )}
                         </div>
 
-                        <div>
-                          <span className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
-                            style={{ background: sb.bg, color: sb.color, border: `1px solid ${sb.border}` }}>
+                        {/* Stock — number only, centred */}
+                        <div style={{ display: "flex", justifyContent: "center" }}>
+                          <span style={{
+                            display: "inline-flex", alignItems: "center",
+                            padding: "3px 9px", borderRadius: 99,
+                            fontSize: 11, fontWeight: 700,
+                            background: sb.bg, color: sb.color, border: `1px solid ${sb.border}`,
+                          }}>
                             {sb.label}
                           </span>
                         </div>
 
-                        <div>
-                          <span className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
-                            style={{
+                        {/* Status — desktop only */}
+                        {!isMobile && (
+                          <div>
+                            <span style={{
+                              display: "inline-flex", alignItems: "center",
+                              padding: "3px 9px", borderRadius: 99,
+                              fontSize: 11, fontWeight: 700,
                               background: product.isActive ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)",
                               color:      product.isActive ? "#34d399" : "#f87171",
                               border:     `1px solid ${product.isActive ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`,
                             }}>
-                            {product.isActive ? t("সক্রিয়","Active") : t("নিষ্ক্রিয়","Inactive")}
-                          </span>
-                        </div>
+                              {product.isActive ? t("সক্রিয়","Active") : t("নিষ্ক্রিয়","Inactive")}
+                            </span>
+                          </div>
+                        )}
 
-                        <div className="flex justify-end items-center gap-1.5">
+                        {/* Actions */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: isMobile ? 4 : 6 }}>
                           <button className="ps-icon-btn"
                             style={{ background: "rgba(129,140,248,0.08)", color: "#818cf8" }}
                             onClick={() => handleEdit(product)}>
@@ -388,6 +480,35 @@ const ProductShow = ({
                   })
                 )}
               </div>
+
+              {/* ══ PAGINATION ══ */}
+              {totalPages > 1 && (
+                <div style={{
+                  display: "flex", justifyContent: "center", alignItems: "center",
+                  flexWrap: "wrap", gap: 6, padding: "14px 16px",
+                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  background: "rgba(255,255,255,0.01)",
+                }}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <motion.button key={p}
+                      whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+                      onClick={() => setPage(p)}
+                      style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        fontSize: 12, fontWeight: 700, cursor: "pointer",
+                        border: "1px solid",
+                        borderColor: page === p ? "rgba(201,168,76,0.5)" : "rgba(255,255,255,0.08)",
+                        background: page === p ? "linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.12))" : "transparent",
+                        color: page === p ? "#e8c876" : "#475569",
+                        boxShadow: page === p ? "0 4px 12px rgba(201,168,76,0.2)" : "none",
+                        transition: "all .15s ease",
+                        fontFamily: "'DM Sans', sans-serif",
+                      }}>
+                      {p}
+                    </motion.button>
+                  ))}
+                </div>
+              )}
             </div>
 
           </motion.div>
