@@ -29,21 +29,21 @@ import { adminDashboardDesign as design } from "../../design/adminDashboardDesig
 import { showLogoutToast } from "../../utils/toast/logoutToast";
 
 const getMenuItems = (t) => [
-  { name: t("ড্যাশবোর্ড",    "Dashboard"),    icon: LayoutDashboard, path: "/admin/dashboard",     group: "main"    },
-  { name: t("পণ্য",           "Products"),     icon: Package,         path: "/admin/products",      group: "main"    },
-  { name: t("অর্ডার",         "Orders"),       icon: ShoppingCart,    path: "/admin/orders",        group: "main"    },
-  { name: t("ডেলিভারি",       "Delivery"),     icon: Truck,           path: "/admin/delivery",      group: "main"    },
-  { name: t("ব্যবহারকারী",    "Users"),        icon: Users,           path: "/admin/users",         group: "main"    },
-  { name: t("বিশ্লেষন",  "Analytics"),    icon: BarChart3,       path: "/admin/analytics",     group: "main"    },
-  { name: t("লিংক",           "Link"),         icon: LinkIcon,        path: "/admin/links",         group: "nav"     },
-  { name: t("সাবলিংক",        "SubLink"),      icon: Layers,          path: "/admin/sublinks",      group: "nav"     },
-  { name: t("সাব-এডমিন",      "SubAdmins"),    icon: ShieldCheck,     path: "/admin/subadmins",     group: "nav"     },
-  { name: t("পণ্য লগ",        "Product Logs"), icon: Activity,        path: "/admin/product-logs",  group: "logs"    },
-  { name: t("অর্ডার লগ",      "Order Logs"),   icon: Activity,        path: "/admin/order-logs",    group: "logs"    },
-  { name: t("লিংক লগ",        "Link Logs"),    icon: Activity,        path: "/admin/link-logs",     group: "logs"    },
-  { name: t("সাবলিংক লগ",     "Sublink Logs"), icon: Activity,        path: "/admin/sublink-logs",  group: "logs"    },
-  { name: t("সাবএডমিন লগ",    "Subadmin Logs"),icon: Activity,        path: "/admin/subadmin-logs", group: "logs"    },
-  { name: t("সেটিংস",         "Settings"),     icon: Settings,        path: "/admin/settings",      group: "system"  },
+  { name: t("ড্যাশবোর্ড",    "Dashboard"),    icon: LayoutDashboard, path: "/manage-x9k2/dashboard",     group: "main"    },
+  { name: t("পণ্য",           "Products"),     icon: Package,         path: "/manage-x9k2/products",      group: "main"    },
+  { name: t("অর্ডার",         "Orders"),       icon: ShoppingCart,    path: "/manage-x9k2/orders",        group: "main"    },
+  { name: t("ডেলিভারি",       "Delivery"),     icon: Truck,           path: "/manage-x9k2/delivery",      group: "main"    },
+  { name: t("ব্যবহারকারী",    "Users"),        icon: Users,           path: "/manage-x9k2/users",         group: "main"    },
+  { name: t("বিশ্লেষন",  "Analytics"),    icon: BarChart3,       path: "/manage-x9k2/analytics",     group: "main"    },
+  { name: t("লিংক",           "Link"),         icon: LinkIcon,        path: "/manage-x9k2/links",         group: "nav"     },
+  { name: t("সাবলিংক",        "SubLink"),      icon: Layers,          path: "/manage-x9k2/sublinks",      group: "nav"     },
+  { name: t("সাব-এডমিন",      "SubAdmins"),    icon: ShieldCheck,     path: "/manage-x9k2/subadmins",     group: "nav"     },
+  { name: t("পণ্য লগ",        "Product Logs"), icon: Activity,        path: "/manage-x9k2/product-logs",  group: "logs"    },
+  { name: t("অর্ডার লগ",      "Order Logs"),   icon: Activity,        path: "/manage-x9k2/order-logs",    group: "logs"    },
+  { name: t("লিংক লগ",        "Link Logs"),    icon: Activity,        path: "/manage-x9k2/link-logs",     group: "logs"    },
+  { name: t("সাবলিংক লগ",     "Sublink Logs"), icon: Activity,        path: "/manage-x9k2/sublink-logs",  group: "logs"    },
+  { name: t("সাবএডমিন লগ",    "Subadmin Logs"),icon: Activity,        path: "/manage-x9k2/subadmin-logs", group: "logs"    },
+  { name: t("সেটিংস",         "Settings"),     icon: Settings,        path: "/manage-x9k2/settings",      group: "system"  },
 ];
 
 const GROUP_LABELS = {
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
     localStorage.removeItem("adminInfo");
     localStorage.removeItem("token");
     localStorage.removeItem("adminToken");
-    setTimeout(() => navigate("/admin/login"), 1200);
+    setTimeout(() => navigate("/manage-x9k2/login"), 1200);
   };
 
   const currentPage = menuItems.find(m => m.path === location.pathname);
@@ -495,7 +495,7 @@ export default function AdminDashboard() {
                     <span>{adminInfo?.email}</span>
                   </div>
                   <div className="adm-dropdown-item"
-                    onClick={() => { navigate("/admin/profile"); setDropdownOpen(false); }}>
+                    onClick={() => { navigate("/manage-x9k2/profile"); setDropdownOpen(false); }}>
                     <User size={14} /> {t("প্রোফাইল", "Profile")}
                   </div>
                   <div className="adm-dropdown-danger" onClick={handleLogout}>
