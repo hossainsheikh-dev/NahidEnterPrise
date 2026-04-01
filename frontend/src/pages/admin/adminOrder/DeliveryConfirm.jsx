@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, ChevronDown, Loader2, X,
@@ -29,43 +30,44 @@ const SORT_OPTS = (t) => [
   { value:"total",  label:t("সর্বোচ্চ মোট","Highest Total") },
 ];
 
+/* ── Portal ── */
+function ModalPortal({ children }) {
+  return createPortal(children, document.body);
+}
+
 /* ─────────────── Screenshot Viewer ─────────────── */
 function ScreenshotViewer({ url }) {
   const [zoomed, setZoomed] = useState(false);
   if (!url) return (
-    <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(255,255,255,0.1)" }}>
-      <ImageIcon size={12} style={{ color: "#334155" }}/>
-      <span className="text-xs italic" style={{ color: "#475569" }}>No screenshot uploaded</span>
+    <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(99,102,241,0.04)", border:"1px dashed rgba(99,102,241,0.2)", borderRadius:10, padding:"10px 14px" }}>
+      <ImageIcon size={13} style={{ color:"#c4cdd8" }} />
+      <span style={{ fontSize:12, color:"#94a3b8", fontStyle:"italic" }}>No screenshot uploaded</span>
     </div>
   );
   return (
     <>
-      <div onClick={() => setZoomed(true)}
-        className="relative rounded-xl overflow-hidden cursor-zoom-in group"
-        style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-        <img src={url} alt="payment proof" className="w-full max-h-44 object-contain p-1"
-          style={{ background: "rgba(255,255,255,0.03)" }}/>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-          style={{ background: "rgba(0,0,0,0.2)" }}>
-          <span className="text-xs font-semibold text-white px-3 py-1.5 rounded-lg"
-            style={{ background: "rgba(0,0,0,0.6)" }}>🔍 Click to zoom</span>
+      <div onClick={() => setZoomed(true)} style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid rgba(99,102,241,0.12)", cursor:"zoom-in" }}>
+        <img src={url} alt="payment proof" style={{ width:"100%", maxHeight:176, objectFit:"contain", background:"#f8f9ff", padding:4, display:"block" }} />
+        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0)", transition:"background .2s" }}
+          onMouseEnter={e => e.currentTarget.style.background="rgba(0,0,0,0.12)"}
+          onMouseLeave={e => e.currentTarget.style.background="rgba(0,0,0,0)"}>
+          <span style={{ fontSize:11, fontWeight:600, color:"#fff", background:"rgba(0,0,0,0.55)", padding:"4px 10px", borderRadius:8 }}>🔍 Click to zoom</span>
         </div>
       </div>
       <AnimatePresence>
         {zoomed && (
-          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6"
-            style={{ background: "rgba(0,0,0,0.92)" }}
-            onClick={() => setZoomed(false)}>
-            <motion.img initial={{ scale:0.85 }} animate={{ scale:1 }} exit={{ scale:0.85 }}
-              transition={{ type:"spring", stiffness:280, damping:22 }}
-              src={url} alt="proof" className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain"/>
-            <button className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,255,255,0.15)" }}>
-              <X size={18} color="#fff"/>
-            </button>
-          </motion.div>
+          <ModalPortal>
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}
+              onClick={() => setZoomed(false)}>
+              <motion.img initial={{ scale:0.85 }} animate={{ scale:1 }} exit={{ scale:0.85 }}
+                transition={{ type:"spring", stiffness:280, damping:22 }}
+                src={url} alt="proof" style={{ maxWidth:"100%", maxHeight:"90vh", borderRadius:16, objectFit:"contain" }} />
+              <button onClick={() => setZoomed(false)} style={{ position:"absolute", top:20, right:20, width:40, height:40, borderRadius:"50%", background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <X size={18} style={{ color:"#fff" }} />
+              </button>
+            </motion.div>
+          </ModalPortal>
         )}
       </AnimatePresence>
     </>
@@ -75,313 +77,289 @@ function ScreenshotViewer({ url }) {
 /* ─────────────── Order Detail Modal ─────────────── */
 function OrderDetailModal({ order, onClose, onSuccess, onFail, t }) {
   const [note, setNote] = useState("");
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   if (!order) return null;
   const cfg    = STATUS_CFG[order.status] || STATUS_CFG.confirmed;
   const isDig  = order.paymentMethod !== "cod";
   const proofOk = isDig && order.transactionId && order.screenshotUrl;
   const canAct = order.status === "confirmed";
 
+  const sec = { background:"rgba(99,102,241,0.025)", border:"1px solid rgba(99,102,241,0.09)", borderRadius:16, padding:"14px 16px" };
+  const secLabel = { fontSize:10, fontWeight:800, color:"#94a3b8", letterSpacing:".1em", textTransform:"uppercase", marginBottom:10, display:"block" };
+
   return (
-    <AnimatePresence>
-      <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-        onClick={onClose}>
+    <ModalPortal>
+      <AnimatePresence>
         <motion.div
-          initial={{ opacity:0, scale:0.95, y:16 }} animate={{ opacity:1, scale:1, y:0 }}
-          exit={{ opacity:0, scale:0.95, y:16 }}
-          transition={{ type:"spring", stiffness:300, damping:28 }}
-          className="w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden rounded-2xl"
-          style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}
-          onClick={e => e.stopPropagation()}>
+          initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+          style={{
+            position:"fixed", inset:0, zIndex:9000,
+            background:"rgba(15,23,42,0.55)",
+            backdropFilter:"blur(10px)",
+            WebkitBackdropFilter:"blur(10px)",
+            display:"flex", alignItems:"flex-start", justifyContent:"center",
+            padding:"16px 16px 32px", overflowY:"auto",
+          }}
+          onClick={onClose}>
+          <motion.div
+            initial={{ opacity:0, y:-24, scale:0.97 }}
+            animate={{ opacity:1, y:0, scale:1 }}
+            exit={{ opacity:0, y:-16, scale:0.97 }}
+            transition={{ type:"spring", stiffness:320, damping:28 }}
+            style={{
+              background:"#ffffff", borderRadius:24,
+              border:"1px solid rgba(99,102,241,0.14)",
+              boxShadow:"0 0 0 1px rgba(99,102,241,0.06), 0 32px 80px rgba(15,23,42,0.28)",
+              width:"100%", maxWidth:520,
+              display:"flex", flexDirection:"column", overflow:"hidden", marginTop:0,
+            }}
+            onClick={e => e.stopPropagation()}>
 
-          <div className="h-1 w-full rounded-t-2xl" style={{ background: cfg.barBg }}/>
+            <div style={{ height:4, background:`linear-gradient(90deg, ${cfg.barBg}, ${cfg.barBg}cc)`, flexShrink:0 }} />
 
-          {/* header */}
-          <div className="flex items-center justify-between px-5 py-4"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}>
-                <cfg.icon size={15} style={{ color: cfg.color }}/>
-              </div>
-              <div>
-                <p className="text-sm font-bold" style={{ color: "#f1f5f9" }}>{order.orderId}</p>
-                <p className="text-xs font-semibold" style={{ color: cfg.color }}>{cfg.label}</p>
-              </div>
-            </div>
-            <button onClick={onClose}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition"
-              style={{ background: "rgba(255,255,255,0.06)", color: "#64748b" }}>
-              <X size={13}/>
-            </button>
-          </div>
-
-          <div className="overflow-y-auto flex-1 p-5 space-y-4">
-
-            {/* cancellation reason */}
-            {order.status === "cancelled" && (
-              <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
-                style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
-                <AlertTriangle size={13} style={{ color: "#f87171", flexShrink: 0, marginTop: "2px" }}/>
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", flexShrink:0, borderBottom:"1px solid rgba(99,102,241,0.08)", background:"rgba(99,102,241,0.02)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ width:40, height:40, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", background:cfg.bg, border:`1.5px solid ${cfg.border}`, flexShrink:0 }}>
+                  <cfg.icon size={18} style={{ color:cfg.color }} />
+                </div>
                 <div>
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: "#f87171" }}>{t("বাতিলের কারণ","Cancellation Reason")}</p>
-                  <p className="text-sm" style={{ color: "#fca5a5" }}>{order.cancellationReason || t("কোনো কারণ দেওয়া হয়নি","No reason provided")}</p>
-                </div>
-              </div>
-            )}
-
-            {/* delivery note */}
-            {order.deliveryNote && order.status !== "cancelled" && (
-              <div className="flex items-start gap-2.5 rounded-xl px-4 py-3"
-                style={{ background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.2)" }}>
-                <FileText size={13} style={{ color: "#38bdf8", flexShrink: 0, marginTop: "2px" }}/>
-                <div>
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: "#38bdf8" }}>{t("ডেলিভারি নোট","Delivery Note")}</p>
-                  <p className="text-sm" style={{ color: "#7dd3fc" }}>{order.deliveryNote}</p>
-                </div>
-              </div>
-            )}
-
-            {/* customer */}
-            <div className="rounded-xl p-4 space-y-2"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "#475569" }}>{t("কাস্টমার","Customer")}</p>
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg,rgba(167,139,250,0.2),rgba(201,168,76,0.2))", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span className="text-sm font-bold" style={{ color: "#c9a84c" }}>{order.customer?.name?.[0]?.toUpperCase()}</span>
-                </div>
-                <span className="text-sm font-semibold" style={{ color: "#e2e8f0" }}>{order.customer?.name}</span>
-              </div>
-              <p className="text-sm flex items-center gap-1.5" style={{ color: "#94a3b8" }}>
-                <Phone size={11} style={{ color: "#475569" }}/>{order.customer?.phone}
-              </p>
-              <p className="text-sm flex items-start gap-1.5" style={{ color: "#94a3b8" }}>
-                <MapPin size={11} style={{ color: "#475569", marginTop: "2px", flexShrink: 0 }}/>
-                {order.customer?.address}, {order.customer?.thana}, {order.customer?.district}
-              </p>
-              {order.customer?.note && (
-                <p className="text-xs italic px-3 py-2 rounded-lg" style={{ color: "#64748b", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  "{order.customer.note}"
-                </p>
-              )}
-            </div>
-
-            {/* items */}
-            <div className="rounded-xl p-4"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#475569" }}>
-                {t("পণ্যসমূহ","Products")} ({order.items?.length})
-              </p>
-              <div className="space-y-2">
-                {order.items?.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div className="w-10 h-10 rounded-lg flex-shrink-0 overflow-hidden"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                      {item.image
-                        ? <img src={item.image} alt={item.name} className="w-full h-full object-contain p-0.5"/>
-                        : <div className="w-full h-full flex items-center justify-center"><Package size={13} style={{ color: "#334155" }}/></div>
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate" style={{ color: "#e2e8f0" }}>{item.name}</p>
-                      <p className="text-xs" style={{ color: "#64748b" }}>৳{(item.salePrice || item.price || 0).toLocaleString()} × {item.quantity}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-bold" style={{ color: "#c9a84c" }}>
-                        ৳{((item.salePrice || item.price || 0) * (item.quantity || 1)).toLocaleString()}
-                      </p>
-                      {canAct && (
-                        <p className="text-[10px]" style={{ color: "#f87171" }}>−{item.quantity} {t("স্টক","stock")}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* payment proof */}
-            {isDig && (
-              <div className="rounded-xl p-4"
-                style={{
-                  background: proofOk ? "rgba(52,211,153,0.05)" : "rgba(232,164,39,0.05)",
-                  border: `1px solid ${proofOk ? "rgba(52,211,153,0.2)" : "rgba(232,164,39,0.2)"}`,
-                }}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#475569" }}>
-                    {t("পেমেন্ট","Payment")} — {PAY_LABEL[order.paymentMethod]}
-                  </p>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                    style={{ background: proofOk ? "rgba(52,211,153,0.1)" : "rgba(232,164,39,0.1)", color: proofOk ? "#34d399" : "#e8a427" }}>
-                    {proofOk ? t("✓ সম্পূর্ণ","✓ Complete") : t("⚠ অসম্পূর্ণ","⚠ Incomplete")}
+                  <p style={{ fontSize:10, fontWeight:800, color:"#94a3b8", letterSpacing:".1em", textTransform:"uppercase" }}>{t("অর্ডার বিবরণ","Order Details")}</p>
+                  <p style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginTop:1, letterSpacing:"-0.02em" }}>{order.orderId}</p>
+                  <span style={{ fontSize:11, fontWeight:700, color:cfg.color, display:"flex", alignItems:"center", gap:4, marginTop:2 }}>
+                    <span style={{ width:6, height:6, borderRadius:"50%", background:cfg.dot, display:"inline-block" }} />
+                    {cfg.label}
                   </span>
                 </div>
-                <div className="space-y-1.5 mb-3">
-                  {[
-                    { icon:Phone, label:t("প্রেরক","Sender"), val:order.paymentNumber, mono:false },
-                    { icon:Hash,  label:t("ট্রানজেকশন আইডি","TrxID"), val:order.transactionId, mono:true },
-                  ].map(r => (
-                    <div key={r.label} className="flex items-center justify-between rounded-lg px-3 py-2"
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span className="text-xs flex items-center gap-1.5" style={{ color: "#475569" }}>
-                        <r.icon size={10}/>{r.label}
-                      </span>
-                      <span className={`text-xs font-semibold ${r.mono ? "font-mono" : ""}`}
-                        style={{ color: r.val ? "#e2e8f0" : "#f87171", fontStyle: r.val ? "normal" : "italic" }}>
-                        {r.val || t("দেওয়া হয়নি","Not provided")}
-                      </span>
+              </div>
+              <button onClick={onClose} style={{ width:34, height:34, borderRadius:10, background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.13)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                <X size={15} style={{ color:"#6366f1" }} />
+              </button>
+            </div>
+
+            <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:10 }}>
+
+              {order.status === "cancelled" && (
+                <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:"rgba(248,113,113,0.06)", border:"1px solid rgba(248,113,113,0.18)", borderRadius:14, padding:"12px 14px" }}>
+                  <AlertTriangle size={13} style={{ color:"#f87171", flexShrink:0, marginTop:1 }} />
+                  <div>
+                    <p style={{ fontSize:11, fontWeight:700, color:"#f87171", marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>{t("বাতিলের কারণ","Cancellation Reason")}</p>
+                    <p style={{ fontSize:13, color:"#e11d48" }}>{order.cancellationReason || t("কোনো কারণ দেওয়া হয়নি","No reason provided")}</p>
+                  </div>
+                </div>
+              )}
+
+              {order.deliveryNote && order.status !== "cancelled" && (
+                <div style={{ display:"flex", alignItems:"flex-start", gap:10, background:"rgba(56,189,248,0.06)", border:"1px solid rgba(56,189,248,0.18)", borderRadius:14, padding:"12px 14px" }}>
+                  <FileText size={13} style={{ color:"#38bdf8", flexShrink:0, marginTop:1 }} />
+                  <div>
+                    <p style={{ fontSize:11, fontWeight:700, color:"#38bdf8", marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>{t("ডেলিভারি নোট","Delivery Note")}</p>
+                    <p style={{ fontSize:13, color:"#0284c7" }}>{order.deliveryNote}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Customer */}
+              <div style={sec}>
+                <span style={secLabel}>{t("কাস্টমার","Customer")}</span>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:36, height:36, borderRadius:11, flexShrink:0, background:"linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.12))", border:"1px solid rgba(99,102,241,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:800, color:"#6366f1" }}>
+                      {order.customer?.name?.[0]?.toUpperCase()}
+                    </div>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#0f172a" }}>{order.customer?.name}</span>
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:7 }}><Phone size={11} style={{ color:"#a8b4c8", flexShrink:0 }} /><span style={{ fontSize:13, color:"#64748b" }}>{order.customer?.phone}</span></div>
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:7 }}><MapPin size={11} style={{ color:"#a8b4c8", flexShrink:0, marginTop:2 }} /><span style={{ fontSize:13, color:"#64748b" }}>{order.customer?.address}, {order.customer?.thana}, {order.customer?.district}</span></div>
+                  {order.customer?.note && <p style={{ fontSize:12, color:"#94a3b8", fontStyle:"italic", background:"rgba(99,102,241,0.04)", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(99,102,241,0.08)" }}>"{order.customer.note}"</p>}
+                </div>
+              </div>
+
+              {/* Items */}
+              <div style={sec}>
+                <span style={secLabel}>{t("পণ্যসমূহ","Products")} ({order.items?.length})</span>
+                <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                  {order.items?.map((item, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:10, background:"#fff", borderRadius:11, padding:"8px 10px", border:"1px solid rgba(99,102,241,0.07)" }}>
+                      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, background:"rgba(99,102,241,0.04)", border:"1px solid rgba(99,102,241,0.09)", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {item.image ? <img src={item.image} alt={item.name} style={{ width:"100%", height:"100%", objectFit:"contain", padding:2 }} /> : <Package size={13} style={{ color:"#c4cdd8" }} />}
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p style={{ fontSize:12.5, fontWeight:600, color:"#1e293b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.name}</p>
+                        <p style={{ fontSize:12, color:"#94a3b8", marginTop:2 }}>৳{(item.salePrice||item.price||0).toLocaleString()} × {item.quantity}</p>
+                      </div>
+                      <div style={{ textAlign:"right", flexShrink:0 }}>
+                        <p style={{ fontSize:13.5, fontWeight:700, color:"#1e293b" }}>৳{((item.salePrice||item.price||0)*(item.quantity||1)).toLocaleString()}</p>
+                        {canAct && <p style={{ fontSize:10, color:"#f87171", marginTop:2 }}>−{item.quantity} {t("স্টক","stock")}</p>}
+                      </div>
                     </div>
                   ))}
                 </div>
-                <ScreenshotViewer url={order.screenshotUrl}/>
               </div>
-            )}
 
-            {/* summary */}
-            <div className="rounded-xl p-4 space-y-1.5"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: "#475569" }}>{t("সারসংক্ষেপ","Summary")}</p>
-              <div className="flex justify-between text-sm" style={{ color: "#64748b" }}>
-                <span>{t("সাবটোটাল","Subtotal")}</span><span>৳{order.subtotal?.toLocaleString()}</span>
-              </div>
-              {order.savings > 0 && (
-                <div className="flex justify-between text-sm" style={{ color: "#34d399" }}>
-                  <span>{t("সাশ্রয়","Savings")}</span><span>−৳{order.savings?.toLocaleString()}</span>
+              {/* Payment */}
+              {isDig && (
+                <div style={{ ...sec, background:proofOk?"rgba(52,211,153,0.05)":"rgba(232,164,39,0.05)", border:`1px solid ${proofOk?"rgba(52,211,153,0.18)":"rgba(232,164,39,0.2)"}` }}>
+                  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
+                    <span style={{ ...secLabel, marginBottom:0 }}>{t("পেমেন্ট","Payment")} — {PAY_LABEL[order.paymentMethod]}</span>
+                    <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:99, background:proofOk?"rgba(52,211,153,0.1)":"rgba(232,164,39,0.1)", color:proofOk?"#059669":"#d97706", border:`1px solid ${proofOk?"rgba(52,211,153,0.2)":"rgba(232,164,39,0.2)"}` }}>
+                      {proofOk ? t("✓ সম্পূর্ণ","✓ Complete") : t("⚠ অসম্পূর্ণ","⚠ Incomplete")}
+                    </span>
+                  </div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:10 }}>
+                    {[{ icon:Phone, label:t("প্রেরক","Sender"), val:order.paymentNumber, mono:false },{ icon:Hash, label:t("ট্রানজেকশন আইডি","TrxID"), val:order.transactionId, mono:true }].map(r => (
+                      <div key={r.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fff", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(99,102,241,0.08)" }}>
+                        <span style={{ fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:5 }}><r.icon size={10} />{r.label}</span>
+                        <span style={{ fontSize:12, fontWeight:600, fontFamily:r.mono?"monospace":"inherit", color:r.val?"#374151":"#f87171", fontStyle:r.val?"normal":"italic" }}>{r.val||t("দেওয়া হয়নি","Not provided")}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <ScreenshotViewer url={order.screenshotUrl} />
                 </div>
               )}
-              <div className="flex justify-between text-sm" style={{ color: "#64748b" }}>
-                <span>{t("ডেলিভারি","Delivery")}</span>
-                <span>{order.deliveryCharge === 0 ? t("বিনামূল্যে","Free") : `৳${order.deliveryCharge}`}</span>
-              </div>
-              <div className="my-1.5" style={{ height: "1px", background: "rgba(255,255,255,0.07)" }}/>
-              <div className="flex justify-between text-sm font-bold" style={{ color: "#f1f5f9" }}>
-                <span>{t("মোট","Total")}</span>
-                <span style={{ color: "#c9a84c" }}>৳{order.total?.toLocaleString()}</span>
-              </div>
-            </div>
 
-            {/* delivery note input */}
-            {canAct && (
-              <div className="rounded-xl p-4"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1.5" style={{ color: "#475569" }}>
-                  <FileText size={10}/> {t("ডেলিভারি নোট (ঐচ্ছিক)","Delivery Note (optional)")}
-                </p>
-                <input type="text" value={note} onChange={e => setNote(e.target.value)}
-                  placeholder={t("যেমন: গেটে রেখেছি...","e.g. Left at gate...")}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#e2e8f0" }}/>
+              {/* Summary */}
+              <div style={sec}>
+                <span style={secLabel}>{t("সারসংক্ষেপ","Summary")}</span>
+                <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                  {[
+                    { label:t("সাবটোটাল","Subtotal"), val:`৳${order.subtotal?.toLocaleString()}`, color:"#64748b" },
+                    ...(order.savings>0?[{ label:t("সাশ্রয়","Savings"), val:`−৳${order.savings?.toLocaleString()}`, color:"#059669" }]:[]),
+                    { label:t("ডেলিভারি","Delivery"), val:order.deliveryCharge===0?t("বিনামূল্যে","Free"):`৳${order.deliveryCharge}`, color:"#64748b" },
+                  ].map(r => (
+                    <div key={r.label} style={{ display:"flex", justifyContent:"space-between" }}>
+                      <span style={{ fontSize:13, color:"#94a3b8" }}>{r.label}</span>
+                      <span style={{ fontSize:13, color:r.color, fontWeight:500 }}>{r.val}</span>
+                    </div>
+                  ))}
+                  <div style={{ height:1, background:"rgba(99,102,241,0.08)", margin:"2px 0" }} />
+                  <div style={{ display:"flex", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#1e293b" }}>{t("মোট","Total")}</span>
+                    <span style={{ fontSize:15, fontWeight:900, color:"#0f172a" }}>৳{order.total?.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* action buttons */}
-          {canAct && (
-            <div className="px-5 pb-5 pt-3 flex gap-2.5"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-              <button onClick={() => { onSuccess(order, note); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition"
-                style={{ background: "linear-gradient(135deg,#34d399,#10b981)", color: "#fff", boxShadow: "0 4px 16px rgba(52,211,153,0.3)" }}>
-                <CheckCircle size={14}/> {t("ডেলিভার্ড ✓","Delivered ✓")}
-              </button>
-              <button onClick={() => { onFail(order, note); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition"
-                style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "#f87171" }}>
-                <XCircle size={14}/> {t("ব্যর্থ ✗","Failed ✗")}
-              </button>
+              {/* Delivery note input */}
+              {canAct && (
+                <div style={sec}>
+                  <span style={secLabel}>{t("ডেলিভারি নোট (ঐচ্ছিক)","Delivery Note (optional)")}</span>
+                  <input type="text" value={note} onChange={e => setNote(e.target.value)}
+                    placeholder={t("যেমন: গেটে রেখেছি...","e.g. Left at gate...")}
+                    style={{ width:"100%", outline:"none", background:"#f8f9ff", border:"1.5px solid rgba(99,102,241,0.14)", borderRadius:13, padding:"10px 14px", fontSize:13, color:"#1e293b", fontFamily:"'Plus Jakarta Sans',sans-serif", transition:"all .15s" }}
+                    onFocus={e => { e.target.style.background="#fff"; e.target.style.borderColor="rgba(99,102,241,0.45)"; e.target.style.boxShadow="0 0 0 4px rgba(99,102,241,0.08)"; }}
+                    onBlur={e => { e.target.style.background="#f8f9ff"; e.target.style.borderColor="rgba(99,102,241,0.14)"; e.target.style.boxShadow="none"; }} />
+                </div>
+              )}
+
+              <p style={{ fontSize:11.5, textAlign:"center", color:"#c4cdd8" }}>{new Date(order.createdAt).toLocaleString("en-BD")}</p>
+
+              {/* Action buttons */}
+              {canAct && (
+                <div style={{ display:"flex", gap:10, paddingTop:4 }}>
+                  <motion.button whileHover={{ scale:1.02, y:-1 }} whileTap={{ scale:0.97 }}
+                    onClick={() => { onSuccess(order, note); onClose(); }}
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:7, background:"linear-gradient(135deg,#34d399,#10b981)", border:"none", color:"#fff", borderRadius:13, padding:"13px 16px", fontSize:13.5, fontWeight:700, cursor:"pointer", boxShadow:"0 6px 20px rgba(52,211,153,0.35)", letterSpacing:"-.01em" }}>
+                    <CheckCircle size={15} /> {t("ডেলিভার্ড ✓","Delivered ✓")}
+                  </motion.button>
+                  <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }}
+                    onClick={() => { onFail(order, note); onClose(); }}
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:7, background:"rgba(248,113,113,0.07)", border:"1.5px solid rgba(248,113,113,0.25)", color:"#e11d48", borderRadius:13, padding:"13px 16px", fontSize:13.5, fontWeight:700, cursor:"pointer", letterSpacing:"-.01em", transition:"all .15s" }}
+                    onMouseEnter={e => e.currentTarget.style.background="rgba(248,113,113,0.14)"}
+                    onMouseLeave={e => e.currentTarget.style.background="rgba(248,113,113,0.07)"}>
+                    <XCircle size={15} /> {t("ব্যর্থ ✗","Failed ✗")}
+                  </motion.button>
+                </div>
+              )}
             </div>
-          )}
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      </AnimatePresence>
+    </ModalPortal>
   );
 }
 
 /* ─────────────── Confirm Action Modal ─────────────── */
 function ConfirmActionModal({ order, type, note, onClose, onConfirm, loading, t }) {
   const isSuccess = type === "success";
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   if (!order) return null;
   return (
-    <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
-      onClick={onClose}>
-      <motion.div initial={{ scale:0.92, opacity:0, y:10 }} animate={{ scale:1, opacity:1, y:0 }}
-        exit={{ scale:0.92, opacity:0, y:10 }}
-        transition={{ type:"spring", stiffness:300, damping:25 }}
-        className="w-full max-w-sm p-7 rounded-2xl"
-        style={{ background: "#111827", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 30px 80px rgba(0,0,0,0.6)" }}
-        onClick={e => e.stopPropagation()}>
+    <ModalPortal>
+      <AnimatePresence>
+        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+          style={{
+            position:"fixed", inset:0, zIndex:9100,
+            background:"rgba(15,23,42,0.6)",
+            backdropFilter:"blur(12px)",
+            WebkitBackdropFilter:"blur(12px)",
+            display:"flex", alignItems:"center", justifyContent:"center", padding:16,
+          }}
+          onClick={onClose}>
+          <motion.div
+            initial={{ scale:0.9, opacity:0, y:16 }} animate={{ scale:1, opacity:1, y:0 }}
+            exit={{ scale:0.9, opacity:0, y:16 }}
+            transition={{ type:"spring", stiffness:360, damping:30 }}
+            style={{ background:"#ffffff", borderRadius:22, border:"1px solid rgba(99,102,241,0.14)", boxShadow:"0 40px 100px rgba(15,23,42,0.3)", padding:"28px 24px", width:"100%", maxWidth:380 }}
+            onClick={e => e.stopPropagation()}>
 
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5"
-          style={{ background: isSuccess ? "rgba(52,211,153,0.1)" : "rgba(248,113,113,0.1)", border: `1px solid ${isSuccess ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}` }}>
-          {isSuccess
-            ? <CheckCircle size={26} style={{ color: "#34d399" }}/>
-            : <XCircle    size={26} style={{ color: "#f87171" }}/>
-          }
-        </div>
+            <div style={{ width:60, height:60, borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 18px", background:isSuccess?"rgba(52,211,153,0.1)":"rgba(248,113,113,0.08)", border:`1.5px solid ${isSuccess?"rgba(52,211,153,0.25)":"rgba(248,113,113,0.22)"}` }}>
+              {isSuccess ? <CheckCircle size={28} style={{ color:"#34d399" }} /> : <XCircle size={28} style={{ color:"#f87171" }} />}
+            </div>
 
-        <h3 className="text-base font-bold text-center mb-1" style={{ color: "#f1f5f9", letterSpacing: "-0.01em" }}>
-          {isSuccess ? t("ডেলিভারি নিশ্চিত করবেন?","Confirm Delivery?") : t("ব্যর্থ হিসেবে চিহ্নিত করবেন?","Mark as Failed?")}
-        </h3>
-        <p className="text-sm text-center mb-4" style={{ color: "#64748b" }}>
-          <span style={{ fontWeight: 600, color: "#94a3b8" }}>{order.orderId}</span>
-        </p>
+            <h3 style={{ fontSize:17, fontWeight:900, color:"#0f172a", textAlign:"center", fontFamily:"'Plus Jakarta Sans',sans-serif", letterSpacing:"-.025em", marginBottom:6 }}>
+              {isSuccess ? t("ডেলিভারি নিশ্চিত করবেন?","Confirm Delivery?") : t("ব্যর্থ হিসেবে চিহ্নিত করবেন?","Mark as Failed?")}
+            </h3>
+            <p style={{ fontSize:13, color:"#94a3b8", textAlign:"center", marginBottom:18 }}>
+              <span style={{ fontWeight:700, color:"#374151" }}>{order.orderId}</span>
+            </p>
 
-        <div className="rounded-xl p-3 mb-4 space-y-1"
-          style={{ background: isSuccess ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)", border: `1px solid ${isSuccess ? "rgba(52,211,153,0.15)" : "rgba(248,113,113,0.15)"}` }}>
-          <p className="text-xs font-semibold" style={{ color: isSuccess ? "#34d399" : "#f87171" }}>
-            {isSuccess ? t("✓ এটি করবে:","✓ This will:") : t("⚠ এটি করবে:","⚠ This will:")}
-          </p>
-          {isSuccess ? (
-            <>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("স্ট্যাটাস → ডেলিভার্ড","Status → Delivered")}</p>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("পেমেন্ট → পরিশোধিত","Payment → Paid")}</p>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("সকল পণ্যের স্টক কমবে","Stock decremented for all items")}</p>
-            </>
-          ) : (
-            <>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("স্ট্যাটাস → বাতিল","Status → Cancelled")}</p>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("পেমেন্ট → ব্যর্থ","Payment → Failed")}</p>
-              <p className="text-xs pl-2" style={{ color: "#64748b" }}>• {t("স্টক অপরিবর্তিত","Stock unchanged")}</p>
-            </>
-          )}
-        </div>
+            <div style={{ borderRadius:13, padding:"12px 14px", marginBottom:16, background:isSuccess?"rgba(52,211,153,0.06)":"rgba(248,113,113,0.05)", border:`1px solid ${isSuccess?"rgba(52,211,153,0.18)":"rgba(248,113,113,0.15)"}` }}>
+              {(isSuccess
+                ? [t("স্ট্যাটাস → ডেলিভার্ড","Status → Delivered"), t("পেমেন্ট → পরিশোধিত","Payment → Paid"), t("সকল পণ্যের স্টক কমবে","Stock decremented")]
+                : [t("স্ট্যাটাস → বাতিল","Status → Cancelled"), t("পেমেন্ট → ব্যর্থ","Payment → Failed")]
+              ).map(txt => (
+                <p key={txt} style={{ fontSize:12, color:isSuccess?"#059669":"#e11d48", display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                  <span style={{ width:4, height:4, borderRadius:"50%", background:isSuccess?"#34d399":"#f87171", display:"inline-block", flexShrink:0 }} />{txt}
+                </p>
+              ))}
+            </div>
 
-        {note && (
-          <div className="rounded-xl p-3 mb-4"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "#475569" }}>{t("নোট","Note")}</p>
-            <p className="text-sm" style={{ color: "#94a3b8" }}>"{note}"</p>
-          </div>
-        )}
+            {note && (
+              <div style={{ background:"rgba(99,102,241,0.04)", border:"1px solid rgba(99,102,241,0.10)", borderRadius:12, padding:"10px 14px", marginBottom:16 }}>
+                <p style={{ fontSize:12, color:"#64748b", fontStyle:"italic" }}>"{note}"</p>
+              </div>
+            )}
 
-        <div className="flex gap-3">
-          <button onClick={onClose} disabled={loading}
-            className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}>
-            {t("বাতিল","Cancel")}
-          </button>
-          <button onClick={onConfirm} disabled={loading}
-            className="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition"
-            style={{
-              background: isSuccess ? "linear-gradient(135deg,#34d399,#10b981)" : "linear-gradient(135deg,#f87171,#ef4444)",
-              color: "#fff",
-              boxShadow: isSuccess ? "0 4px 16px rgba(52,211,153,0.3)" : "0 4px 16px rgba(248,113,113,0.3)",
-              opacity: loading ? 0.6 : 1,
-            }}>
-            {loading
-              ? <Loader2 size={14} className="animate-spin"/>
-              : isSuccess
-                ? <><CheckCircle size={13}/> {t("নিশ্চিত","Confirm")}</>
-                : <><XCircle size={13}/> {t("ব্যর্থ চিহ্নিত","Mark Failed")}</>
-            }
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={onClose} disabled={loading}
+                style={{ flex:1, padding:"12px 16px", borderRadius:13, fontSize:13.5, fontWeight:600, color:"#475569", cursor:"pointer", background:"rgba(99,102,241,0.06)", border:"1px solid rgba(99,102,241,0.13)", transition:"all .15s" }}>
+                {t("বাতিল","Cancel")}
+              </button>
+              <motion.button onClick={onConfirm} disabled={loading}
+                whileHover={!loading?{ scale:1.02, y:-1 }:{}} whileTap={!loading?{ scale:0.97 }:{}}
+                style={{ flex:1, padding:"12px 16px", borderRadius:13, fontSize:13.5, fontWeight:700, color:"#fff", cursor:loading?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, border:"none", background:isSuccess?"linear-gradient(135deg,#34d399,#10b981)":"linear-gradient(135deg,#f87171,#ef4444)", boxShadow:isSuccess?"0 6px 20px rgba(52,211,153,0.35)":"0 6px 20px rgba(248,113,113,0.32)", letterSpacing:"-.01em" }}>
+                {loading ? <Loader2 size={14} className="animate-spin" />
+                  : isSuccess ? <><CheckCircle size={14} /> {t("নিশ্চিত","Confirm")}</>
+                  : <><XCircle size={14} /> {t("ব্যর্থ চিহ্নিত","Mark Failed")}</>}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    </ModalPortal>
   );
 }
 
@@ -472,276 +450,267 @@ export default function DeliveryConfirm() {
   const revenue = orders.filter(o => o.status === "delivered").reduce((s, o) => s + (o.total || 0), 0);
   const sortOpts = SORT_OPTS(t);
 
+  const statCards = [
+    { labelBn:"কনফার্মড", labelEn:"Confirmed", count:counts.confirmed, color:"#0284c7", soft:"rgba(56,189,248,0.08)",  border:"rgba(56,189,248,0.22)",  grad:"linear-gradient(135deg,#38bdf8,#0ea5e9)",  icon:CheckCircle },
+    { labelBn:"ডেলিভার্ড",labelEn:"Delivered", count:counts.delivered, color:"#059669", soft:"rgba(52,211,153,0.08)",  border:"rgba(52,211,153,0.22)",  grad:"linear-gradient(135deg,#34d399,#10b981)",  icon:Star        },
+    { labelBn:"বাতিল",    labelEn:"Cancelled", count:counts.cancelled, color:"#e11d48", soft:"rgba(248,113,113,0.08)", border:"rgba(248,113,113,0.22)", grad:"linear-gradient(135deg,#fb7185,#f43f5e)",  icon:XCircle     },
+    { labelBn:"রেভিনিউ",  labelEn:"Revenue",   count:`৳${revenue.toLocaleString()}`, color:"#7c3aed", soft:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.22)", grad:"linear-gradient(135deg,#a78bfa,#8b5cf6)", icon:TrendingUp  },
+  ];
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .dc-wrap * { box-sizing: border-box; }
-        .dc-wrap { font-family: 'DM Sans', sans-serif; }
-        .dc-search-input {
-          background: transparent; border: none; outline: none;
-          font-size: 13px; color: #e2e8f0; width: 100%;
-          font-family: 'DM Sans', sans-serif;
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        .dc-wrap, .dc-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* ── stat grid: 4 col desktop, 2×2 mobile ── */
+        .dc-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
         }
-        .dc-search-input::placeholder { color: #475569; }
+        @media (max-width: 640px) {
+          .dc-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+        }
+
+        /* ── table ── */
+        .dc-col-header, .dc-row {
+          display: grid;
+          align-items: center;
+          grid-template-columns: 22px 1fr 1fr 72px 36px;
+          gap: 8px;
+        }
         .dc-col-header {
-          display: grid; align-items: center; padding: 11px 20px;
-          grid-template-columns: 28px 1fr 1fr 1fr 60px 80px 80px;
-          gap: 8px; background: #0f1929;
-          border-bottom: 1px solid rgba(255,255,255,0.07);
+          padding: 10px 20px;
+          font-size: 10.5px; font-weight: 700; color: #94a3b8;
+          letter-spacing: .06em; text-transform: uppercase;
+          border-bottom: 1px solid rgba(99,102,241,0.08);
+          background: rgba(99,102,241,0.02);
           position: sticky; top: 0; z-index: 10;
         }
         .dc-row {
-          display: grid; align-items: center; padding: 13px 20px;
-          grid-template-columns: 28px 1fr 1fr 1fr 60px 80px 80px;
-          gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);
-          transition: background 0.15s; cursor: pointer;
-        }
-        @media (max-width: 640px) {
-          .dc-col-header { grid-template-columns: 28px 1fr 80px; }
-          .dc-row { grid-template-columns: 28px 1fr 80px; }
-          .dc-hide-sm { display: none; }
+          padding: 12px 20px;
+          border-bottom: 1px solid rgba(99,102,241,0.06);
+          transition: background 0.12s; cursor: pointer;
         }
         .dc-row:last-child { border-bottom: none; }
-        .dc-row:hover { background: rgba(255,255,255,0.03); }
+        .dc-row:hover { background: rgba(99,102,241,0.025); }
+
+        @media (max-width: 640px) {
+          .dc-col-header, .dc-row {
+            grid-template-columns: 16px 1fr 1fr 58px 32px;
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+          .dc-hide-sm { display: none !important; }
+        }
+        @media (max-width: 400px) {
+          .dc-col-header, .dc-row {
+            grid-template-columns: 14px 1fr 1fr 50px 28px;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+          }
+        }
       `}</style>
 
-      <div className="dc-wrap max-w-5xl mx-auto pb-10">
+      <div className="dc-wrap" style={{ padding:"0 8px 32px" }}>
         <AnimatePresence mode="wait">
           <motion.div key="dc" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-            exit={{ opacity:0 }} transition={{ duration:0.25 }} className="space-y-4">
+            exit={{ opacity:0 }} transition={{ duration:0.25 }}>
 
-            {/* ══ HEADER CARD ══ */}
-            <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
-              transition={{ duration:0.4 }}
-              className="relative rounded-2xl overflow-hidden"
-              style={{ background: "linear-gradient(135deg,#0d1426 0%,#111827 50%,#0f172a 100%)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+            {/* ── PAGE TITLE ── */}
+            <div style={{ textAlign:"center", marginBottom:12 }}>
+              <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#1e293b", letterSpacing:"-0.03em" }}>
+                {t("ডেলিভারি","Delivery")}
+              </h1>
+              <p style={{ fontSize:13, color:"#94a3b8", marginTop:4 }}>
+                {t("অর্ডার ডেলিভারি নিশ্চিত ও পরিচালনা করুন","Manage and confirm your order deliveries")}
+              </p>
+            </div>
 
-              <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: "linear-gradient(90deg,transparent,rgba(52,211,153,0.6) 30%,rgba(56,189,248,0.6) 70%,transparent)" }}/>
-              <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}/>
-              <div className="absolute pointer-events-none" style={{ top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%)" }}/>
-
-              <div className="relative p-6 sm:p-7">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.05))", border: "1px solid rgba(52,211,153,0.2)" }}>
-                      <Truck size={20} style={{ color: "#34d399" }}/>
-                    </div>
-                    <div>
-                      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: "20px", color: "#f1f5f9", letterSpacing: "-0.01em", lineHeight: 1.2 }}>
-                        {t("ডেলিভারি","Delivery")}
-                      </h1>
-                      <p className="text-xs mt-1" style={{ color: "#475569" }}>
-                        {t("অর্ডার ডেলিভারি নিশ্চিত ও পরিচালনা করুন","Manage and confirm your order deliveries")}
-                      </p>
-                    </div>
-                  </div>
-                  <button onClick={fetchOrders}
-                    className="flex items-center gap-2 self-start sm:self-auto rounded-xl px-4 py-2.5 text-xs font-semibold transition"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
-                    <RefreshCw size={13} className={loading ? "animate-spin" : ""}/>
-                    <span className="hidden sm:inline">{t("রিফ্রেশ","Refresh")}</span>
-                  </button>
-                </div>
-
-                {/* stat cards */}
-                <div className="flex gap-3 flex-wrap sm:flex-nowrap">
-                  {[
-                    { labelBn:"কনফার্মড", labelEn:"Confirmed", count:counts.confirmed, color:"#38bdf8" },
-                    { labelBn:"ডেলিভার্ড",labelEn:"Delivered", count:counts.delivered, color:"#34d399" },
-                    { labelBn:"বাতিল",    labelEn:"Cancelled", count:counts.cancelled, color:"#f87171" },
-                    { labelBn:"রেভিনিউ",  labelEn:"Revenue",   count:`৳${revenue.toLocaleString()}`, color:"#a78bfa" },
-                  ].map(({ labelBn, labelEn, count, color }) => (
-                    <div key={labelEn} className="flex-1 min-w-0 rounded-xl p-3"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="text-xl font-bold truncate" style={{ color, lineHeight: 1 }}>{count}</div>
-                      <div className="text-[11px] font-medium mt-1" style={{ color: "#475569" }}>{t(labelBn, labelEn)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+            <div style={{ marginBottom:14 }}>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:8, background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.2)", color:"#059669", fontWeight:600, fontSize:12 }}>
+                <Truck size={12} /> {t("ডেলিভারি","Delivery")}
+              </span>
+            </div>
 
             {/* result banner */}
             <AnimatePresence>
               {resultBanner && (
                 <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
-                  className="rounded-2xl p-4 flex items-start gap-3"
-                  style={{
-                    background: resultBanner.type === "success" ? "rgba(52,211,153,0.06)" : "rgba(248,113,113,0.06)",
-                    border: `1px solid ${resultBanner.type === "success" ? "rgba(52,211,153,0.2)" : "rgba(248,113,113,0.2)"}`,
-                  }}>
-                  {resultBanner.type === "success"
-                    ? <CheckCircle size={16} style={{ color: "#34d399", flexShrink: 0, marginTop: "2px" }}/>
-                    : <XCircle    size={16} style={{ color: "#f87171", flexShrink: 0, marginTop: "2px" }}/>
+                  style={{ borderRadius:16, padding:"12px 16px", display:"flex", alignItems:"flex-start", gap:10, marginBottom:14,
+                    background:resultBanner.type==="success"?"rgba(52,211,153,0.07)":"rgba(248,113,113,0.06)",
+                    border:`1px solid ${resultBanner.type==="success"?"rgba(52,211,153,0.2)":"rgba(248,113,113,0.18)"}` }}>
+                  {resultBanner.type==="success"
+                    ? <CheckCircle size={15} style={{ color:"#34d399", flexShrink:0, marginTop:1 }} />
+                    : <XCircle    size={15} style={{ color:"#f87171", flexShrink:0, marginTop:1 }} />
                   }
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold" style={{ color: resultBanner.type === "success" ? "#34d399" : "#f87171" }}>
-                      {resultBanner.type === "success" ? t("✓ ডেলিভার্ড ও স্টক আপডেট!","✓ Delivered & stock updated!") : t("অর্ডার ব্যর্থ হিসেবে চিহ্নিত","Order marked as failed")}
+                  <div style={{ flex:1 }}>
+                    <p style={{ fontSize:13, fontWeight:700, color:resultBanner.type==="success"?"#059669":"#e11d48" }}>
+                      {resultBanner.type==="success" ? t("✓ ডেলিভার্ড ও স্টক আপডেট!","✓ Delivered & stock updated!") : t("অর্ডার ব্যর্থ হিসেবে চিহ্নিত","Order marked as failed")}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: "#64748b" }}>{resultBanner.order?.orderId}</p>
+                    <p style={{ fontSize:11.5, color:"#94a3b8", marginTop:2 }}>{resultBanner.order?.orderId}</p>
                     {resultBanner.stockErrors?.map((e, i) => (
-                      <p key={i} className="text-xs mt-0.5" style={{ color: "#e8a427" }}>• {e}</p>
+                      <p key={i} style={{ fontSize:11.5, color:"#d97706", marginTop:2 }}>• {e}</p>
                     ))}
                   </div>
-                  <button onClick={() => setResult(null)} style={{ color: "#475569" }}>
-                    <X size={14}/>
-                  </button>
+                  <button onClick={() => setResult(null)} style={{ background:"none", border:"none", cursor:"pointer" }}><X size={14} style={{ color:"#94a3b8" }} /></button>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* ══ CONTROLS ══ */}
-            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-              {/* search */}
-              <div className="relative flex-1 flex items-center gap-2 rounded-xl px-3"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <Search size={14} style={{ color: "#475569", flexShrink: 0 }}/>
+            {/* ── TOP BAR ── */}
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between", gap:12, background:"linear-gradient(160deg,#ffffff,#fafbff)", border:"1px solid rgba(99,102,241,0.10)", borderRadius:18, padding:"14px 16px", marginBottom:14, boxShadow:"0 4px 20px rgba(99,102,241,0.06)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, flex:"1 1 220px", maxWidth:340, background:"rgba(99,102,241,0.05)", border:"1px solid rgba(99,102,241,0.12)", borderRadius:11, padding:"8px 13px" }}>
+                <Search size={14} style={{ color:"#a8b4c8", flexShrink:0 }} />
                 <input type="text"
-                  placeholder={t("নাম, ফোন, অর্ডার আইডি খুঁজুন…","Search name, phone, order ID…")}
+                  placeholder={t("নাম, ফোন, অর্ডার আইডি…","Search name, phone, order ID…")}
                   value={search} onChange={e => setSearch(e.target.value)}
-                  className="dc-search-input py-2.5"/>
-                {search && (
-                  <button onClick={() => setSearch("")} style={{ color: "#475569" }}>
-                    <X size={13}/>
-                  </button>
-                )}
+                  style={{ background:"transparent", outline:"none", border:"none", fontSize:13, color:"#374151", width:"100%", fontFamily:"'Plus Jakarta Sans',sans-serif" }} />
+                {search && <button onClick={() => setSearch("")} style={{ color:"#a8b4c8", lineHeight:1, background:"none", border:"none", cursor:"pointer" }}><X size={12} /></button>}
               </div>
-
-              {/* filter tabs */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {FILTER_TABS.map(tab => {
-                  const count  = tab.value === "all" ? orders.length : (counts[tab.value] || 0);
-                  const active = filter === tab.value;
-                  return (
-                    <button key={tab.value} onClick={() => setFilter(tab.value)}
-                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all"
-                      style={{
-                        background: active ? `${tab.dot}18` : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${active ? `${tab.dot}35` : "rgba(255,255,255,0.08)"}`,
-                        color: active ? tab.dot : "#64748b",
-                        boxShadow: active ? `0 0 0 1px ${tab.dot}20` : "none",
-                      }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: active ? tab.dot : "#334155" }}/>
-                      {tab.label}
-                      {count > 0 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                          style={{ background: active ? `${tab.dot}20` : "rgba(255,255,255,0.06)", color: active ? tab.dot : "#475569" }}>
-                          {count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* sort */}
-              <div className="relative" ref={sortRef}>
-                <button onClick={() => setSortOpen(o => !o)}
-                  className="flex items-center gap-2 text-xs rounded-xl px-3 py-2.5 transition-all"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8" }}>
-                  <span style={{ color: "#cbd5e1", fontWeight: 500 }}>{sortOpts.find(o => o.value === sort)?.label}</span>
-                  <ChevronDown size={12} style={{ color: "#475569" }}/>
-                </button>
-                <AnimatePresence>
-                  {sortOpen && (
-                    <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }}
-                      exit={{ opacity:0 }} transition={{ duration:0.15 }}
-                      className="absolute right-0 top-full mt-1.5 w-44 z-50 rounded-xl overflow-hidden"
-                      style={{ background: "#1a2235", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 16px 48px rgba(0,0,0,0.5)" }}>
-                      {sortOpts.map(opt => (
-                        <div key={opt.value} onClick={() => { setSort(opt.value); setSortOpen(false); }}
-                          className="px-4 py-2.5 text-xs cursor-pointer transition"
-                          style={{ color: sort === opt.value ? "#c9a84c" : "#94a3b8", background: sort === opt.value ? "rgba(201,168,76,0.08)" : "transparent", fontWeight: sort === opt.value ? 600 : 400 }}>
-                          {opt.label}
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }}
+                onClick={fetchOrders}
+                style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(99,102,241,0.06)", border:"1px solid rgba(99,102,241,0.14)", borderRadius:11, padding:"9px 14px", fontSize:13, fontWeight:500, color:"#6366f1", cursor:"pointer", flexShrink:0 }}>
+                <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+                <span>{t("রিফ্রেশ","Refresh")}</span>
+              </motion.button>
             </div>
 
-            {/* ══ TABLE ══ */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 8px 32px rgba(0,0,0,0.3)" }}>
+            {/* ── STAT CARDS (2×2 on mobile) ── */}
+            <div className="dc-stats-grid" style={{ marginBottom:14 }}>
+              {statCards.map((s,i) => (
+                <motion.div key={s.labelEn}
+                  initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
+                  transition={{ delay:i*0.06, duration:0.38, ease:[0.22,1,0.36,1] }}>
+                  <div style={{ background:"#fff", borderRadius:16, border:`1.5px solid ${s.border}`, boxShadow:`0 4px 20px ${s.soft}, 0 1px 4px rgba(0,0,0,0.04)`, overflow:"hidden", position:"relative" }}>
+                    <div style={{ height:3, background:s.grad }} />
+                    <div style={{ padding:"13px 14px 14px" }}>
+                      <div style={{ width:36, height:36, borderRadius:10, background:s.grad, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, boxShadow:`0 4px 12px ${s.color}28` }}>
+                        <s.icon size={15} color="#fff" strokeWidth={2.2} />
+                      </div>
+                      <p style={{ fontSize:typeof s.count==="string"&&s.count.length>6?17:26, fontWeight:900, color:s.color, lineHeight:1, letterSpacing:"-0.03em", marginBottom:5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.count}</p>
+                      <p style={{ fontSize:10.5, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".07em" }}>{t(s.labelBn, s.labelEn)}</p>
+                    </div>
+                    <div style={{ position:"absolute", bottom:-12, right:-12, width:60, height:60, borderRadius:"50%", background:`radial-gradient(circle,${s.color}12 0%,transparent 70%)`, pointerEvents:"none" }} />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-              <div className="dc-col-header">
-                {["#", t("অর্ডার","Order"), t("কাস্টমার","Customer"), t("লোকেশন","Location"), t("পণ্য","Items"), t("মোট","Total"), t("নোট","Note")].map((h, i) => (
-                  <div key={i}
-                    className={`text-[10px] font-semibold uppercase tracking-wider ${i >= 2 ? "dc-hide-sm" : ""}`}
-                    style={{ color: "#2d3f55" }}>{h}</div>
-                ))}
+            {/* ── TABLE CARD ── */}
+            <div style={{ background:"linear-gradient(160deg,#ffffff,#fafbff)", border:"1px solid rgba(99,102,241,0.10)", borderRadius:18, boxShadow:"0 4px 24px rgba(99,102,241,0.06)", overflow:"hidden" }}>
+
+              {/* table top */}
+              <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between", gap:10, padding:"14px 20px", borderBottom:"1px solid rgba(99,102,241,0.08)", background:"rgba(99,102,241,0.025)" }}>
+                <h2 style={{ fontSize:14, fontWeight:900, color:"#1e293b", letterSpacing:"-0.02em" }}>
+                  {t("ডেলিভারি তালিকা","Delivery List")}
+                  {displayed.length !== orders.length && (
+                    <span style={{ marginLeft:8, fontSize:11, fontWeight:500, color:"#94a3b8" }}>
+                      ({displayed.length} {t("এর","of")} {orders.length})
+                    </span>
+                  )}
+                </h2>
+                <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", gap:8 }}>
+                  {/* filter tabs */}
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                    {FILTER_TABS.map(tab => {
+                      const count  = tab.value === "all" ? orders.length : (counts[tab.value] || 0);
+                      const active = filter === tab.value;
+                      return (
+                        <motion.button key={tab.value} type="button"
+                          whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }}
+                          onClick={() => setFilter(tab.value)}
+                          style={{ display:"flex", alignItems:"center", gap:5, padding:"6px 12px", borderRadius:10, fontSize:12, fontWeight:600, cursor:"pointer", transition:"all .15s", background:active?"linear-gradient(135deg,#6366f1,#4f46e5)":"#fff", border:`1.5px solid ${active?"transparent":"rgba(99,102,241,0.14)"}`, color:active?"#fff":"#64748b", boxShadow:active?"0 3px 12px rgba(99,102,241,0.28)":"none" }}>
+                          <span style={{ width:6, height:6, borderRadius:"50%", background:active?"rgba(255,255,255,0.7)":tab.dot, display:"inline-block" }} />
+                          {tab.label}
+                          {count > 0 && <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:99, background:active?"rgba(255,255,255,0.2)":"rgba(99,102,241,0.08)", color:active?"#fff":"#6366f1" }}>{count}</span>}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  {/* sort */}
+                  <div style={{ position:"relative" }} ref={sortRef}>
+                    <button onClick={() => setSortOpen(o => !o)}
+                      style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, borderRadius:12, padding:"9px 14px", cursor:"pointer", background:"#fff", border:"1px solid rgba(99,102,241,0.15)", color:"#374151", fontWeight:500, boxShadow:"0 1px 4px rgba(99,102,241,0.05)", fontFamily:"inherit" }}>
+                      <span>{sortOpts.find(o => o.value === sort)?.label}</span>
+                      <ChevronDown size={12} style={{ color:"#a8b4c8" }}/>
+                    </button>
+                    <AnimatePresence>
+                      {sortOpen && (
+                        <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }} transition={{ duration:0.15 }}
+                          style={{ position:"absolute", right:0, top:"calc(100% + 6px)", minWidth:"100%", borderRadius:14, background:"#fff", border:"1px solid rgba(99,102,241,0.12)", boxShadow:"0 16px 48px rgba(99,102,241,0.13)", overflow:"hidden", zIndex:50 }}>
+                          {sortOpts.map(opt => (
+                            <div key={opt.value} onClick={() => { setSort(opt.value); setSortOpen(false); }}
+                              style={{ padding:"10px 14px", fontSize:13, cursor:"pointer", background: sort===opt.value?"rgba(99,102,241,0.07)":"transparent", color: sort===opt.value?"#6366f1":"#374151", fontWeight: sort===opt.value?600:400, whiteSpace:"nowrap" }}>
+                              {opt.label}
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
               </div>
 
-              <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+              {/* col headers */}
+              <div className="dc-col-header">
+                <div>#</div>
+                <div>{t("অর্ডার","Order")}</div>
+                <div className="dc-hide-sm">{t("কাস্টমার","Customer")}</div>
+                <div>{t("মোট","Total")}</div>
+                <div />
+              </div>
+
+              <div style={{ overflowY:"auto", maxHeight:"60vh" }}>
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                      style={{ background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.15)" }}>
-                      <Loader2 size={20} className="animate-spin" style={{ color: "#34d399" }}/>
-                    </div>
-                    <p className="text-xs font-medium" style={{ color: "#475569" }}>{t("লোড হচ্ছে…","Loading…")}</p>
+                  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"64px 0", gap:12 }}>
+                    <Loader2 size={26} style={{ color:"#c4cdd8" }} className="animate-spin" />
+                    <p style={{ fontSize:13, color:"#94a3b8" }}>{t("লোড হচ্ছে…","Loading…")}</p>
                   </div>
                 ) : displayed.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                      <Truck size={24} style={{ color: "#1e293b" }}/>
+                  <div style={{ padding:"56px 0", textAlign:"center" }}>
+                    <div style={{ width:48, height:48, borderRadius:14, background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.12)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+                      <Truck size={22} style={{ color:"#c4cdd8" }} />
                     </div>
-                    <p className="text-sm font-medium" style={{ color: "#475569" }}>
-                      {t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}
-                    </p>
+                    <p style={{ fontSize:13, color:"#94a3b8" }}>{t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}</p>
                   </div>
                 ) : displayed.map((order, idx) => {
-                  const cfg   = STATUS_CFG[order.status] || STATUS_CFG.confirmed;
-                  const items = order.items?.reduce((s, i) => s + (i.quantity || 1), 0) || 0;
-                  const note  = order.cancellationReason || order.deliveryNote || "";
+                  const cfg  = STATUS_CFG[order.status] || STATUS_CFG.confirmed;
                   return (
                     <motion.div key={order._id} className="dc-row"
                       initial={{ opacity:0 }} animate={{ opacity:1 }}
                       transition={{ delay: idx * 0.015 }}
                       onClick={() => setDetail(order)}>
 
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dot }}/>
-                        <span className="text-xs font-medium" style={{ color: "#2d3f55" }}>{idx + 1}</span>
+                      <div style={{ fontSize:11.5, fontWeight:600, color:"#c4cdd8" }}>{idx+1}</div>
+
+                      <div style={{ minWidth:0, paddingRight:8 }}>
+                        <p style={{ fontSize:12.5, fontWeight:700, color:"#1e293b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.orderId}</p>
+                        <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:2 }}>
+                          <span style={{ width:5, height:5, borderRadius:"50%", background:cfg.dot, display:"inline-block", flexShrink:0 }} />
+                          <span style={{ fontSize:10, fontWeight:700, color:cfg.color }}>{cfg.label}</span>
+                        </div>
                       </div>
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate" style={{ color: "#e2e8f0" }}>{order.orderId}</p>
-                        <span className="text-xs font-medium" style={{ color: cfg.color }}>{cfg.label}</span>
+                      <div className="dc-hide-sm" style={{ minWidth:0, paddingRight:6 }}>
+                        <p style={{ fontSize:12.5, fontWeight:600, color:"#374151", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.customer?.name}</p>
+                        <p style={{ fontSize:11, color:"#94a3b8" }}>{order.customer?.district}</p>
                       </div>
 
-                      <div className="min-w-0 dc-hide-sm">
-                        <p className="text-sm font-medium truncate" style={{ color: "#94a3b8" }}>{order.customer?.name}</p>
-                        <p className="text-xs" style={{ color: "#475569" }}>{order.customer?.phone}</p>
+                      <div>
+                        <p style={{ fontSize:12.5, fontWeight:800, color:"#1e293b", whiteSpace:"nowrap" }}>৳{order.total?.toLocaleString()}</p>
+                        <p style={{ fontSize:10.5, color:"#94a3b8" }}>{PAY_LABEL[order.paymentMethod]}</p>
                       </div>
 
-                      <div className="min-w-0 dc-hide-sm">
-                        <p className="text-sm truncate" style={{ color: "#94a3b8" }}>{order.customer?.district}</p>
-                        <p className="text-xs truncate" style={{ color: "#475569" }}>{order.customer?.thana}</p>
-                      </div>
-
-                      <div className="dc-hide-sm">
-                        <p className="text-sm font-semibold" style={{ color: "#94a3b8" }}>{items}</p>
-                      </div>
-
-                      <div className="dc-hide-sm">
-                        <p className="text-sm font-bold" style={{ color: "#c9a84c" }}>৳{order.total?.toLocaleString()}</p>
-                        <p className="text-xs" style={{ color: "#475569" }}>{PAY_LABEL[order.paymentMethod]}</p>
-                      </div>
-
-                      <div className="dc-hide-sm">
-                        {note
-                          ? <p className="text-xs truncate max-w-[80px]" style={{ color: "#475569" }} title={note}>{note}</p>
-                          : <span style={{ color: "#1e293b", fontSize: "12px" }}>—</span>
-                        }
+                      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                        <motion.button whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
+                          onClick={e => { e.stopPropagation(); setDetail(order); }}
+                          style={{ width:28, height:28, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.13)", color:"#6366f1", cursor:"pointer" }}
+                          onMouseEnter={e => e.currentTarget.style.background="rgba(99,102,241,0.14)"}
+                          onMouseLeave={e => e.currentTarget.style.background="rgba(99,102,241,0.07)"}>
+                          <Truck size={12}/>
+                        </motion.button>
                       </div>
                     </motion.div>
                   );
