@@ -67,8 +67,8 @@ import SubAdminAnalytics from "./pages/subadmin/SubAdminAnalytics";
 
 function FloatingContactWrapper() {
   const location       = useLocation();
-  const isAdminPage    = location.pathname.startsWith("/admin");
-  const isSubAdminPage = location.pathname.startsWith("/subadmin");
+  const isAdminPage    = location.pathname.startsWith("/manage-x9k2");
+  const isSubAdminPage = location.pathname.startsWith("/portal-v7m4");
   if (isAdminPage || isSubAdminPage) return null;
   return <FloatingContact />;
 }
@@ -83,7 +83,7 @@ function App() {
       <FloatingContactWrapper />
       <Routes>
 
-        {/* ublic routes  */}
+        {/* public routes  */}
         <Route path="/"              element={<><Navbar /><Home /><AboutPreview /><Footer /></>} />
         <Route path="/cart"          element={<><Navbar /><Cart /><Footer /></>} />
         <Route path="/checkout"      element={<><Navbar /><Checkout /><Footer /></>} />
@@ -107,10 +107,10 @@ function App() {
         <Route path="/payment/fail"    element={<PaymentFail />} />
 
         {/* admin login */}
-        <Route path="/admin/login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
+        <Route path="/manage-x9k2/auth" element={<PublicRoute><AdminLogin /></PublicRoute>} />
 
-        {/* admin dashboard*/}
-        <Route path="/admin" element={
+        {/* admin dashboard */}
+        <Route path="/manage-x9k2" element={
           <ProtectedRoute>
             <AdminLangProvider>
               <AdminDashboard />
@@ -137,9 +137,9 @@ function App() {
           <Route path="*"             element={<AdminNotFound />} />
         </Route>
 
-        {/* subAdmin routess*/}
-        <Route path="/subadmin/signup-login-page" element={<SubAdminAuth />} />
-        <Route path="/subadmin" element={<SubAdminDashboard />}>
+        {/* subAdmin routes */}
+        <Route path="/portal-v7m4/access" element={<SubAdminAuth />} />
+        <Route path="/portal-v7m4" element={<SubAdminDashboard />}>
           <Route index            element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<SubAdminHome />} />
           <Route path="products"  element={<SubAdminProducts />} />
