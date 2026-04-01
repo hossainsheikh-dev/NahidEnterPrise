@@ -14,6 +14,7 @@ import { useAdminLang } from "../../../context/AdminLangContext";
 
 const API       = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ORDER_API = `${API}/api/orders`;
+const PAGE_SIZE = 15;
 
 const STATUS_CFG = {
   pending:    { label:"Pending",    color:"#e8a427", bg:"rgba(232,164,39,0.1)",  border:"rgba(232,164,39,0.25)", dot:"#e8a427", barBg:"#e8a427", icon:Clock       },
@@ -386,6 +387,7 @@ export default function DeliveryConfirm() {
   const [modal,       setModal     ] = useState(null);
   const [confirming,  setConfirming] = useState(false);
   const [resultBanner,setResult    ] = useState(null);
+  const [page,        setPage      ] = useState(1);
 
   const sortRef = useRef(null);
 
@@ -394,6 +396,9 @@ export default function DeliveryConfirm() {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [search, filter, sort]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -442,6 +447,9 @@ export default function DeliveryConfirm() {
       return b.total - a.total;
     });
 
+  const totalPages = Math.ceil(displayed.length / PAGE_SIZE);
+  const paginated  = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const counts = {
     confirmed: orders.filter(o => o.status === "confirmed").length,
     delivered: orders.filter(o => o.status === "delivered").length,
@@ -451,11 +459,30 @@ export default function DeliveryConfirm() {
   const sortOpts = SORT_OPTS(t);
 
   const statCards = [
-    { labelBn:"কনফার্মড", labelEn:"Confirmed", count:counts.confirmed, color:"#38bdf8", soft:"rgba(56,189,248,0.08)",  border:"rgba(56,189,248,0.22)",  grad:"linear-gradient(135deg,#38bdf8,#0ea5e9)",  icon:CheckCircle },
-    { labelBn:"ডেলিভার্ড",labelEn:"Delivered", count:counts.delivered, color:"#34d399", soft:"rgba(52,211,153,0.08)",  border:"rgba(52,211,153,0.22)",  grad:"linear-gradient(135deg,#34d399,#10b981)",  icon:Star        },
-    { labelBn:"বাতিল",    labelEn:"Cancelled", count:counts.cancelled, color:"#f87171", soft:"rgba(248,113,113,0.08)", border:"rgba(248,113,113,0.22)", grad:"linear-gradient(135deg,#fb7185,#f43f5e)",  icon:XCircle     },
-    { labelBn:"রেভিনিউ",  labelEn:"Revenue",   count:`৳${revenue.toLocaleString()}`, color:"#a78bfa", soft:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.22)", grad:"linear-gradient(135deg,#a78bfa,#8b5cf6)", icon:TrendingUp  },
+    { labelBn:"কনফার্মড", labelEn:"Confirmed", count:counts.confirmed, color:"#38bdf8" },
+    { labelBn:"ডেলিভার্ড",labelEn:"Delivered", count:counts.delivered, color:"#34d399" },
+    { labelBn:"বাতিল",    labelEn:"Cancelled", count:counts.cancelled, color:"#f87171" },
+    { labelBn:"রেভিনিউ",  labelEn:"Revenue",   count:`৳${revenue.toLocaleString()}`, color:"#a78bfa" },
   ];
+
+  /* ── Pagination button ── */
+  const PageBtn = ({ children, onClick, disabled, active }) => (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        display:"flex", alignItems:"center", justifyContent:"center",
+        minWidth:32, height:32, padding:"0 10px", borderRadius:9,
+        fontSize:12, fontWeight:700, cursor:disabled?"not-allowed":"pointer",
+        transition:"all .15s",
+        background: active ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${active ? "transparent" : "rgba(255,255,255,0.08)"}`,
+        color: active ? "#0a0f1e" : disabled ? "#2d3f55" : "#64748b",
+        boxShadow: active ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+        opacity: disabled ? 0.35 : 1,
+        fontFamily:"inherit",
+      }}>
+      {children}
+    </button>
+  );
 
   return (
     <>
@@ -463,14 +490,14 @@ export default function DeliveryConfirm() {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .dc-wrap, .dc-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* ── stat grid: 4 col desktop, 2×2 mobile ── */
-        .dc-stats-grid {
+        /* ── stat grid inside header card: 4 col desktop, 2×2 mobile ── */
+        .dc-stat-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 10px;
         }
-        @media (max-width: 640px) {
-          .dc-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+        @media (min-width: 480px) {
+          .dc-stat-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         /* ── table ── */
@@ -518,21 +545,52 @@ export default function DeliveryConfirm() {
           <motion.div key="dc" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0 }} transition={{ duration:0.25 }}>
 
-            {/* ── PAGE TITLE ── */}
-            <div style={{ textAlign:"center", marginBottom:12 }}>
-              <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.03em" }}>
-                {t("ডেলিভারি","Delivery")}
-              </h1>
-              <p style={{ fontSize:13, color:"#475569", marginTop:4 }}>
-                {t("অর্ডার ডেলিভারি নিশ্চিত ও পরিচালনা করুন","Manage and confirm your order deliveries")}
-              </p>
-            </div>
+            {/* ══ HEADER CARD (AdminSublinkLogs style) ══ */}
+            <motion.div
+              initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.4 }}
+              style={{ position:"relative", borderRadius:20, overflow:"hidden", marginBottom:14, background:"linear-gradient(135deg,#0d1426 0%,#111827 50%,#0f172a 100%)", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
 
-            <div style={{ marginBottom:14 }}>
-              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:8, background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.2)", color:"#34d399", fontWeight:600, fontSize:12 }}>
-                <Truck size={12} /> {t("ডেলিভারি","Delivery")}
-              </span>
-            </div>
+              {/* top gradient line */}
+              <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(52,211,153,0.6) 30%,rgba(56,189,248,0.6) 70%,transparent)", pointerEvents:"none" }} />
+              {/* grid overlay */}
+              <div style={{ position:"absolute", inset:0, opacity:0.03, backgroundImage:"linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize:"32px 32px", pointerEvents:"none" }} />
+              {/* radial glows */}
+              <div style={{ position:"absolute", top:-60, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%)", pointerEvents:"none" }} />
+              <div style={{ position:"absolute", bottom:-40, left:-20, width:160, height:160, borderRadius:"50%", background:"radial-gradient(circle,rgba(56,189,248,0.06) 0%,transparent 70%)", pointerEvents:"none" }} />
+
+              <div style={{ position:"relative", padding:"22px 22px 18px" }}>
+                {/* title row */}
+                <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:16 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                    <div style={{ width:46, height:46, borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, background:"linear-gradient(135deg,rgba(52,211,153,0.15),rgba(52,211,153,0.05))", border:"1px solid rgba(52,211,153,0.2)" }}>
+                      <Truck size={20} style={{ color:"#34d399" }} />
+                    </div>
+                    <div>
+                      <h1 style={{ fontSize:"clamp(18px,3.5vw,23px)", fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.02em", lineHeight:1.2 }}>
+                        {t("ডেলিভারি","Delivery")}
+                      </h1>
+                      <p style={{ fontSize:12, color:"#475569", marginTop:3 }}>
+                        {t("অর্ডার ডেলিভারি নিশ্চিত ও পরিচালনা করুন","Manage and confirm your order deliveries")}
+                      </p>
+                      <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:7, background:"rgba(52,211,153,0.1)", border:"1px solid rgba(52,211,153,0.22)", color:"#34d399", fontWeight:700, fontSize:10.5, marginTop:6 }}>
+                        <Truck size={10} /> {t("ডেলিভারি","Delivery")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── STAT CARDS ── */}
+                <div className="dc-stat-grid">
+                  {statCards.map(s => (
+                    <div key={s.labelEn} style={{ borderRadius:12, padding:"12px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ fontSize:typeof s.count==="string"&&s.count.length>6?16:22, fontWeight:900, color:s.color, lineHeight:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.count}</div>
+                      <div style={{ fontSize:10, fontWeight:500, color:"#475569", marginTop:4 }}>{t(s.labelBn, s.labelEn)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
 
             {/* result banner */}
             <AnimatePresence>
@@ -575,27 +633,6 @@ export default function DeliveryConfirm() {
                 <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
                 <span>{t("রিফ্রেশ","Refresh")}</span>
               </motion.button>
-            </div>
-
-            {/* ── STAT CARDS (2×2 on mobile) ── */}
-            <div className="dc-stats-grid" style={{ marginBottom:14 }}>
-              {statCards.map((s,i) => (
-                <motion.div key={s.labelEn}
-                  initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
-                  transition={{ delay:i*0.06, duration:0.38, ease:[0.22,1,0.36,1] }}>
-                  <div style={{ background:"#0d1426", borderRadius:16, border:`1.5px solid ${s.border}`, boxShadow:`0 4px 20px ${s.soft}, 0 1px 4px rgba(0,0,0,0.3)`, overflow:"hidden", position:"relative" }}>
-                    <div style={{ height:3, background:s.grad }} />
-                    <div style={{ padding:"13px 14px 14px" }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:s.grad, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, boxShadow:`0 4px 12px ${s.color}28` }}>
-                        <s.icon size={15} color="#fff" strokeWidth={2.2} />
-                      </div>
-                      <p style={{ fontSize:typeof s.count==="string"&&s.count.length>6?17:26, fontWeight:900, color:s.color, lineHeight:1, letterSpacing:"-0.03em", marginBottom:5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.count}</p>
-                      <p style={{ fontSize:10.5, fontWeight:700, color:"#475569", textTransform:"uppercase", letterSpacing:".07em" }}>{t(s.labelBn, s.labelEn)}</p>
-                    </div>
-                    <div style={{ position:"absolute", bottom:-12, right:-12, width:60, height:60, borderRadius:"50%", background:`radial-gradient(circle,${s.color}12 0%,transparent 70%)`, pointerEvents:"none" }} />
-                  </div>
-                </motion.div>
-              ))}
             </div>
 
             {/* ── TABLE CARD ── */}
@@ -668,14 +705,14 @@ export default function DeliveryConfirm() {
                     <Loader2 size={26} style={{ color:"#334155" }} className="animate-spin" />
                     <p style={{ fontSize:13, color:"#475569" }}>{t("লোড হচ্ছে…","Loading…")}</p>
                   </div>
-                ) : displayed.length === 0 ? (
+                ) : paginated.length === 0 ? (
                   <div style={{ padding:"56px 0", textAlign:"center" }}>
                     <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
                       <Truck size={22} style={{ color:"#334155" }} />
                     </div>
                     <p style={{ fontSize:13, color:"#475569" }}>{t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}</p>
                   </div>
-                ) : displayed.map((order, idx) => {
+                ) : paginated.map((order, idx) => {
                   const cfg  = STATUS_CFG[order.status] || STATUS_CFG.confirmed;
                   return (
                     <motion.div key={order._id} className="dc-row"
@@ -683,7 +720,7 @@ export default function DeliveryConfirm() {
                       transition={{ delay: idx * 0.015 }}
                       onClick={() => setDetail(order)}>
 
-                      <div style={{ fontSize:11.5, fontWeight:600, color:"#334155" }}>{idx+1}</div>
+                      <div style={{ fontSize:11.5, fontWeight:600, color:"#334155" }}>{(page - 1) * PAGE_SIZE + idx + 1}</div>
 
                       <div style={{ minWidth:0, paddingRight:8 }}>
                         <p style={{ fontSize:12.5, fontWeight:700, color:"#e2e8f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.orderId}</p>
@@ -717,6 +754,33 @@ export default function DeliveryConfirm() {
                 })}
               </div>
             </div>
+
+            {/* ── PAGINATION ── */}
+            {totalPages > 1 && (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, marginTop:14 }}>
+                <p style={{ fontSize:12, fontWeight:500, color:"#475569" }}>
+                  {t("পেজ","Page")}{" "}
+                  <span style={{ color:"#94a3b8" }}>{page}</span>
+                  {" "}{t("এর মধ্যে","of")}{" "}
+                  <span style={{ color:"#94a3b8" }}>{totalPages}</span>
+                  {" · "}
+                  <span style={{ color:"#64748b" }}>{displayed.length} {t("মোট","total")}</span>
+                </p>
+                <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                  <PageBtn onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                    ← {t("আগে","Prev")}
+                  </PageBtn>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p > totalPages) return null;
+                    return <PageBtn key={p} onClick={() => setPage(p)} active={page === p}>{p}</PageBtn>;
+                  })}
+                  <PageBtn onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                    {t("পরে","Next")} →
+                  </PageBtn>
+                </div>
+              </div>
+            )}
 
           </motion.div>
         </AnimatePresence>

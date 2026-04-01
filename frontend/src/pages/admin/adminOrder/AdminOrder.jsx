@@ -15,6 +15,7 @@ import { useAdminLang } from "../../../context/AdminLangContext";
 
 const API       = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ORDER_API = `${API}/api/orders`;
+const PAGE_SIZE = 15;
 
 const STATUS_FLOW = ["pending","processing","shipped","confirmed","delivered"];
 
@@ -377,6 +378,7 @@ export default function AdminOrder() {
   const [fStatus,   setFStatus ] = useState("all");
   const [fPay,      setFPay    ] = useState("all");
   const [countdown, setCountdown] = useState(10);
+  const [page,      setPage    ] = useState(1);
 
   const [sortOpen,   setSortOpen  ] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -401,6 +403,9 @@ export default function AdminOrder() {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [search, fStatus, fPay, sort]);
 
   const silentFetch = async () => {
     try {
@@ -476,6 +481,9 @@ export default function AdminOrder() {
       return b.total - a.total;
     }), [orders, search, fStatus, fPay, sort]);
 
+  const totalPages = Math.ceil(displayed.length / PAGE_SIZE);
+  const paginated  = displayed.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const stats = {
     total:      orders.length,
     pending:    orders.filter(o => o.status === "pending").length,
@@ -484,10 +492,10 @@ export default function AdminOrder() {
   };
 
   const statCards = [
-    { labelBn:"মোট",      labelEn:"Total",      count:stats.total,      color:"#c9a84c", soft:"rgba(201,168,76,0.08)",  border:"rgba(201,168,76,0.22)",  grad:"linear-gradient(135deg,#e8c876,#c9a84c)", icon:ShoppingCart },
-    { labelBn:"অপেক্ষা",  labelEn:"Pending",    count:stats.pending,    color:"#e8a427", soft:"rgba(232,164,39,0.08)", border:"rgba(232,164,39,0.22)", grad:"linear-gradient(135deg,#fbbf24,#f59e0b)", icon:Clock        },
-    { labelBn:"প্রসেসিং", labelEn:"Processing", count:stats.processing, color:"#a78bfa", soft:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.22)", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)", icon:Box          },
-    { labelBn:"পথে",      labelEn:"Shipped",    count:stats.shipped,    color:"#60a5fa", soft:"rgba(96,165,250,0.08)",  border:"rgba(96,165,250,0.22)",  grad:"linear-gradient(135deg,#60a5fa,#3b82f6)", icon:Truck        },
+    { labelBn:"মোট",      labelEn:"Total",      count:stats.total,      color:"#c9a84c" },
+    { labelBn:"অপেক্ষা",  labelEn:"Pending",    count:stats.pending,    color:"#e8a427" },
+    { labelBn:"প্রসেসিং", labelEn:"Processing", count:stats.processing, color:"#a78bfa" },
+    { labelBn:"পথে",      labelEn:"Shipped",    count:stats.shipped,    color:"#60a5fa" },
   ];
 
   /* inline dropdown */
@@ -517,20 +525,39 @@ export default function AdminOrder() {
     </div>
   );
 
+  /* ── Pagination button ── */
+  const PageBtn = ({ children, onClick, disabled, active }) => (
+    <button onClick={onClick} disabled={disabled}
+      style={{
+        display:"flex", alignItems:"center", justifyContent:"center",
+        minWidth:32, height:32, padding:"0 10px", borderRadius:9,
+        fontSize:12, fontWeight:700, cursor:disabled?"not-allowed":"pointer",
+        transition:"all .15s",
+        background: active ? "linear-gradient(135deg,#c9a84c,#e8c876)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${active ? "transparent" : "rgba(255,255,255,0.08)"}`,
+        color: active ? "#0a0f1e" : disabled ? "#2d3f55" : "#64748b",
+        boxShadow: active ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+        opacity: disabled ? 0.35 : 1,
+        fontFamily:"inherit",
+      }}>
+      {children}
+    </button>
+  );
+
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
         .ao-wrap, .ao-wrap * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* ── stat grid: 4 col desktop, 2 col mobile ── */
-        .ao-stats-grid {
+        /* ── stat grid inside header card: 4 col desktop, 2 col mobile ── */
+        .ao-stat-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(2, 1fr);
           gap: 10px;
         }
-        @media (max-width: 640px) {
-          .ao-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+        @media (min-width: 480px) {
+          .ao-stat-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         /* ── table rows ── */
@@ -584,21 +611,52 @@ export default function AdminOrder() {
           <motion.div key="ao" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0 }} transition={{ duration:0.25 }}>
 
-            {/* ── PAGE TITLE ── */}
-            <div style={{ textAlign:"center", marginBottom:12 }}>
-              <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.03em" }}>
-                {t("অর্ডার","Orders")}
-              </h1>
-              <p style={{ fontSize:13, color:"#475569", marginTop:4 }}>
-                {t("সকল অর্ডার পরিচালনা করুন","Manage all your orders")}
-              </p>
-            </div>
+            {/* ══ HEADER CARD (AdminSublinkLogs style) ══ */}
+            <motion.div
+              initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
+              transition={{ duration:0.4 }}
+              style={{ position:"relative", borderRadius:20, overflow:"hidden", marginBottom:14, background:"linear-gradient(135deg,#0d1426 0%,#111827 50%,#0f172a 100%)", border:"1px solid rgba(255,255,255,0.07)", boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
 
-            <div style={{ marginBottom:14 }}>
-              <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:8, background:"rgba(201,168,76,0.1)", border:"1px solid rgba(201,168,76,0.22)", color:"#c9a84c", fontWeight:600, fontSize:12 }}>
-                <ShoppingCart size={12} /> {t("অর্ডার","Orders")}
-              </span>
-            </div>
+              {/* top gradient line */}
+              <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,rgba(201,168,76,0.6) 30%,rgba(139,92,246,0.6) 70%,transparent)", pointerEvents:"none" }} />
+              {/* grid overlay */}
+              <div style={{ position:"absolute", inset:0, opacity:0.03, backgroundImage:"linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize:"32px 32px", pointerEvents:"none" }} />
+              {/* radial glows */}
+              <div style={{ position:"absolute", top:-60, right:-40, width:200, height:200, borderRadius:"50%", background:"radial-gradient(circle,rgba(201,168,76,0.07) 0%,transparent 70%)", pointerEvents:"none" }} />
+              <div style={{ position:"absolute", bottom:-40, left:-20, width:160, height:160, borderRadius:"50%", background:"radial-gradient(circle,rgba(129,140,248,0.06) 0%,transparent 70%)", pointerEvents:"none" }} />
+
+              <div style={{ position:"relative", padding:"22px 22px 18px" }}>
+                {/* title row */}
+                <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom:16 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                    <div style={{ width:46, height:46, borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, background:"linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border:"1px solid rgba(201,168,76,0.2)" }}>
+                      <ShoppingCart size={20} style={{ color:"#c9a84c" }} />
+                    </div>
+                    <div>
+                      <h1 style={{ fontSize:"clamp(18px,3.5vw,23px)", fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.02em", lineHeight:1.2 }}>
+                        {t("অর্ডার","Orders")}
+                      </h1>
+                      <p style={{ fontSize:12, color:"#475569", marginTop:3 }}>
+                        {t("সকল অর্ডার পরিচালনা করুন","Manage all your orders")}
+                      </p>
+                      <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:7, background:"rgba(201,168,76,0.1)", border:"1px solid rgba(201,168,76,0.22)", color:"#c9a84c", fontWeight:700, fontSize:10.5, marginTop:6 }}>
+                        <ShoppingCart size={10} /> {t("অর্ডার","Orders")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── STAT CARDS ── */}
+                <div className="ao-stat-grid">
+                  {statCards.map(s => (
+                    <div key={s.labelEn} style={{ borderRadius:12, padding:"12px 14px", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ fontSize:22, fontWeight:900, color:s.color, lineHeight:1 }}>{s.count}</div>
+                      <div style={{ fontSize:10, fontWeight:500, color:"#475569", marginTop:4 }}>{t(s.labelBn, s.labelEn)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
 
             {/* ── TOP BAR (search + refresh + live) ── */}
             <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between", gap:12, background:"linear-gradient(160deg,#0d1426,#111827)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:18, padding:"14px 16px", marginBottom:14, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
@@ -626,27 +684,6 @@ export default function AdminOrder() {
               </div>
             </div>
 
-            {/* ── STAT CARDS (2×2 on mobile) ── */}
-            <div className="ao-stats-grid" style={{ marginBottom:14 }}>
-              {statCards.map((s,i) => (
-                <motion.div key={s.labelEn}
-                  initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
-                  transition={{ delay:i*0.06, duration:0.38, ease:[0.22,1,0.36,1] }}>
-                  <div style={{ background:"#0d1426", borderRadius:16, border:`1.5px solid ${s.border}`, boxShadow:`0 4px 20px ${s.soft}, 0 1px 4px rgba(0,0,0,0.3)`, overflow:"hidden", position:"relative" }}>
-                    <div style={{ height:3, background:s.grad }} />
-                    <div style={{ padding:"13px 14px 14px" }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:s.grad, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, boxShadow:`0 4px 12px ${s.color}28` }}>
-                        <s.icon size={15} color="#fff" strokeWidth={2.2} />
-                      </div>
-                      <p style={{ fontSize:26, fontWeight:900, color:s.color, lineHeight:1, letterSpacing:"-0.03em", marginBottom:5 }}>{s.count}</p>
-                      <p style={{ fontSize:10.5, fontWeight:700, color:"#475569", textTransform:"uppercase", letterSpacing:".07em" }}>{t(s.labelBn, s.labelEn)}</p>
-                    </div>
-                    <div style={{ position:"absolute", bottom:-12, right:-12, width:60, height:60, borderRadius:"50%", background:`radial-gradient(circle,${s.color}12 0%,transparent 70%)`, pointerEvents:"none" }} />
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
             {/* ── FILTER ROW ── */}
             <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
               <div style={{ display:"flex", alignItems:"center", flex:"none" }}>
@@ -663,7 +700,6 @@ export default function AdminOrder() {
             {/* ── TABLE CARD ── */}
             <div style={{ background:"linear-gradient(160deg,#0d1426,#111827)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:18, boxShadow:"0 4px 24px rgba(0,0,0,0.3)", overflow:"hidden" }}>
 
-              {/* table header label */}
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.02)" }}>
                 <h2 style={{ fontSize:14, fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.02em" }}>
                   {t("অর্ডার তালিকা","Orders List")}
@@ -675,7 +711,6 @@ export default function AdminOrder() {
                 </h2>
               </div>
 
-              {/* col headers */}
               <div className="ao-col-header">
                 <div>#</div>
                 <div>{t("অর্ডার","Order")}</div>
@@ -690,14 +725,14 @@ export default function AdminOrder() {
                     <Loader2 size={26} style={{ color:"#334155" }} className="animate-spin" />
                     <p style={{ fontSize:13, color:"#475569" }}>{t("অর্ডার লোড হচ্ছে…","Loading orders…")}</p>
                   </div>
-                ) : displayed.length === 0 ? (
+                ) : paginated.length === 0 ? (
                   <div style={{ padding:"56px 0", textAlign:"center" }}>
                     <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
                       <Package size={22} style={{ color:"#334155" }} />
                     </div>
                     <p style={{ fontSize:13, color:"#475569" }}>{t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}</p>
                   </div>
-                ) : displayed.map((order, idx) => {
+                ) : paginated.map((order, idx) => {
                   const cfg   = STATUS_CFG[order.status] || STATUS_CFG.pending;
                   const isDig = order.paymentMethod !== "cod";
                   const proofOk = isDig && order.transactionId && order.screenshotUrl;
@@ -707,7 +742,7 @@ export default function AdminOrder() {
                       initial={{ opacity:0 }} animate={{ opacity:1 }}
                       transition={{ delay: idx * 0.015 }}>
 
-                      <div style={{ fontSize:11.5, fontWeight:600, color:"#334155" }}>{idx+1}</div>
+                      <div style={{ fontSize:11.5, fontWeight:600, color:"#334155" }}>{(page - 1) * PAGE_SIZE + idx + 1}</div>
 
                       <div style={{ minWidth:0, paddingRight:8 }}>
                         <p style={{ fontSize:12.5, fontWeight:700, color:"#e2e8f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.orderId}</p>
@@ -750,6 +785,33 @@ export default function AdminOrder() {
                 })}
               </div>
             </div>
+
+            {/* ── PAGINATION ── */}
+            {totalPages > 1 && (
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10, marginTop:14 }}>
+                <p style={{ fontSize:12, fontWeight:500, color:"#475569" }}>
+                  {t("পেজ","Page")}{" "}
+                  <span style={{ color:"#94a3b8" }}>{page}</span>
+                  {" "}{t("এর মধ্যে","of")}{" "}
+                  <span style={{ color:"#94a3b8" }}>{totalPages}</span>
+                  {" · "}
+                  <span style={{ color:"#64748b" }}>{displayed.length} {t("মোট","total")}</span>
+                </p>
+                <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                  <PageBtn onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                    ← {t("আগে","Prev")}
+                  </PageBtn>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const p = page <= 3 ? i + 1 : page - 2 + i;
+                    if (p > totalPages) return null;
+                    return <PageBtn key={p} onClick={() => setPage(p)} active={page === p}>{p}</PageBtn>;
+                  })}
+                  <PageBtn onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                    {t("পরে","Next")} →
+                  </PageBtn>
+                </div>
+              </div>
+            )}
 
           </motion.div>
         </AnimatePresence>
