@@ -45,17 +45,17 @@ function ModalPortal({ children }) {
 function ScreenshotViewer({ url }) {
   const [zoomed, setZoomed] = useState(false);
   if (!url) return (
-    <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(99,102,241,0.04)", border:"1px dashed rgba(99,102,241,0.2)", borderRadius:10, padding:"10px 14px" }}>
-      <ImageIcon size={13} style={{ color:"#c4cdd8" }} />
-      <span style={{ fontSize:12, color:"#94a3b8", fontStyle:"italic" }}>No screenshot uploaded</span>
+    <div style={{ display:"flex", alignItems:"center", gap:8, background:"rgba(167,139,250,0.04)", border:"1px dashed rgba(167,139,250,0.2)", borderRadius:10, padding:"10px 14px" }}>
+      <ImageIcon size={13} style={{ color:"#475569" }} />
+      <span style={{ fontSize:12, color:"#64748b", fontStyle:"italic" }}>No screenshot uploaded</span>
     </div>
   );
   return (
     <>
-      <div onClick={() => setZoomed(true)} style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid rgba(99,102,241,0.12)", cursor:"zoom-in" }}>
-        <img src={url} alt="payment proof" style={{ width:"100%", maxHeight:176, objectFit:"contain", background:"#f8f9ff", padding:4, display:"block" }} />
+      <div onClick={() => setZoomed(true)} style={{ position:"relative", borderRadius:12, overflow:"hidden", border:"1px solid rgba(167,139,250,0.15)", cursor:"zoom-in" }}>
+        <img src={url} alt="payment proof" style={{ width:"100%", maxHeight:176, objectFit:"contain", background:"#1e293b", padding:4, display:"block" }} />
         <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"rgba(0,0,0,0)", transition:"background .2s" }}
-          onMouseEnter={e => e.currentTarget.style.background="rgba(0,0,0,0.12)"}
+          onMouseEnter={e => e.currentTarget.style.background="rgba(0,0,0,0.3)"}
           onMouseLeave={e => e.currentTarget.style.background="rgba(0,0,0,0)"}>
           <span style={{ fontSize:11, fontWeight:600, color:"#fff", background:"rgba(0,0,0,0.55)", padding:"4px 10px", borderRadius:8 }}>🔍 Click to zoom</span>
         </div>
@@ -121,8 +121,8 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
     setSaving(false); onClose();
   };
 
-  const sec = { background:"rgba(99,102,241,0.025)", border:"1px solid rgba(99,102,241,0.09)", borderRadius:16, padding:"14px 16px" };
-  const secLabel = { fontSize:10, fontWeight:800, color:"#94a3b8", letterSpacing:".1em", textTransform:"uppercase", marginBottom:10, display:"block" };
+  const sec = { background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"14px 16px" };
+  const secLabel = { fontSize:10, fontWeight:800, color:"#64748b", letterSpacing:".1em", textTransform:"uppercase", marginBottom:10, display:"block" };
 
   return (
     <ModalPortal>
@@ -131,7 +131,7 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
           initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
           style={{
             position:"fixed", inset:0, zIndex:9000,
-            background:"rgba(15,23,42,0.55)",
+            background:"rgba(0,0,0,0.75)",
             backdropFilter:"blur(10px)",
             WebkitBackdropFilter:"blur(10px)",
             display:"flex",
@@ -147,10 +147,10 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
             exit={{ opacity:0, y:-16, scale:0.97 }}
             transition={{ type:"spring", stiffness:320, damping:28 }}
             style={{
-              background:"#ffffff",
+              background:"#0d1426",
               borderRadius:24,
-              border:"1px solid rgba(99,102,241,0.14)",
-              boxShadow:"0 0 0 1px rgba(99,102,241,0.06), 0 32px 80px rgba(15,23,42,0.28), 0 8px 24px rgba(99,102,241,0.12)",
+              border:"1px solid rgba(255,255,255,0.08)",
+              boxShadow:"0 0 0 1px rgba(255,255,255,0.04), 0 32px 80px rgba(0,0,0,0.6)",
               width:"100%",
               maxWidth:520,
               display:"flex",
@@ -163,17 +163,17 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
             <div style={{ height:4, background:`linear-gradient(90deg, ${currentCfg.barBg}, ${currentCfg.barBg}cc)`, flexShrink:0 }} />
 
             {/* Header */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", flexShrink:0, borderBottom:"1px solid rgba(99,102,241,0.08)", background:"rgba(99,102,241,0.02)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", flexShrink:0, borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.02)" }}>
               <div>
-                <p style={{ fontSize:10, fontWeight:800, color:"#94a3b8", letterSpacing:".1em", textTransform:"uppercase" }}>{t("অর্ডার বিবরণ","Order Details")}</p>
-                <p style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginTop:2, letterSpacing:"-0.02em" }}>{order.orderId}</p>
+                <p style={{ fontSize:10, fontWeight:800, color:"#475569", letterSpacing:".1em", textTransform:"uppercase" }}>{t("অর্ডার বিবরণ","Order Details")}</p>
+                <p style={{ fontSize:15, fontWeight:800, color:"#f1f5f9", marginTop:2, letterSpacing:"-0.02em" }}>{order.orderId}</p>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                 <span style={{ fontSize:11, fontWeight:700, padding:"5px 12px", borderRadius:99, background:currentCfg.bg, color:currentCfg.color, border:`1.5px solid ${currentCfg.border}`, display:"flex", alignItems:"center", gap:5 }}>
                   <span style={{ width:6, height:6, borderRadius:"50%", background:currentCfg.dot, display:"inline-block" }} />{currentCfg.label}
                 </span>
-                <button onClick={onClose} style={{ width:34, height:34, borderRadius:10, background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.13)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-                  <X size={15} style={{ color:"#6366f1" }} />
+                <button onClick={onClose} style={{ width:34, height:34, borderRadius:10, background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.1)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+                  <X size={15} style={{ color:"#94a3b8" }} />
                 </button>
               </div>
             </div>
@@ -181,7 +181,7 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
             <div style={{ padding:"16px 18px", display:"flex", flexDirection:"column", gap:10 }}>
 
               {/* Status updater */}
-              <div style={{ ...sec, background:"rgba(99,102,241,0.03)" }}>
+              <div style={{ ...sec, background:"rgba(255,255,255,0.02)" }}>
                 <span style={secLabel}>{t("স্ট্যাটাস আপডেট","Update Status")}</span>
                 {isFinished ? (
                   <div style={{ display:"flex", alignItems:"center", gap:10, background:currentCfg.bg, border:`1px solid ${currentCfg.border}`, borderRadius:12, padding:"12px 14px" }}>
@@ -194,8 +194,8 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
                       <span style={{ fontSize:12, fontWeight:600, color:currentCfg.color }}>{currentCfg.label}</span>
-                      <ArrowRight size={11} style={{ color:"#c4cdd8" }} />
-                      <span style={{ fontSize:12, color:"#94a3b8" }}>{t("একাধিক স্টেপ বেছে নিন:","Select steps:")}</span>
+                      <ArrowRight size={11} style={{ color:"#334155" }} />
+                      <span style={{ fontSize:12, color:"#64748b" }}>{t("একাধিক স্টেপ বেছে নিন:","Select steps:")}</span>
                     </div>
                     <div style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
                       {allowed.map(s => {
@@ -203,7 +203,7 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                         return (
                           <motion.button key={s} type="button" whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                             onClick={() => toggleStatus(s)}
-                            style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 12px", borderRadius:10, fontSize:12, fontWeight:600, cursor:"pointer", background:isOn?c.bg:"#f8f9ff", border:`1.5px solid ${isOn?c.border:isCan?"rgba(248,113,113,0.2)":"rgba(99,102,241,0.12)"}`, color:isOn?c.color:isCan?"#f87171":"#94a3b8", transition:"all .15s" }}>
+                            style={{ display:"flex", alignItems:"center", gap:5, padding:"7px 12px", borderRadius:10, fontSize:12, fontWeight:600, cursor:"pointer", background:isOn?c.bg:"rgba(255,255,255,0.04)", border:`1.5px solid ${isOn?c.border:isCan?"rgba(248,113,113,0.2)":"rgba(255,255,255,0.1)"}`, color:isOn?c.color:isCan?"#f87171":"#64748b", transition:"all .15s" }}>
                             {isOn && <span style={{ width:16, height:16, borderRadius:"50%", fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, background:isCan?"#f87171":c.dot, color:"#fff" }}>{selIdx+1}</span>}
                             <c.icon size={12} />{c.label}
                           </motion.button>
@@ -211,10 +211,10 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                       })}
                     </div>
                     {selected.length > 0 && (
-                      <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:4, background:"rgba(99,102,241,0.05)", borderRadius:10, padding:"8px 12px" }}>
+                      <div style={{ display:"flex", alignItems:"center", flexWrap:"wrap", gap:4, background:"rgba(255,255,255,0.04)", borderRadius:10, padding:"8px 12px" }}>
                         <span style={{ fontSize:11, fontWeight:600, color:currentCfg.color }}>{currentCfg.label}</span>
-                        {selected.map(s => { const c=STATUS_CFG[s]; return (<span key={s} style={{ display:"flex", alignItems:"center", gap:4 }}><ArrowRight size={9} style={{ color:"#c4cdd8" }} /><span style={{ fontSize:11, fontWeight:700, color:c.color }}>{c.label}</span></span>); })}
-                        <span style={{ marginLeft:"auto", fontSize:10, color:"#94a3b8" }}>→ {t("চূড়ান্ত","final")}: <span style={{ fontWeight:700, color:"#374151" }}>{STATUS_CFG[finalStatus]?.label}</span></span>
+                        {selected.map(s => { const c=STATUS_CFG[s]; return (<span key={s} style={{ display:"flex", alignItems:"center", gap:4 }}><ArrowRight size={9} style={{ color:"#334155" }} /><span style={{ fontSize:11, fontWeight:700, color:c.color }}>{c.label}</span></span>); })}
+                        <span style={{ marginLeft:"auto", fontSize:10, color:"#64748b" }}>→ {t("চূড়ান্ত","final")}: <span style={{ fontWeight:700, color:"#94a3b8" }}>{STATUS_CFG[finalStatus]?.label}</span></span>
                       </div>
                     )}
                     <AnimatePresence>
@@ -226,7 +226,7 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                             </p>
                             <input type="text" value={reason} onChange={e => { setReason(e.target.value); setErr(""); }}
                               placeholder={t("যেমন: ভুল ঠিকানা...","e.g. Wrong address...")} autoFocus
-                              style={{ width:"100%", outline:"none", background:"#fff", border:"1.5px solid rgba(248,113,113,0.3)", borderRadius:12, padding:"10px 14px", fontSize:13, color:"#1e293b", fontFamily:"inherit", transition:"all .15s" }} />
+                              style={{ width:"100%", outline:"none", background:"rgba(255,255,255,0.05)", border:"1.5px solid rgba(248,113,113,0.3)", borderRadius:12, padding:"10px 14px", fontSize:13, color:"#e2e8f0", fontFamily:"inherit", transition:"all .15s" }} />
                             {err && <p style={{ fontSize:12, color:"#f87171", fontWeight:500 }}>{err}</p>}
                           </div>
                         </motion.div>
@@ -246,15 +246,15 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                 <span style={secLabel}>{t("কাস্টমার","Customer")}</span>
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:36, height:36, borderRadius:11, flexShrink:0, background:"linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.12))", border:"1px solid rgba(99,102,241,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:800, color:"#6366f1" }}>
+                    <div style={{ width:36, height:36, borderRadius:11, flexShrink:0, background:"linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))", border:"1px solid rgba(201,168,76,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:800, color:"#c9a84c" }}>
                       {order.customer?.name?.[0]?.toUpperCase()}
                     </div>
-                    <span style={{ fontSize:14, fontWeight:700, color:"#0f172a" }}>{order.customer?.name}</span>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#f1f5f9" }}>{order.customer?.name}</span>
                   </div>
-                  <div style={{ display:"flex", alignItems:"center", gap:7 }}><Phone size={11} style={{ color:"#a8b4c8", flexShrink:0 }} /><span style={{ fontSize:13, color:"#64748b" }}>{order.customer?.phone}</span></div>
-                  {order.customer?.email && <span style={{ fontSize:12, color:"#94a3b8" }}>{order.customer.email}</span>}
-                  <div style={{ display:"flex", alignItems:"flex-start", gap:7 }}><MapPin size={11} style={{ color:"#a8b4c8", flexShrink:0, marginTop:2 }} /><span style={{ fontSize:13, color:"#64748b" }}>{order.customer?.address}, {order.customer?.thana}, {order.customer?.district}</span></div>
-                  {order.customer?.note && <p style={{ fontSize:12, color:"#94a3b8", fontStyle:"italic", background:"rgba(99,102,241,0.04)", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(99,102,241,0.08)" }}>"{order.customer.note}"</p>}
+                  <div style={{ display:"flex", alignItems:"center", gap:7 }}><Phone size={11} style={{ color:"#475569", flexShrink:0 }} /><span style={{ fontSize:13, color:"#94a3b8" }}>{order.customer?.phone}</span></div>
+                  {order.customer?.email && <span style={{ fontSize:12, color:"#64748b" }}>{order.customer.email}</span>}
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:7 }}><MapPin size={11} style={{ color:"#475569", flexShrink:0, marginTop:2 }} /><span style={{ fontSize:13, color:"#94a3b8" }}>{order.customer?.address}, {order.customer?.thana}, {order.customer?.district}</span></div>
+                  {order.customer?.note && <p style={{ fontSize:12, color:"#64748b", fontStyle:"italic", background:"rgba(255,255,255,0.03)", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(255,255,255,0.06)" }}>"{order.customer.note}"</p>}
                 </div>
               </div>
 
@@ -272,15 +272,15 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                 <div style={{ ...sec, background:proofOk?"rgba(52,211,153,0.05)":"rgba(232,164,39,0.05)", border:`1px solid ${proofOk?"rgba(52,211,153,0.18)":"rgba(232,164,39,0.2)"}` }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10 }}>
                     <span style={{ ...secLabel, marginBottom:0 }}>{t("পেমেন্ট","Payment")} — {PAY_LABEL[order.paymentMethod]}</span>
-                    <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:99, background:proofOk?"rgba(52,211,153,0.1)":"rgba(232,164,39,0.1)", color:proofOk?"#059669":"#d97706", border:`1px solid ${proofOk?"rgba(52,211,153,0.2)":"rgba(232,164,39,0.2)"}` }}>
+                    <span style={{ fontSize:11, fontWeight:700, padding:"3px 10px", borderRadius:99, background:proofOk?"rgba(52,211,153,0.1)":"rgba(232,164,39,0.1)", color:proofOk?"#34d399":"#e8a427", border:`1px solid ${proofOk?"rgba(52,211,153,0.2)":"rgba(232,164,39,0.2)"}` }}>
                       {proofOk ? t("✓ সম্পূর্ণ","✓ Complete") : t("⚠ অসম্পূর্ণ","⚠ Incomplete")}
                     </span>
                   </div>
                   <div style={{ display:"flex", flexDirection:"column", gap:6, marginBottom:10 }}>
                     {[{ icon:Phone, label:t("প্রেরকের নম্বর","Sender #"), val:order.paymentNumber, mono:false },{ icon:Hash, label:t("ট্রানজেকশন আইডি","TrxID"), val:order.transactionId, mono:true }].map(r => (
-                      <div key={r.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"#fff", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(99,102,241,0.08)" }}>
-                        <span style={{ fontSize:11, color:"#94a3b8", display:"flex", alignItems:"center", gap:5 }}><r.icon size={10} />{r.label}</span>
-                        <span style={{ fontSize:12, fontWeight:600, fontFamily:r.mono?"monospace":"inherit", color:r.val?"#374151":"#f87171", fontStyle:r.val?"normal":"italic" }}>{r.val||t("দেওয়া হয়নি","Not provided")}</span>
+                      <div key={r.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"rgba(255,255,255,0.04)", borderRadius:10, padding:"8px 12px", border:"1px solid rgba(255,255,255,0.07)" }}>
+                        <span style={{ fontSize:11, color:"#64748b", display:"flex", alignItems:"center", gap:5 }}><r.icon size={10} />{r.label}</span>
+                        <span style={{ fontSize:12, fontWeight:600, fontFamily:r.mono?"monospace":"inherit", color:r.val?"#e2e8f0":"#f87171", fontStyle:r.val?"normal":"italic" }}>{r.val||t("দেওয়া হয়নি","Not provided")}</span>
                       </div>
                     ))}
                   </div>
@@ -293,15 +293,15 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                 <span style={secLabel}>{t("পণ্যসমূহ","Items")} ({order.items?.length})</span>
                 <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
                   {order.items?.map((item, i) => (
-                    <div key={i} style={{ display:"flex", alignItems:"center", gap:10, background:"#fff", borderRadius:11, padding:"8px 10px", border:"1px solid rgba(99,102,241,0.07)" }}>
-                      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, background:"rgba(99,102,241,0.04)", border:"1px solid rgba(99,102,241,0.09)", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {item.image ? <img src={item.image} alt={item.name} style={{ width:"100%", height:"100%", objectFit:"contain", padding:2 }} /> : <Package size={13} style={{ color:"#c4cdd8" }} />}
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:10, background:"rgba(255,255,255,0.03)", borderRadius:11, padding:"8px 10px", border:"1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ width:40, height:40, borderRadius:9, flexShrink:0, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.07)", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {item.image ? <img src={item.image} alt={item.name} style={{ width:"100%", height:"100%", objectFit:"contain", padding:2 }} /> : <Package size={13} style={{ color:"#334155" }} />}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:12.5, fontWeight:600, color:"#1e293b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.name}</p>
-                        <p style={{ fontSize:12, color:"#94a3b8", marginTop:2 }}>৳{(item.salePrice||item.price||0).toLocaleString()} × {item.quantity}</p>
+                        <p style={{ fontSize:12.5, fontWeight:600, color:"#e2e8f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{item.name}</p>
+                        <p style={{ fontSize:12, color:"#64748b", marginTop:2 }}>৳{(item.salePrice||item.price||0).toLocaleString()} × {item.quantity}</p>
                       </div>
-                      <p style={{ fontSize:13.5, fontWeight:700, color:"#1e293b", flexShrink:0 }}>৳{((item.salePrice||item.price||0)*(item.quantity||1)).toLocaleString()}</p>
+                      <p style={{ fontSize:13.5, fontWeight:700, color:"#f1f5f9", flexShrink:0 }}>৳{((item.salePrice||item.price||0)*(item.quantity||1)).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>
@@ -312,26 +312,26 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                 <span style={secLabel}>{t("সারসংক্ষেপ","Summary")}</span>
                 <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
                   {[
-                    { label:t("সাবটোটাল","Subtotal"), val:`৳${order.subtotal?.toLocaleString()}`, color:"#64748b" },
-                    ...(order.savings>0?[{ label:t("সাশ্রয়","Savings"), val:`−৳${order.savings?.toLocaleString()}`, color:"#059669" }]:[]),
-                    { label:t("ডেলিভারি","Delivery"), val:order.deliveryCharge===0?t("বিনামূল্যে","Free"):`৳${order.deliveryCharge}`, color:"#64748b" },
+                    { label:t("সাবটোটাল","Subtotal"), val:`৳${order.subtotal?.toLocaleString()}`, color:"#94a3b8" },
+                    ...(order.savings>0?[{ label:t("সাশ্রয়","Savings"), val:`−৳${order.savings?.toLocaleString()}`, color:"#34d399" }]:[]),
+                    { label:t("ডেলিভারি","Delivery"), val:order.deliveryCharge===0?t("বিনামূল্যে","Free"):`৳${order.deliveryCharge}`, color:"#94a3b8" },
                   ].map(r => (
                     <div key={r.label} style={{ display:"flex", justifyContent:"space-between" }}>
-                      <span style={{ fontSize:13, color:"#94a3b8" }}>{r.label}</span>
+                      <span style={{ fontSize:13, color:"#64748b" }}>{r.label}</span>
                       <span style={{ fontSize:13, color:r.color, fontWeight:500 }}>{r.val}</span>
                     </div>
                   ))}
-                  <div style={{ height:1, background:"rgba(99,102,241,0.08)", margin:"2px 0" }} />
+                  <div style={{ height:1, background:"rgba(255,255,255,0.06)", margin:"2px 0" }} />
                   <div style={{ display:"flex", justifyContent:"space-between" }}>
-                    <span style={{ fontSize:14, fontWeight:700, color:"#1e293b" }}>{t("মোট","Total")}</span>
-                    <span style={{ fontSize:15, fontWeight:900, color:"#0f172a" }}>৳{order.total?.toLocaleString()}</span>
+                    <span style={{ fontSize:14, fontWeight:700, color:"#e2e8f0" }}>{t("মোট","Total")}</span>
+                    <span style={{ fontSize:15, fontWeight:900, color:"#f1f5f9" }}>৳{order.total?.toLocaleString()}</span>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:8, paddingTop:2 }}>
-                    <CreditCard size={11} style={{ color:"#a8b4c8" }} />
-                    <span style={{ fontSize:12, color:"#94a3b8" }}>{PAY_LABEL[order.paymentMethod]}</span>
+                    <CreditCard size={11} style={{ color:"#475569" }} />
+                    <span style={{ fontSize:12, color:"#64748b" }}>{PAY_LABEL[order.paymentMethod]}</span>
                     <span style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:99, marginLeft:"auto",
                       background:order.paymentStatus==="paid"?"rgba(52,211,153,0.08)":order.paymentStatus==="awaiting_confirmation"?"rgba(56,189,248,0.08)":"rgba(232,164,39,0.08)",
-                      color:order.paymentStatus==="paid"?"#059669":order.paymentStatus==="awaiting_confirmation"?"#0284c7":"#d97706",
+                      color:order.paymentStatus==="paid"?"#34d399":order.paymentStatus==="awaiting_confirmation"?"#38bdf8":"#e8a427",
                       border:`1px solid ${order.paymentStatus==="paid"?"rgba(52,211,153,0.2)":order.paymentStatus==="awaiting_confirmation"?"rgba(56,189,248,0.2)":"rgba(232,164,39,0.2)"}` }}>
                       {order.paymentStatus}
                     </span>
@@ -339,7 +339,7 @@ function OrderModal({ order, onClose, onStatusChange, t }) {
                 </div>
               </div>
 
-              <p style={{ fontSize:11.5, textAlign:"center", color:"#c4cdd8" }}>{new Date(order.createdAt).toLocaleString("en-BD")}</p>
+              <p style={{ fontSize:11.5, textAlign:"center", color:"#334155" }}>{new Date(order.createdAt).toLocaleString("en-BD")}</p>
             </div>
           </motion.div>
         </motion.div>
@@ -485,28 +485,28 @@ export default function AdminOrder() {
 
   const statCards = [
     { labelBn:"মোট",      labelEn:"Total",      count:stats.total,      color:"#c9a84c", soft:"rgba(201,168,76,0.08)",  border:"rgba(201,168,76,0.22)",  grad:"linear-gradient(135deg,#e8c876,#c9a84c)", icon:ShoppingCart },
-    { labelBn:"অপেক্ষা",  labelEn:"Pending",    count:stats.pending,    color:"#d97706", soft:"rgba(232,164,39,0.08)", border:"rgba(232,164,39,0.22)", grad:"linear-gradient(135deg,#fbbf24,#f59e0b)", icon:Clock        },
-    { labelBn:"প্রসেসিং", labelEn:"Processing", count:stats.processing, color:"#7c3aed", soft:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.22)", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)", icon:Box          },
-    { labelBn:"পথে",      labelEn:"Shipped",    count:stats.shipped,    color:"#2563eb", soft:"rgba(96,165,250,0.08)",  border:"rgba(96,165,250,0.22)",  grad:"linear-gradient(135deg,#60a5fa,#3b82f6)", icon:Truck        },
+    { labelBn:"অপেক্ষা",  labelEn:"Pending",    count:stats.pending,    color:"#e8a427", soft:"rgba(232,164,39,0.08)", border:"rgba(232,164,39,0.22)", grad:"linear-gradient(135deg,#fbbf24,#f59e0b)", icon:Clock        },
+    { labelBn:"প্রসেসিং", labelEn:"Processing", count:stats.processing, color:"#a78bfa", soft:"rgba(167,139,250,0.08)", border:"rgba(167,139,250,0.22)", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)", icon:Box          },
+    { labelBn:"পথে",      labelEn:"Shipped",    count:stats.shipped,    color:"#60a5fa", soft:"rgba(96,165,250,0.08)",  border:"rgba(96,165,250,0.22)",  grad:"linear-gradient(135deg,#60a5fa,#3b82f6)", icon:Truck        },
   ];
 
   /* inline dropdown */
   const DDBtn = ({ refEl, open, setOpen, value, options, onChange }) => (
     <div style={{ position:"relative" }} ref={refEl}>
       <button type="button" onClick={() => setOpen(o => !o)}
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, fontSize:13, borderRadius:12, padding:"9px 14px", cursor:"pointer", background:"#fff", border:"1px solid rgba(99,102,241,0.15)", color:"#374151", fontWeight:500, minWidth:130, boxShadow:"0 1px 4px rgba(99,102,241,0.05)", fontFamily:"inherit" }}>
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, fontSize:13, borderRadius:12, padding:"9px 14px", cursor:"pointer", background:"#0d1426", border:"1px solid rgba(255,255,255,0.1)", color:"#94a3b8", fontWeight:500, minWidth:130, boxShadow:"0 1px 4px rgba(0,0,0,0.3)", fontFamily:"inherit" }}>
         <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{options.find(o => o.value === value)?.label}</span>
-        <ChevronDown size={12} style={{ color:"#a8b4c8", flexShrink:0 }}/>
+        <ChevronDown size={12} style={{ color:"#475569", flexShrink:0 }}/>
       </button>
       <AnimatePresence>
         {open && (
           <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }}
             exit={{ opacity:0 }} transition={{ duration:0.15 }}
-            style={{ position:"absolute", right:0, top:"calc(100% + 6px)", minWidth:"100%", borderRadius:14, background:"#fff", border:"1px solid rgba(99,102,241,0.12)", boxShadow:"0 16px 48px rgba(99,102,241,0.13)", overflow:"hidden", zIndex:50 }}>
+            style={{ position:"absolute", right:0, top:"calc(100% + 6px)", minWidth:"100%", borderRadius:14, background:"#111827", border:"1px solid rgba(255,255,255,0.09)", boxShadow:"0 16px 48px rgba(0,0,0,0.5)", overflow:"hidden", zIndex:50 }}>
             {options.map(opt => (
               <div key={opt.value} onClick={() => { onChange(opt.value); setOpen(false); }}
-                style={{ padding:"10px 14px", fontSize:13, cursor:"pointer", background: value === opt.value ? "rgba(99,102,241,0.07)" : "transparent", color: value === opt.value ? "#6366f1" : "#374151", fontWeight: value === opt.value ? 600 : 400, whiteSpace:"nowrap" }}
-                onMouseEnter={e => { if (value !== opt.value) e.currentTarget.style.background = "rgba(99,102,241,0.04)"; }}
+                style={{ padding:"10px 14px", fontSize:13, cursor:"pointer", background: value === opt.value ? "rgba(201,168,76,0.08)" : "transparent", color: value === opt.value ? "#c9a84c" : "#94a3b8", fontWeight: value === opt.value ? 600 : 400, whiteSpace:"nowrap" }}
+                onMouseEnter={e => { if (value !== opt.value) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
                 onMouseLeave={e => { if (value !== opt.value) e.currentTarget.style.background = "transparent"; }}>
                 {opt.label}
               </div>
@@ -542,19 +542,19 @@ export default function AdminOrder() {
         }
         .ao-col-header {
           padding: 10px 20px;
-          font-size: 10.5px; font-weight: 700; color: #94a3b8;
+          font-size: 10.5px; font-weight: 700; color: #475569;
           letter-spacing: .06em; text-transform: uppercase;
-          border-bottom: 1px solid rgba(99,102,241,0.08);
-          background: rgba(99,102,241,0.02);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.02);
           position: sticky; top: 0; z-index: 10;
         }
         .ao-row {
           padding: 12px 20px;
-          border-bottom: 1px solid rgba(99,102,241,0.06);
+          border-bottom: 1px solid rgba(255,255,255,0.05);
           transition: background 0.12s;
         }
         .ao-row:last-child { border-bottom: none; }
-        .ao-row:hover { background: rgba(99,102,241,0.025); }
+        .ao-row:hover { background: rgba(255,255,255,0.03); }
 
         @media (max-width: 640px) {
           .ao-col-header, .ao-row {
@@ -586,10 +586,10 @@ export default function AdminOrder() {
 
             {/* ── PAGE TITLE ── */}
             <div style={{ textAlign:"center", marginBottom:12 }}>
-              <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#1e293b", letterSpacing:"-0.03em" }}>
+              <h1 style={{ fontSize:"clamp(20px,4vw,28px)", fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.03em" }}>
                 {t("অর্ডার","Orders")}
               </h1>
-              <p style={{ fontSize:13, color:"#94a3b8", marginTop:4 }}>
+              <p style={{ fontSize:13, color:"#475569", marginTop:4 }}>
                 {t("সকল অর্ডার পরিচালনা করুন","Manage all your orders")}
               </p>
             </div>
@@ -601,14 +601,14 @@ export default function AdminOrder() {
             </div>
 
             {/* ── TOP BAR (search + refresh + live) ── */}
-            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between", gap:12, background:"linear-gradient(160deg,#ffffff,#fafbff)", border:"1px solid rgba(99,102,241,0.10)", borderRadius:18, padding:"14px 16px", marginBottom:14, boxShadow:"0 4px 20px rgba(99,102,241,0.06)" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10, flex:"1 1 220px", maxWidth:340, background:"rgba(99,102,241,0.05)", border:"1px solid rgba(99,102,241,0.12)", borderRadius:11, padding:"8px 13px" }}>
-                <Search size={14} style={{ color:"#a8b4c8", flexShrink:0 }} />
+            <div style={{ display:"flex", flexWrap:"wrap", alignItems:"center", justifyContent:"space-between", gap:12, background:"linear-gradient(160deg,#0d1426,#111827)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:18, padding:"14px 16px", marginBottom:14, boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, flex:"1 1 220px", maxWidth:340, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:11, padding:"8px 13px" }}>
+                <Search size={14} style={{ color:"#475569", flexShrink:0 }} />
                 <input type="text"
                   placeholder={t("নাম, ফোন, অর্ডার আইডি…","Search name, phone, order ID…")}
                   value={search} onChange={e => setSearch(e.target.value)}
-                  style={{ background:"transparent", outline:"none", border:"none", fontSize:13, color:"#374151", width:"100%", fontFamily:"'Plus Jakarta Sans',sans-serif" }} />
-                {search && <button onClick={() => setSearch("")} style={{ color:"#a8b4c8", lineHeight:1, background:"none", border:"none", cursor:"pointer" }}><X size={12} /></button>}
+                  style={{ background:"transparent", outline:"none", border:"none", fontSize:13, color:"#e2e8f0", width:"100%", fontFamily:"'Plus Jakarta Sans',sans-serif" }} />
+                {search && <button onClick={() => setSearch("")} style={{ color:"#475569", lineHeight:1, background:"none", border:"none", cursor:"pointer" }}><X size={12} /></button>}
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:10, background:"rgba(52,211,153,0.06)", border:"1px solid rgba(52,211,153,0.15)" }}>
@@ -619,7 +619,7 @@ export default function AdminOrder() {
                 </div>
                 <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.97 }}
                   onClick={() => { fetchOrders(); setCountdown(10); }}
-                  style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(99,102,241,0.06)", border:"1px solid rgba(99,102,241,0.14)", borderRadius:11, padding:"9px 14px", fontSize:13, fontWeight:500, color:"#6366f1", cursor:"pointer" }}>
+                  style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:11, padding:"9px 14px", fontSize:13, fontWeight:500, color:"#94a3b8", cursor:"pointer" }}>
                   <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
                   <span>{t("রিফ্রেশ","Refresh")}</span>
                 </motion.button>
@@ -632,14 +632,14 @@ export default function AdminOrder() {
                 <motion.div key={s.labelEn}
                   initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
                   transition={{ delay:i*0.06, duration:0.38, ease:[0.22,1,0.36,1] }}>
-                  <div style={{ background:"#fff", borderRadius:16, border:`1.5px solid ${s.border}`, boxShadow:`0 4px 20px ${s.soft}, 0 1px 4px rgba(0,0,0,0.04)`, overflow:"hidden", position:"relative" }}>
+                  <div style={{ background:"#0d1426", borderRadius:16, border:`1.5px solid ${s.border}`, boxShadow:`0 4px 20px ${s.soft}, 0 1px 4px rgba(0,0,0,0.3)`, overflow:"hidden", position:"relative" }}>
                     <div style={{ height:3, background:s.grad }} />
                     <div style={{ padding:"13px 14px 14px" }}>
                       <div style={{ width:36, height:36, borderRadius:10, background:s.grad, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:10, boxShadow:`0 4px 12px ${s.color}28` }}>
                         <s.icon size={15} color="#fff" strokeWidth={2.2} />
                       </div>
                       <p style={{ fontSize:26, fontWeight:900, color:s.color, lineHeight:1, letterSpacing:"-0.03em", marginBottom:5 }}>{s.count}</p>
-                      <p style={{ fontSize:10.5, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:".07em" }}>{t(s.labelBn, s.labelEn)}</p>
+                      <p style={{ fontSize:10.5, fontWeight:700, color:"#475569", textTransform:"uppercase", letterSpacing:".07em" }}>{t(s.labelBn, s.labelEn)}</p>
                     </div>
                     <div style={{ position:"absolute", bottom:-12, right:-12, width:60, height:60, borderRadius:"50%", background:`radial-gradient(circle,${s.color}12 0%,transparent 70%)`, pointerEvents:"none" }} />
                   </div>
@@ -661,14 +661,14 @@ export default function AdminOrder() {
             </div>
 
             {/* ── TABLE CARD ── */}
-            <div style={{ background:"linear-gradient(160deg,#ffffff,#fafbff)", border:"1px solid rgba(99,102,241,0.10)", borderRadius:18, boxShadow:"0 4px 24px rgba(99,102,241,0.06)", overflow:"hidden" }}>
+            <div style={{ background:"linear-gradient(160deg,#0d1426,#111827)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:18, boxShadow:"0 4px 24px rgba(0,0,0,0.3)", overflow:"hidden" }}>
 
               {/* table header label */}
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"1px solid rgba(99,102,241,0.08)", background:"rgba(99,102,241,0.025)" }}>
-                <h2 style={{ fontSize:14, fontWeight:900, color:"#1e293b", letterSpacing:"-0.02em" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 20px", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(255,255,255,0.02)" }}>
+                <h2 style={{ fontSize:14, fontWeight:900, color:"#f1f5f9", letterSpacing:"-0.02em" }}>
                   {t("অর্ডার তালিকা","Orders List")}
                   {displayed.length !== orders.length && (
-                    <span style={{ marginLeft:8, fontSize:11, fontWeight:500, color:"#94a3b8" }}>
+                    <span style={{ marginLeft:8, fontSize:11, fontWeight:500, color:"#475569" }}>
                       ({displayed.length} {t("এর","of")} {orders.length})
                     </span>
                   )}
@@ -687,15 +687,15 @@ export default function AdminOrder() {
               <div style={{ overflowY:"auto", maxHeight:"60vh" }}>
                 {loading ? (
                   <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"64px 0", gap:12 }}>
-                    <Loader2 size={26} style={{ color:"#c4cdd8" }} className="animate-spin" />
-                    <p style={{ fontSize:13, color:"#94a3b8" }}>{t("অর্ডার লোড হচ্ছে…","Loading orders…")}</p>
+                    <Loader2 size={26} style={{ color:"#334155" }} className="animate-spin" />
+                    <p style={{ fontSize:13, color:"#475569" }}>{t("অর্ডার লোড হচ্ছে…","Loading orders…")}</p>
                   </div>
                 ) : displayed.length === 0 ? (
                   <div style={{ padding:"56px 0", textAlign:"center" }}>
-                    <div style={{ width:48, height:48, borderRadius:14, background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.12)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
-                      <Package size={22} style={{ color:"#c4cdd8" }} />
+                    <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 14px" }}>
+                      <Package size={22} style={{ color:"#334155" }} />
                     </div>
-                    <p style={{ fontSize:13, color:"#94a3b8" }}>{t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}</p>
+                    <p style={{ fontSize:13, color:"#475569" }}>{t("কোনো অর্ডার পাওয়া যায়নি।","No orders found.")}</p>
                   </div>
                 ) : displayed.map((order, idx) => {
                   const cfg   = STATUS_CFG[order.status] || STATUS_CFG.pending;
@@ -707,10 +707,10 @@ export default function AdminOrder() {
                       initial={{ opacity:0 }} animate={{ opacity:1 }}
                       transition={{ delay: idx * 0.015 }}>
 
-                      <div style={{ fontSize:11.5, fontWeight:600, color:"#c4cdd8" }}>{idx+1}</div>
+                      <div style={{ fontSize:11.5, fontWeight:600, color:"#334155" }}>{idx+1}</div>
 
                       <div style={{ minWidth:0, paddingRight:8 }}>
-                        <p style={{ fontSize:12.5, fontWeight:700, color:"#1e293b", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.orderId}</p>
+                        <p style={{ fontSize:12.5, fontWeight:700, color:"#e2e8f0", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.orderId}</p>
                         <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:2 }}>
                           <span style={{ width:5, height:5, borderRadius:"50%", background:cfg.dot, display:"inline-block", flexShrink:0 }} />
                           <span style={{ fontSize:10, fontWeight:700, color:cfg.color }}>{cfg.label}</span>
@@ -718,23 +718,23 @@ export default function AdminOrder() {
                       </div>
 
                       <div className="ao-hide-sm" style={{ minWidth:0, paddingRight:6 }}>
-                        <p style={{ fontSize:12.5, fontWeight:600, color:"#374151", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.customer?.name}</p>
-                        <p style={{ fontSize:11, color:"#94a3b8" }}>{order.customer?.phone}</p>
+                        <p style={{ fontSize:12.5, fontWeight:600, color:"#94a3b8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{order.customer?.name}</p>
+                        <p style={{ fontSize:11, color:"#475569" }}>{order.customer?.phone}</p>
                       </div>
 
                       <div>
-                        <p style={{ fontSize:12.5, fontWeight:800, color:"#1e293b", whiteSpace:"nowrap" }}>৳{order.total?.toLocaleString()}</p>
-                        <p style={{ fontSize:10.5, color:"#94a3b8" }}>{PAY_LABEL[order.paymentMethod]}</p>
-                        {proofOk && <p style={{ fontSize:10, color:"#059669", marginTop:1 }}>✓ {t("প্রমাণ","Proof")}</p>}
-                        {proofBd && <p style={{ fontSize:10, color:"#d97706", marginTop:1 }}>⚠ {t("প্রমাণ নেই","No proof")}</p>}
+                        <p style={{ fontSize:12.5, fontWeight:800, color:"#f1f5f9", whiteSpace:"nowrap" }}>৳{order.total?.toLocaleString()}</p>
+                        <p style={{ fontSize:10.5, color:"#475569" }}>{PAY_LABEL[order.paymentMethod]}</p>
+                        {proofOk && <p style={{ fontSize:10, color:"#34d399", marginTop:1 }}>✓ {t("প্রমাণ","Proof")}</p>}
+                        {proofBd && <p style={{ fontSize:10, color:"#e8a427", marginTop:1 }}>⚠ {t("প্রমাণ নেই","No proof")}</p>}
                       </div>
 
                       <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end", gap:6 }}>
                         <motion.button className="ao-icon-btn" whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
-                          style={{ background:"rgba(99,102,241,0.07)", border:"1px solid rgba(99,102,241,0.13)", color:"#6366f1" }}
+                          style={{ background:"rgba(201,168,76,0.08)", border:"1px solid rgba(201,168,76,0.18)", color:"#c9a84c" }}
                           onClick={() => setSelOrder(order)}
-                          onMouseEnter={e => e.currentTarget.style.background="rgba(99,102,241,0.14)"}
-                          onMouseLeave={e => e.currentTarget.style.background="rgba(99,102,241,0.07)"}>
+                          onMouseEnter={e => e.currentTarget.style.background="rgba(201,168,76,0.16)"}
+                          onMouseLeave={e => e.currentTarget.style.background="rgba(201,168,76,0.08)"}>
                           <Eye size={13}/>
                         </motion.button>
                         <motion.button className="ao-icon-btn" whileHover={{ scale:1.1 }} whileTap={{ scale:0.9 }}
