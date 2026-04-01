@@ -420,6 +420,11 @@ export default function AdminDashboard() {
         }
         .adm-content-inner { position: relative; z-index: 1; padding: 28px 24px; }
 
+
+        @media (max-width: 640px) {
+          .adm-content-inner { padding: 16px 14px; }
+        }
+
         .adm-breadcrumb {
           display: flex; align-items: center; gap: 6px;
           margin-bottom: 20px; font-size: 11px; color: #334155;
