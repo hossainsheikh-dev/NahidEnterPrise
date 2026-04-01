@@ -30,6 +30,10 @@ function ProductCard({ product }) {
   const salePrice   = product.salePrice ?? product.price;
   const wished      = isWished(product._id);
 
+
+    console.log("STOCK DEBUG:", product.name, product.stock, typeof product.stock);
+
+
   const isNew = (() => {
     const d = new Date(product.createdAt);
     return (Date.now() - d) / 86400000 <= 14;
