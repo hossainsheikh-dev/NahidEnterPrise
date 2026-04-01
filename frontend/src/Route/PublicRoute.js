@@ -12,7 +12,7 @@ function PublicRoute({ children }) {
     const decoded = jwtDecode(token);
 
     if (decoded.role === "admin") {
-      return <Navigate to="/admin/dashboard" replace />;
+      return <Navigate to="/manage-x9k2/dashboard" replace />;  // ✅ নতুন
     }
 
     return children;

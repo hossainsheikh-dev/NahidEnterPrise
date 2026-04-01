@@ -5,19 +5,19 @@ function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/manage-x9k2/auth" replace />;  // ✅ নতুন
   }
 
   try {
     const decoded = jwtDecode(token);
 
     if (decoded.role !== "admin") {
-      return <Navigate to="/404" replace />;
+      return <Navigate to="/manage-x9k2/auth" replace />;  // ✅ নতুন
     }
 
     return children;
   } catch (error) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/manage-x9k2/auth" replace />;  // ✅ নতুন
   }
 }
 
