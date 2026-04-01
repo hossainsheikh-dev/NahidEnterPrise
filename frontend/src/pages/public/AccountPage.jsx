@@ -1725,6 +1725,11 @@ export default function AccountPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
+  /* ── Scroll to top on mount ── */
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
   useEffect(()=>{
     const token = localStorage.getItem("customerToken");
     const info  = localStorage.getItem("customerInfo");
@@ -1824,22 +1829,12 @@ export default function AccountPage() {
       <div className="relative z-10 flex flex-col items-center px-4 pt-10 pb-16">
         <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:0.35,delay:0.05}}
           className="text-center mb-8 max-w-sm">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-4"
-            style={{background:"#f0fdf4",border:"1px solid #bbf7d0"}}>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/>
-            <span className="text-[11.5px] font-bold text-emerald-700">
-              {mode==="register"?t("বিনামূল্যে","Free Account"):t("আবার স্বাগতম","Welcome Back")}
-            </span>
-          </div>
+          {/* ── Badge সরানো হয়েছে (লগিন ও রেজিস্ট্রেশন উভয় থেকে) ── */}
           <h1 className="text-[28px] sm:text-[32px] font-black text-slate-900 leading-tight tracking-tight">
-            {t("Nahid Enterprise","Nahid Enterprise")}<br/>
-            <span style={{
-              color: mode==="register"?"#dc2626":undefined,
-              background: mode==="register"?"none":"linear-gradient(135deg,#15803d,#4ade80)",
-              WebkitBackgroundClip: mode==="register"?"unset":"text",
-              WebkitTextFillColor: mode==="register"?"unset":"transparent",
-            }}>
-              {mode==="register"?t("রেজিস্ট্রেশন","Registration"):t("লগইন","Sign In")}
+            {/* ── Nahid Enterprise ও Sign In / Registration সব লাল ── */}
+            <span style={{ color: "#dc2626" }}>Nahid Enterprise</span><br/>
+            <span style={{ color: "#dc2626" }}>
+              {mode === "register" ? t("রেজিস্ট্রেশন","Registration") : t("লগইন","Sign In")}
             </span>
           </h1>
         </motion.div>
