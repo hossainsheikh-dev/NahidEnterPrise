@@ -259,7 +259,7 @@ export default function SubAdminOrderBell() {
                     <motion.button
                       initial={{ opacity:0, x:-8 }} animate={{ opacity:1, x:0 }}
                       transition={{ delay:0.05 }}
-                      onClick={() => { navigate("/subadmin/orders"); setOpen(false); }}
+                      onClick={() => { navigate("/portal-v7m4/orders"); setOpen(false); }}
                       className="w-full flex items-center gap-3 px-3 py-3 text-left transition-all group"
                       style={{ background:"transparent" }}
                       onMouseEnter={e => e.currentTarget.style.background="rgba(99,102,241,0.04)"}
