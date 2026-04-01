@@ -14,9 +14,9 @@ import { SortFilterDropdown, applySortFilter } from "../components/SortFilter";
 const API          = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 const ITEMS_PER_PAGE = 12;
 
-
-
-//product card
+/* ════════════════════════════════
+   HOME PRODUCT CARD
+════════════════════════════════ */
 function HomeProductCard({ product, index }) {
   const { addToCart }                = useCart();
   const { toggleWishlist, isWished } = useWishlist();
@@ -26,7 +26,7 @@ function HomeProductCard({ product, index }) {
 
   const hasDiscount = product.discountType !== "none" && product.discountValue > 0;
   const salePrice   = product.salePrice ?? product.price;
-  const inStock     = product.stock > 0;
+  const inStock     = Number(product.stock) > 0; // ✅ FIX
   const wished      = isWished(product._id);
   const image       = product.images?.[0]?.url || product.image || "";
 
@@ -113,8 +113,9 @@ function HomeProductCard({ product, index }) {
   );
 }
 
-
-//section header
+/* ════════════════════════════════
+   SECTION HEADER
+════════════════════════════════ */
 function SectionHeader({ icon, titleBn, titleEn, subtitleBn, subtitleEn, showAllTo, t }) {
   return (
     <div className="flex items-center justify-between mb-5">
@@ -136,7 +137,9 @@ function SectionHeader({ icon, titleBn, titleEn, subtitleBn, subtitleEn, showAll
   );
 }
 
-//skeleton
+/* ════════════════════════════════
+   SKELETON
+════════════════════════════════ */
 function Skeletons({ count = 8 }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
@@ -155,7 +158,30 @@ function Skeletons({ count = 8 }) {
   );
 }
 
-//lazy product grid
+/* ════════════════════════════════
+   SPINNER
+════════════════════════════════ */
+function PageSpinner({ t }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-28 gap-4">
+      <div className="relative w-12 h-12">
+        <div className="absolute inset-0 rounded-full border-2 border-gray-100" />
+        <motion.div
+          className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#2e7d32]"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+        />
+      </div>
+      <p className="text-[13px] text-gray-400 font-medium">
+        {t("পণ্য লোড হচ্ছে...", "Loading products...")}
+      </p>
+    </div>
+  );
+}
+
+/* ════════════════════════════════
+   LAZY PRODUCT GRID
+════════════════════════════════ */
 function LazyProductGrid({ products, t }) {
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
   const [loadingMore,  setLoadingMore ] = useState(false);
@@ -200,7 +226,6 @@ function LazyProductGrid({ products, t }) {
         {visibleProducts.map((p, i) => <HomeProductCard key={p._id} product={p} index={i} />)}
       </div>
 
-      {/* Loader */}
       <div ref={loaderRef} className="mt-8 flex flex-col items-center gap-3">
         {loadingMore && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -234,9 +259,9 @@ function LazyProductGrid({ products, t }) {
   );
 }
 
-
-
-//link catehogory
+/* ════════════════════════════════
+   LINK CATEGORY SECTION
+════════════════════════════════ */
 function LinkSection({ link, t }) {
   const [products, setProducts] = useState([]);
   const [loading,  setLoading ] = useState(true);
@@ -272,9 +297,9 @@ function LinkSection({ link, t }) {
   );
 }
 
-
-
-//main home
+/* ════════════════════════════════
+   MAIN HOME
+════════════════════════════════ */
 function Home() {
   const t = useT();
 
@@ -333,7 +358,7 @@ function Home() {
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 mt-12 pb-10">
 
-        {/* all product */}
+        {/* সব পণ্য */}
         <section className="mb-14">
           <SectionHeader
             icon={<Package size={18} className="text-[#1a2e1a]" />}
@@ -347,13 +372,14 @@ function Home() {
             filters={filters} setFilters={setFilters}
             total={filteredProducts.length} t={t}
           />
+          {/* ✅ Spinner — skeleton এর বদলে */}
           {loadingAll
-            ? <Skeletons count={8} />
+            ? <PageSpinner t={t} />
             : <LazyProductGrid products={filteredProducts} t={t} />
           }
         </section>
 
-        {/* most seller*/}
+        {/* সবচেয়ে বেশি বিক্রিত */}
         {(loadingOrdered || mostOrdered.length > 0) && (
           <section className="mb-14">
             <SectionHeader
@@ -372,7 +398,7 @@ function Home() {
           </section>
         )}
 
-        {/*popular section*/}
+        {/* জনপ্রিয় পণ্য */}
         {(loadingWish || mostWishlisted.length > 0) && (
           <section className="mb-14">
             <SectionHeader
@@ -391,7 +417,7 @@ function Home() {
           </section>
         )}
 
-        {/*link Category sections */}
+        {/* লিংক ক্যাটাগরি */}
         {navLinks.map(link => (
           <LinkSection key={link._id} link={link} t={t} />
         ))}
