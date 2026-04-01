@@ -185,7 +185,10 @@ const ProductAdd = ({
         .pa-feature-row.filled { border-color: rgba(52,211,153,0.25); }
         .pa-feature-key {
           display: flex; align-items: center; gap: 8px;
-          padding: 11px 14px; min-width: 150px; flex-shrink: 0;
+          padding: 11px 14px;
+          width: clamp(100px, 35%, 150px);
+          min-width: unset;
+          flex-shrink: 0;
           background: rgba(255,255,255,0.03);
           border-right: 1px solid rgba(255,255,255,0.06);
           transition: background 0.2s;
@@ -197,6 +200,7 @@ const ProductAdd = ({
           border: none; outline: none;
           font-size: 13px; font-weight: 500; color: #e2e8f0;
           font-family: 'DM Sans', sans-serif;
+          min-width: 0;
         }
         .pa-feature-val::placeholder { color: #334155; font-weight: 400; }
         .pa-upload-zone {
