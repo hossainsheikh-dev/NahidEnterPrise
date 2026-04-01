@@ -19,63 +19,45 @@ const PER_PAGE = 10;
 function StatCard({ icon, label, value, color, loading, trend }) {
   return (
     <motion.div
-      whileHover={{ y: -2, boxShadow: `0 8px 32px ${color}22` }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      className="rounded-2xl overflow-hidden relative"
       style={{
-        background:   "#0d1426",
-        border:       "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 20,
-        boxShadow:    `0 2px 12px ${color}0f`,
-        overflow:     "hidden",
-        position:     "relative",
-        padding:      "18px 16px 16px",
+        background: "#0d1426",
+        border:     "1px solid rgba(255,255,255,0.06)",
+        boxShadow:  `0 2px 12px ${color}0f`,
+        padding:    "18px 16px 16px",
       }}
     >
       {/* top color bar */}
-      <div style={{
-        position:     "absolute", top: 0, left: 0, right: 0, height: 3,
-        background:   `linear-gradient(90deg, ${color}, ${color}88)`,
-        borderRadius: "20px 20px 0 0",
-      }}/>
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl"
+        style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}/>
 
-      {/* ambient glow blob */}
-      <div style={{
-        position:      "absolute", top: -20, right: -20,
-        width:         80, height: 80, borderRadius: "50%",
-        background:    `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
-        pointerEvents: "none",
-      }}/>
+      {/* glow blob */}
+      <div className="absolute -top-5 -right-5 w-20 h-20 rounded-full pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${color}18 0%, transparent 70%)` }}/>
 
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        {/* left: value + label */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex items-start justify-between gap-2">
+        {/* value + label */}
+        <div className="flex-1 min-w-0">
           {loading ? (
             <>
-              <div style={{ height: 28, width: "60%", borderRadius: 8, background: `${color}12`, marginBottom: 8, animation: "pulse 1.5s infinite" }}/>
-              <div style={{ height: 10, width: "80%", borderRadius: 6, background: "rgba(255,255,255,0.04)" }}/>
+              <div className="h-7 w-3/5 rounded-lg mb-2 animate-pulse" style={{ background: `${color}12` }}/>
+              <div className="h-2.5 w-4/5 rounded-md" style={{ background: "rgba(255,255,255,0.04)" }}/>
             </>
           ) : (
             <>
-              <p style={{
-                fontSize:      "clamp(22px, 5vw, 30px)",
-                fontWeight:    900,
+              <p className="font-black leading-none" style={{
+                fontSize:      "clamp(22px, 5vw, 28px)",
                 color:         "#f1f5f9",
-                lineHeight:    1.1,
                 fontFamily:    "'Plus Jakarta Sans', sans-serif",
                 letterSpacing: "-0.03em",
               }}>
                 {value}
               </p>
-              <p style={{
-                fontSize:      "clamp(10px, 2vw, 11px)",
-                fontWeight:    700,
-                color:         "#475569",
-                marginTop:     6,
-                textTransform: "uppercase",
-                letterSpacing: ".07em",
-                whiteSpace:    "nowrap",
-                overflow:      "hidden",
-                textOverflow:  "ellipsis",
+              <p className="mt-1.5 font-bold uppercase tracking-wider truncate" style={{
+                fontSize: "10px",
+                color:    "#475569",
               }}>
                 {label}
               </p>
@@ -83,38 +65,26 @@ function StatCard({ icon, label, value, color, loading, trend }) {
           )}
         </div>
 
-        {/* right: icon circle */}
-        <div style={{
-          width:          40,
-          height:         40,
-          borderRadius:   12,
-          background:     `${color}12`,
-          border:         `1.5px solid ${color}28`,
-          display:        "flex",
-          alignItems:     "center",
-          justifyContent: "center",
-          flexShrink:     0,
-          boxShadow:      `0 4px 12px ${color}18`,
-        }}>
+        {/* icon */}
+        <div className="flex-shrink-0 flex items-center justify-center rounded-xl"
+          style={{
+            width:     40,
+            height:    40,
+            background: `${color}12`,
+            border:    `1.5px solid ${color}28`,
+            boxShadow: `0 4px 12px ${color}18`,
+          }}>
           <span style={{ color, display: "flex" }}>{icon}</span>
         </div>
       </div>
 
-      {/* bottom divider + footer */}
+      {/* footer */}
       {!loading && (
-        <div style={{
-          marginTop:  12,
-          paddingTop: 10,
-          borderTop:  `1px solid ${color}12`,
-          display:    "flex",
-          alignItems: "center",
-          gap:        4,
-        }}>
-          <div style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: color, boxShadow: `0 0 0 2px ${color}28`,
-          }}/>
-          <span style={{ fontSize: 10, color: `${color}cc`, fontWeight: 600 }}>
+        <div className="flex items-center gap-1.5 mt-3 pt-2.5"
+          style={{ borderTop: `1px solid ${color}12` }}>
+          <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: color, boxShadow: `0 0 0 2px ${color}28` }}/>
+          <span className="text-[10px] font-semibold truncate" style={{ color: `${color}cc` }}>
             {trend || "\u00a0"}
           </span>
         </div>
@@ -145,35 +115,35 @@ function OrderRow({ order }) {
   const payColor = PAY_STATUS_COLOR[order.paymentStatus] || "#64748b";
 
   return (
-    <div className="rounded-xl overflow-hidden w-full"
+    <div className="rounded-xl overflow-hidden"
       style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-      <div className="flex items-center justify-between px-3 py-2.5 gap-2 min-w-0">
-        {/* বাম পাশ */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center px-3 py-2.5 gap-2">
+        {/* বাম */}
+        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
           <span className="font-black text-[11px] flex-shrink-0" style={{ color: "#c9a84c" }}>
             {order.orderId}
           </span>
           <span className="text-[11px] flex-shrink-0" style={{ color: "#475569" }}>
-            {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
+            {order.items?.length}x
           </span>
           <span className="text-[11px] hidden sm:block capitalize px-2 py-0.5 rounded-lg flex-shrink-0"
             style={{ background: `${color}18`, color, border: `1px solid ${color}30` }}>
             {order.status}
           </span>
         </div>
-        {/* ডান পাশ */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] capitalize px-2 py-0.5 rounded-lg hidden sm:block flex-shrink-0"
+        {/* ডান */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] capitalize px-1.5 py-0.5 rounded-md hidden sm:block flex-shrink-0"
             style={{ background: `${payColor}18`, color: payColor, border: `1px solid ${payColor}30` }}>
             {order.paymentMethod?.toUpperCase()}
           </span>
-          <span className="font-black text-[13px] whitespace-nowrap" style={{ color: "#f1f5f9" }}>
+          <span className="font-black text-[12px] whitespace-nowrap flex-shrink-0" style={{ color: "#f1f5f9" }}>
             ৳{order.total?.toLocaleString()}
           </span>
         </div>
       </div>
 
-      {/* Items preview */}
+      {/* items */}
       {order.items?.length > 0 && (
         <div className="px-3 pb-2.5 flex gap-2 overflow-x-auto">
           {order.items.slice(0, 4).map((item, i) => (
@@ -183,15 +153,13 @@ function OrderRow({ order }) {
                 ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white"/>
                 : <Package size={12} style={{ color: "#334155" }}/>
               }
-              <span className="text-[10px] max-w-[80px] truncate" style={{ color: "#64748b" }}>
-                {item.name}
-              </span>
+              <span className="text-[10px] max-w-[70px] truncate" style={{ color: "#64748b" }}>{item.name}</span>
               <span className="text-[10px] font-bold flex-shrink-0" style={{ color: "#c9a84c" }}>×{item.quantity}</span>
             </div>
           ))}
           {order.items.length > 4 && (
             <span className="text-[10px] self-center flex-shrink-0" style={{ color: "#475569" }}>
-              +{order.items.length - 4} more
+              +{order.items.length - 4}
             </span>
           )}
         </div>
@@ -262,40 +230,38 @@ function UserCard({ user, index }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.3 }}
-      className="rounded-2xl overflow-hidden transition-all duration-200"
+      className="rounded-2xl overflow-hidden w-full"
       style={{
         background: "#0d1426",
         border:     `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`,
         boxShadow:  expanded ? "0 4px 24px rgba(201,168,76,0.08)" : "0 1px 6px rgba(0,0,0,0.2)",
+        transition: "border-color 0.2s, box-shadow 0.2s",
       }}>
 
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3 px-4 py-4 min-w-0">
+      {/* header */}
+      <div className="flex items-center gap-2 px-3 py-3 w-full overflow-hidden">
 
-        {/* Avatar */}
+        {/* avatar */}
         <div className="relative flex-shrink-0">
           {user.avatar
             ? <img src={user.avatar} alt={user.name}
-                className="w-11 h-11 rounded-xl object-cover border-2"
+                className="w-10 h-10 rounded-xl object-cover border-2"
                 style={{ borderColor: "rgba(201,168,76,0.25)" }}/>
-            : <div className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-black"
+            : <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[12px] font-black"
                 style={{
-                  background: user.isGuest
-                    ? "linear-gradient(135deg,#1e293b,#334155)"
-                    : "linear-gradient(135deg,#1e3a5f,#1e40af)",
-                  color:  "#c9a84c",
-                  border: "2px solid rgba(201,168,76,0.2)",
+                  background: user.isGuest ? "linear-gradient(135deg,#1e293b,#334155)" : "linear-gradient(135deg,#1e3a5f,#1e40af)",
+                  color: "#c9a84c", border: "2px solid rgba(201,168,76,0.2)",
                 }}>
                 {initials}
               </div>
           }
-          <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2"
+          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
             style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }}/>
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        {/* info — flex-1 + min-w-0 ছাড়া overflow হবে */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-1 flex-wrap">
             <p className="text-[13px] font-bold truncate" style={{ color: "#f1f5f9" }}>{user.name}</p>
             <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0"
               style={{
@@ -318,84 +284,70 @@ function UserCard({ user, index }) {
               </span>
             )}
           </div>
-
-          {/* Contact info */}
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             {user.email && (
-              <span className="flex items-center gap-1 text-[11px] min-w-0" style={{ color: "#64748b" }}>
-                <Mail size={10} className="flex-shrink-0"/>
-                <span className="truncate max-w-[130px] sm:max-w-[200px]">{user.email}</span>
+              <span className="flex items-center gap-1 text-[10px] min-w-0" style={{ color: "#64748b" }}>
+                <Mail size={9} className="flex-shrink-0"/>
+                <span className="truncate max-w-[110px] sm:max-w-[180px]">{user.email}</span>
               </span>
             )}
             {user.phone && (
-              <span className="flex items-center gap-1 text-[11px] flex-shrink-0" style={{ color: "#64748b" }}>
-                <Phone size={10}/> {user.phone}
+              <span className="flex items-center gap-1 text-[10px] flex-shrink-0" style={{ color: "#64748b" }}>
+                <Phone size={9}/> {user.phone}
               </span>
             )}
-            <span className="flex items-center gap-1 text-[11px] flex-shrink-0" style={{ color: "#475569" }}>
-              <Calendar size={10}/> {joined}
+            <span className="flex items-center gap-1 text-[10px] flex-shrink-0" style={{ color: "#475569" }}>
+              <Calendar size={9}/> {joined}
             </span>
           </div>
         </div>
 
-        {/* Quick stats — md+ only */}
-        <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+        {/* quick stats — শুধু md+ */}
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <div className="text-center">
-            <p className="text-[16px] font-black" style={{ color: "#c9a84c" }}>{fetched ? orders.length : "—"}</p>
-            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>
-              {t("অর্ডার", "Orders")}
-            </p>
+            <p className="text-[15px] font-black" style={{ color: "#c9a84c" }}>{fetched ? orders.length : "—"}</p>
+            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("অর্ডার", "Orders")}</p>
           </div>
           <div className="text-center">
-            <p className="text-[16px] font-black whitespace-nowrap" style={{ color: "#22c55e" }}>
+            <p className="text-[15px] font-black whitespace-nowrap" style={{ color: "#22c55e" }}>
               {fetched ? `৳${totalSpent.toLocaleString()}` : "—"}
             </p>
-            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>
-              {t("মোট খরচ", "Spent")}
-            </p>
+            <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("মোট খরচ", "Spent")}</p>
           </div>
           {!user.isGuest && (
             <div className="text-center">
-              <p className="text-[16px] font-black" style={{ color: "#f43f5e" }}>
-                {user.wishlist?.length || 0}
-              </p>
-              <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>
-                {t("উইশলিস্ট", "Wishlist")}
-              </p>
+              <p className="text-[15px] font-black" style={{ color: "#f43f5e" }}>{user.wishlist?.length || 0}</p>
+              <p className="text-[9px] uppercase tracking-widest" style={{ color: "#334155" }}>{t("উইশলিস্ট", "Wishlist")}</p>
             </div>
           )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {!user.isGuest && (
             <button onClick={handleBlock} disabled={blocking}
-              title={isBlocked ? t("আনব্লক করুন", "Unblock") : t("ব্লক করুন", "Block")}
-              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+              className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
               style={{
                 background: isBlocked ? "rgba(34,197,94,0.1)"  : "rgba(239,68,68,0.08)",
                 border:     isBlocked ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(239,68,68,0.15)",
                 color:      isBlocked ? "#22c55e" : "#f87171",
               }}>
-              {blocking
-                ? <RefreshCw size={13} className="animate-spin"/>
-                : isBlocked ? <Shield size={13}/> : <ShieldOff size={13}/>
-              }
+              {blocking ? <RefreshCw size={12} className="animate-spin"/> : isBlocked ? <Shield size={12}/> : <ShieldOff size={12}/>}
             </button>
           )}
           <button onClick={handleExpand}
-            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
             style={{
               background: expanded ? "rgba(201,168,76,0.12)" : "rgba(255,255,255,0.04)",
               border:     expanded ? "1px solid rgba(201,168,76,0.25)" : "1px solid rgba(255,255,255,0.08)",
               color:      expanded ? "#c9a84c" : "#64748b",
             }}>
-            {expanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            {expanded ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
           </button>
         </div>
       </div>
 
-      {/* ── Expanded Detail ── */}
+      {/* expanded */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -404,74 +356,73 @@ function UserCard({ user, index }) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
             className="overflow-hidden">
-            <div className="px-4 pb-5 space-y-5"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="px-3 pb-4 space-y-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
 
-              {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+              {/* summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
                 {[
-                  { label: t("মোট অর্ডার",  "Total Orders"),  value: orders.length,                    color: "#c9a84c", icon: <ShoppingBag size={14}/> },
-                  { label: t("মোট খরচ",     "Total Spent"),   value: `৳${totalSpent.toLocaleString()}`, color: "#22c55e", icon: <TrendingUp size={14}/> },
-                  { label: t("ডেলিভার্ড",   "Delivered"),     value: deliveredCnt,                     color: "#06b6d4", icon: <CheckCircle size={14}/> },
-                  { label: t("বাতিল",        "Cancelled"),     value: cancelledCnt,                     color: "#ef4444", icon: <XCircle size={14}/> },
+                  { label: t("মোট অর্ডার",  "Total Orders"),  value: orders.length,                    color: "#c9a84c", icon: <ShoppingBag size={13}/> },
+                  { label: t("মোট খরচ",     "Total Spent"),   value: `৳${totalSpent.toLocaleString()}`, color: "#22c55e", icon: <TrendingUp size={13}/> },
+                  { label: t("ডেলিভার্ড",   "Delivered"),     value: deliveredCnt,                     color: "#06b6d4", icon: <CheckCircle size={13}/> },
+                  { label: t("বাতিল",        "Cancelled"),     value: cancelledCnt,                     color: "#ef4444", icon: <XCircle size={13}/> },
                 ].map(s => (
-                  <div key={s.label} className="rounded-xl p-3.5 text-center"
+                  <div key={s.label} className="rounded-xl p-3 text-center"
                     style={{ background: `${s.color}08`, border: `1px solid ${s.color}18` }}>
-                    <div className="flex items-center justify-center mb-1.5" style={{ color: s.color }}>{s.icon}</div>
-                    <p className="text-[17px] font-black" style={{ color: "#f1f5f9" }}>{s.value}</p>
+                    <div className="flex items-center justify-center mb-1" style={{ color: s.color }}>{s.icon}</div>
+                    <p className="text-[16px] font-black" style={{ color: "#f1f5f9" }}>{s.value}</p>
                     <p className="text-[10px] mt-0.5" style={{ color: "#475569" }}>{s.label}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Registered extra info */}
+              {/* account + extra info */}
               {!user.isGuest && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-xl p-4 space-y-2.5"
+                  <div className="rounded-xl p-3.5 space-y-2"
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
+                    <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#334155" }}>
                       {t("অ্যাকাউন্ট তথ্য", "Account Info")}
                     </p>
                     {[
-                      { icon: <Mail size={12}/>,        label: t("ইমেইল",      "Email"),    value: user.email    || "—" },
-                      { icon: <Phone size={12}/>,       label: t("ফোন",        "Phone"),    value: user.phone    || "—" },
-                      { icon: <Calendar size={12}/>,    label: t("যোগ দিয়েছেন","Joined"),  value: joined               },
-                      { icon: <CreditCard size={12}/>,  label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
-                      { icon: <CheckCircle size={12}/>, label: t("ভেরিফাইড",   "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
+                      { icon: <Mail size={11}/>,        label: t("ইমেইল",      "Email"),    value: user.email    || "—" },
+                      { icon: <Phone size={11}/>,       label: t("ফোন",        "Phone"),    value: user.phone    || "—" },
+                      { icon: <Calendar size={11}/>,    label: t("যোগ দিয়েছেন","Joined"),  value: joined               },
+                      { icon: <CreditCard size={11}/>,  label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
+                      { icon: <CheckCircle size={11}/>, label: t("ভেরিফাইড",   "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
                     ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
-                        <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
+                      <div key={row.label} className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="flex items-center gap-1.5 flex-shrink-0" style={{ color: "#475569" }}>
                           <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
                         </span>
-                        <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
+                        <span className="font-semibold truncate text-right ml-2" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="rounded-xl p-4 space-y-2.5"
+                  <div className="rounded-xl p-3.5 space-y-2"
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
+                    <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: "#334155" }}>
                       {t("অতিরিক্ত তথ্য", "Extra Info")}
                     </p>
                     {[
-                      { icon: <Heart size={12}/>,  label: t("উইশলিস্ট",    "Wishlist"),   value: `${user.wishlist?.length || 0} টি পণ্য` },
-                      { icon: <MapPin size={12}/>, label: t("জেলা",        "District"),   value: user.address?.district || "—" },
-                      { icon: <MapPin size={12}/>, label: t("থানা",        "Thana"),      value: user.address?.thana    || "—" },
-                      { icon: <Star size={12}/>,   label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label    || "—" },
+                      { icon: <Heart size={11}/>,  label: t("উইশলিস্ট",    "Wishlist"),   value: `${user.wishlist?.length || 0} টি পণ্য` },
+                      { icon: <MapPin size={11}/>, label: t("জেলা",        "District"),   value: user.address?.district || "—" },
+                      { icon: <MapPin size={11}/>, label: t("থানা",        "Thana"),      value: user.address?.thana    || "—" },
+                      { icon: <Star size={11}/>,   label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label    || "—" },
                     ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
-                        <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
+                      <div key={row.label} className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="flex items-center gap-1.5 flex-shrink-0" style={{ color: "#475569" }}>
                           <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
                         </span>
-                        <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
+                        <span className="font-semibold truncate text-right ml-2" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Guest info */}
+              {/* guest */}
               {user.isGuest && (
-                <div className="rounded-xl p-4"
+                <div className="rounded-xl p-3.5"
                   style={{ background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.15)" }}>
                   <p className="text-[11px] font-bold" style={{ color: "#64748b" }}>
                     ℹ️ {t("এই কাস্টমার রেজিস্ট্রেশন করেননি — অর্ডার তথ্য থেকে নেওয়া হয়েছে।",
@@ -480,24 +431,21 @@ function UserCard({ user, index }) {
                 </div>
               )}
 
-              {/* Orders */}
+              {/* orders */}
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: "#334155" }}>
                   {t("অর্ডার ইতিহাস", "Order History")}
                 </p>
                 {loadingOrds ? (
                   <div className="space-y-2">
                     {[1,2,3].map(i => (
-                      <div key={i} className="h-12 rounded-xl animate-pulse"
-                        style={{ background: "rgba(255,255,255,0.04)" }}/>
+                      <div key={i} className="h-10 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }}/>
                     ))}
                   </div>
                 ) : orders.length === 0 ? (
-                  <div className="flex flex-col items-center py-6 gap-2">
-                    <ShoppingCart size={28} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
-                    <p className="text-[12px]" style={{ color: "#334155" }}>
-                      {t("কোনো অর্ডার নেই", "No orders found")}
-                    </p>
+                  <div className="flex flex-col items-center py-5 gap-2">
+                    <ShoppingCart size={26} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
+                    <p className="text-[11px]" style={{ color: "#334155" }}>{t("কোনো অর্ডার নেই", "No orders found")}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -531,9 +479,7 @@ export default function AdminUsers() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/api/auth/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res  = await fetch(`${API}/api/auth/users`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) {
         setUsers(data.users);
@@ -583,9 +529,9 @@ export default function AdminUsers() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 w-full overflow-x-hidden">
 
-      {/* Header */}
+      {/* header */}
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl overflow-hidden"
         style={{
@@ -595,65 +541,59 @@ export default function AdminUsers() {
         }}>
         <div className="absolute top-0 left-0 right-0 h-px"
           style={{ background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.5) 40%,rgba(59,130,246,0.5) 70%,transparent)" }}/>
-        <div className="p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+        <div className="p-5 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.2)" }}>
-            <Users size={22} style={{ color: "#c9a84c" }}/>
+            <Users size={20} style={{ color: "#c9a84c" }}/>
           </div>
           <div className="flex-1 min-w-0">
-            <h1 style={{ fontFamily: "'Instrument Serif',serif", fontSize: "22px", color: "#f1f5f9" }}>
+            <h1 className="truncate" style={{ fontFamily: "'Instrument Serif',serif", fontSize: "20px", color: "#f1f5f9" }}>
               {t("ব্যবহারকারী", "Users")}
             </h1>
-            <p className="text-[12px] mt-0.5" style={{ color: "#475569" }}>
+            <p className="text-[11px] mt-0.5 truncate" style={{ color: "#475569" }}>
               {t("রেজিস্টার্ড + গেস্ট সকল কাস্টমার", "Registered + Guest all customers")}
             </p>
           </div>
           <button onClick={fetchUsers}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b" }}>
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""}/>
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""}/>
           </button>
         </div>
       </motion.div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+      {/* stats — Tailwind grid, inline style নেই */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { icon: <Users size={18}/>,     label: t("মোট কাস্টমার", "Total Customers"), value: stats.total,      color: "#c9a84c", trend: t("সকল ব্যবহারকারী", "All users")        },
-          { icon: <UserCheck size={18}/>, label: t("রেজিস্টার্ড",  "Registered"),      value: stats.registered, color: "#22c55e", trend: t("অ্যাকাউন্টধারী",  "Account holders")  },
-          { icon: <UserX size={18}/>,     label: t("গেস্ট",        "Guest"),            value: stats.guest,      color: "#64748b", trend: t("অ-রেজিস্টার্ড",   "Non-registered")   },
-          { icon: <ShieldOff size={18}/>, label: t("ব্লকড",        "Blocked"),          value: stats.blocked,    color: "#ef4444", trend: t("অ্যাক্সেস বন্ধ",  "Access disabled")  },
+          { icon: <Users size={17}/>,     label: t("মোট কাস্টমার", "Total Customers"), value: stats.total,      color: "#c9a84c", trend: t("সকল ব্যবহারকারী", "All users")       },
+          { icon: <UserCheck size={17}/>, label: t("রেজিস্টার্ড",  "Registered"),      value: stats.registered, color: "#22c55e", trend: t("অ্যাকাউন্টধারী",  "Account holders") },
+          { icon: <UserX size={17}/>,     label: t("গেস্ট",        "Guest"),            value: stats.guest,      color: "#64748b", trend: t("অ-রেজিস্টার্ড",   "Non-registered")  },
+          { icon: <ShieldOff size={17}/>, label: t("ব্লকড",        "Blocked"),          value: stats.blocked,    color: "#ef4444", trend: t("অ্যাক্সেস বন্ধ",  "Access disabled") },
         ].map((s, i) => (
           <StatCard key={i} icon={s.icon} label={s.label} value={s.value} color={s.color} loading={loading} trend={s.trend}/>
         ))}
       </div>
-      <style>{`@media(min-width:640px){.admin-stat-wrap>div{grid-template-columns:repeat(4,1fr)!important}}`}</style>
 
-      {/* Search + Filter */}
+      {/* search + filter */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}/>
+        <div className="relative flex-1 min-w-0">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}/>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder={t("নাম, ইমেইল বা ফোন...", "Search by name, email or phone...")}
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
-            style={{
-              background: "#0d1426",
-              border:     "1px solid rgba(255,255,255,0.08)",
-              color:      "#e2e8f0",
-              fontFamily: "'DM Sans',sans-serif",
-            }}
+            className="w-full pl-8 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
+            style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.08)", color: "#e2e8f0", fontFamily: "'DM Sans',sans-serif" }}
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}>
-              <X size={13}/>
+              <X size={12}/>
             </button>
           )}
         </div>
-        <div className="flex gap-1.5 p-1 rounded-xl overflow-x-auto"
+        <div className="flex gap-1 p-1 rounded-xl overflow-x-auto flex-shrink-0"
           style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
           {FILTERS.map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex-shrink-0 whitespace-nowrap"
               style={filter === f.key
                 ? { background: "rgba(201,168,76,0.15)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.25)" }
                 : { color: "#475569", border: "1px solid transparent" }
@@ -664,26 +604,22 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* Count */}
+      {/* count */}
       {!loading && (
         <p className="text-[11px]" style={{ color: "#334155" }}>
           {t(`${filtered.length}জন কাস্টমার`, `${filtered.length} customer${filtered.length !== 1 ? "s" : ""}`)}
-          {totalPages > 1 && (
-            <span style={{ marginLeft: 8 }}>
-              — {t(`পেজ ${page}/${totalPages}`, `Page ${page}/${totalPages}`)}
-            </span>
-          )}
+          {totalPages > 1 && <span style={{ marginLeft: 8 }}>— {t(`পেজ ${page}/${totalPages}`, `Page ${page}/${totalPages}`)}</span>}
         </p>
       )}
 
-      {/* List */}
+      {/* list */}
       {loading ? (
         <div className="space-y-3">
           {[1,2,3,4,5].map(i => (
-            <div key={i} className="rounded-2xl p-5 animate-pulse"
+            <div key={i} className="rounded-2xl p-4 animate-pulse"
               style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}/>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}/>
                 <div className="flex-1 space-y-2">
                   <div className="h-3 rounded-lg w-1/3" style={{ background: "rgba(255,255,255,0.06)" }}/>
                   <div className="h-2.5 rounded-lg w-1/2" style={{ background: "rgba(255,255,255,0.04)" }}/>
@@ -694,51 +630,38 @@ export default function AdminUsers() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center py-20 gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <Users size={28} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
+            <Users size={26} style={{ color: "#1e293b" }} strokeWidth={1.2}/>
           </div>
-          <p className="text-[14px] font-bold" style={{ color: "#334155" }}>
+          <p className="text-[13px] font-bold" style={{ color: "#334155" }}>
             {t("কোনো কাস্টমার পাওয়া যায়নি", "No customers found")}
           </p>
         </div>
       ) : (
         <>
           <div className="space-y-3">
-            {paginated.map((user, i) => (
-              <UserCard key={user._id} user={user} index={i}/>
-            ))}
+            {paginated.map((user, i) => <UserCard key={user._id} user={user} index={i}/>)}
           </div>
 
-          {/* Pagination */}
+          {/* pagination */}
           {totalPages > 1 && (
-            <div style={{
-              display:        "flex",
-              justifyContent: "center",
-              alignItems:     "center",
-              gap:            6,
-              padding:        "16px 0 4px",
-            }}>
+            <div className="flex justify-center items-center gap-1.5 pt-4 pb-1 flex-wrap">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <motion.button
                   key={p}
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.93 }}
                   onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  className="w-8 h-8 rounded-lg text-[12px] font-bold flex-shrink-0"
                   style={{
-                    width:        32,
-                    height:       32,
-                    borderRadius: 8,
-                    fontSize:     12,
-                    fontWeight:   700,
-                    cursor:       "pointer",
-                    border:       "1px solid",
-                    borderColor:  page === p ? "#c9a84c" : "rgba(255,255,255,0.08)",
-                    background:   page === p ? "linear-gradient(135deg,#c9a84c,#a07c2e)" : "#0d1426",
-                    color:        page === p ? "#0d1426" : "#c9a84c",
-                    boxShadow:    page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
-                    transition:   "all .15s ease",
-                    fontFamily:   "'Plus Jakarta Sans', sans-serif",
+                    border:      "1px solid",
+                    borderColor: page === p ? "#c9a84c" : "rgba(255,255,255,0.08)",
+                    background:  page === p ? "linear-gradient(135deg,#c9a84c,#a07c2e)" : "#0d1426",
+                    color:       page === p ? "#0d1426" : "#c9a84c",
+                    boxShadow:   page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                    cursor:      "pointer",
+                    fontFamily:  "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
                   {p}
