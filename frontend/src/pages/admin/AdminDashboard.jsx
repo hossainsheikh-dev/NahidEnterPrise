@@ -60,10 +60,11 @@ export default function AdminDashboard() {
 
   const adminInfo = JSON.parse(localStorage.getItem("adminInfo") || "{}");
 
-  const [search,       setSearch      ] = useState("");
-  const [searchFocus,  setSearchFocus ] = useState(false);
-  const [dropdownOpen, setDropdownOpen ] = useState(false);
-  const [sidebarOpen,  setSidebarOpen  ] = useState(false);
+  const [search,        setSearch       ] = useState("");
+  const [searchFocus,   setSearchFocus  ] = useState(false);
+  const [dropdownOpen,  setDropdownOpen ] = useState(false);
+  const [sidebarOpen,   setSidebarOpen  ] = useState(false);
+  const [searchOpen,    setSearchOpen   ] = useState(false);
 
   const dropdownRef = useRef(null);
   const searchRef   = useRef(null);
@@ -190,6 +191,50 @@ export default function AdminDashboard() {
         .adm-search-input:focus {
           border-color: rgba(201,168,76,0.4);
           background: rgba(201,168,76,0.04);
+        }
+
+        .adm-search-mobile-btn {
+          width: 36px; height: 36px;
+          border-radius: 9px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.04);
+          color: #94a3b8;
+          display: none; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+        .adm-search-mobile-btn:hover,
+        .adm-search-mobile-btn.active {
+          background: rgba(201,168,76,0.1);
+          border-color: rgba(201,168,76,0.3);
+          color: #c9a84c;
+        }
+
+        .adm-search-dropdown {
+          position: fixed;
+          top: 60px; left: 0; right: 0;
+          background: rgba(10,15,30,0.97);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          padding: 12px 16px;
+          z-index: 49;
+        }
+        .adm-search-dropdown-inner {
+          position: relative;
+        }
+        .adm-search-dropdown-inner svg {
+          position: absolute;
+          left: 12px; top: 50%;
+          transform: translateY(-50%);
+          color: #64748b;
+          pointer-events: none;
+        }
+
+        @media (max-width: 1023px) {
+          .adm-search-wrap { display: none; }
+          .adm-search-mobile-btn { display: flex; }
         }
 
         .adm-menu-btn {
@@ -461,6 +506,10 @@ export default function AdminDashboard() {
             Nahid Enterprise
           </div>
 
+          <button className={`adm-search-mobile-btn ${searchOpen ? "active" : ""}`} onClick={() => setSearchOpen(!searchOpen)}>
+            <Search size={18} />
+          </button>
+
           <div className={`adm-search-wrap ${searchFocus ? "focused" : ""}`} ref={searchRef}>
             <Search size={14} />
             <input
@@ -508,6 +557,32 @@ export default function AdminDashboard() {
             </AnimatePresence>
           </div>
         </header>
+
+        <AnimatePresence>
+          {searchOpen && (
+            <motion.div
+              className="adm-search-dropdown"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="adm-search-dropdown-inner">
+                <Search size={14} />
+                <input
+                  type="text"
+                  placeholder={t("মেনু খুঁজুন...", "Search menu...")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={() => setSearchFocus(true)}
+                  onBlur={() => setSearchFocus(false)}
+                  className="adm-search-input"
+                  autoFocus
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ═══════════ BODY ═══════════ */}
         <div className="adm-body">
