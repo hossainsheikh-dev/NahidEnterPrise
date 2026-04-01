@@ -113,7 +113,7 @@ export default function AdminLogin() {
     const info = localStorage.getItem("adminInfo");
     if (token && info) {
       try {
-        if (JSON.parse(info).role === "admin") navigate("/admin/dashboard", { replace: true });
+        if (JSON.parse(info).role === "admin") navigate("/manage-x9k2/dashboard", { replace: true });
       } catch (_) {}
     }
   }, [navigate]);
@@ -218,7 +218,7 @@ export default function AdminLogin() {
       localStorage.setItem("token", tempToken);
       localStorage.setItem("adminInfo", JSON.stringify(tempData));
       showLoginToast(tempData.name);
-      navigate("/admin/dashboard", { replace: true });
+      navigate("/manage-x9k2/dashboard", { replace: true });
     } catch (err) {
       handleError(err.message);
     } finally {
