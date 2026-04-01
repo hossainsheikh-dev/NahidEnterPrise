@@ -102,8 +102,8 @@ const ProductAdd = ({
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
-        .pa-wrap * { box-sizing: border-box; }
-        .pa-wrap { font-family: 'DM Sans', sans-serif; }
+        .pa-wrap * { box-sizing: border-box; max-width: 100%; }
+        .pa-wrap { font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
         .pa-input {
           width: 100%; background: rgba(255,255,255,0.04);
@@ -181,26 +181,33 @@ const ProductAdd = ({
           border: 1px solid rgba(255,255,255,0.06);
           transition: border-color 0.2s;
           display: flex;
+          min-width: 0;
+          width: 100%;
         }
         .pa-feature-row.filled { border-color: rgba(52,211,153,0.25); }
         .pa-feature-key {
-          display: flex; align-items: center; gap: 8px;
-          padding: 11px 14px;
-          width: clamp(100px, 35%, 150px);
+          display: flex; align-items: center; gap: 6px;
+          padding: 11px 10px;
+          width: clamp(90px, 32%, 140px);
           min-width: unset;
           flex-shrink: 0;
           background: rgba(255,255,255,0.03);
           border-right: 1px solid rgba(255,255,255,0.06);
           transition: background 0.2s;
+          overflow: hidden;
         }
         .pa-feature-key.filled { background: rgba(52,211,153,0.05); border-right-color: rgba(52,211,153,0.15); }
         .pa-feature-val {
-          flex: 1; padding: 11px 14px;
+          flex: 1;
+          width: 0;
+          min-width: 0;
+          padding: 11px 10px;
           background: transparent;
           border: none; outline: none;
           font-size: 13px; font-weight: 500; color: #e2e8f0;
           font-family: 'DM Sans', sans-serif;
-          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .pa-feature-val::placeholder { color: #334155; font-weight: 400; }
         .pa-upload-zone {
@@ -517,13 +524,11 @@ const ProductAdd = ({
                     return (
                       <div key={i} className={`pa-feature-row ${isFilled ? "filled" : ""}`}>
                         <div className={`pa-feature-key ${isFilled ? "filled" : ""}`}>
-                          <span style={{ fontSize: "18px" }}>{row.icon}</span>
-                          <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide"
-                              style={{ color: isFilled ? "#34d399" : "#334155" }}>
-                              {row.keyPlaceholder}
-                            </p>
-                          </div>
+                          <span style={{ fontSize: "16px", flexShrink: 0 }}>{row.icon}</span>
+                          <p className="text-[11px] font-bold uppercase tracking-wide"
+                            style={{ color: isFilled ? "#34d399" : "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                            {row.keyPlaceholder}
+                          </p>
                         </div>
                         <input type="text" placeholder={row.valuePlaceholder} value={val}
                           onChange={e => {
@@ -532,7 +537,7 @@ const ProductAdd = ({
                             setFeatures(updated);
                           }}
                           className="pa-feature-val"/>
-                        <div className="flex items-center pr-3">
+                        <div className="flex items-center pr-3" style={{ flexShrink: 0 }}>
                           <div className="w-2.5 h-2.5 rounded-full transition-all"
                             style={{ background: isFilled ? "#34d399" : "rgba(255,255,255,0.08)" }}/>
                         </div>
