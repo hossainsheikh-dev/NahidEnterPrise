@@ -138,7 +138,6 @@ export default function AdminDashboard() {
           align-items: center;
           padding: 0 20px;
           gap: 14px;
-          overflow: hidden;
         }
 
         .adm-brand {
