@@ -24,14 +24,16 @@ function ProductCard({ product }) {
   const [added, setAdded]            = useState(false);
 
   // ✅ FIX: Number() দিয়ে string/undefined/null সব handle হবে
+
+    console.log("STOCK DEBUG:", product.name, product.stock, typeof product.stock);
+
+    
   const inStock     = Number(product.stock) > 0;
   const isLowStock  = inStock && Number(product.stock) <= 5;
   const hasDiscount = product.discountType !== "none" && product.discountValue > 0;
   const salePrice   = product.salePrice ?? product.price;
   const wished      = isWished(product._id);
 
-
-    console.log("STOCK DEBUG:", product.name, product.stock, typeof product.stock);
 
 
   const isNew = (() => {
