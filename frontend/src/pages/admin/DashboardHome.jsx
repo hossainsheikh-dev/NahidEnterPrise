@@ -279,7 +279,7 @@ function OrderBreakdown({ stats, loading, t }) {
             <p className="text-[10px]" style={{ color:"#475569" }}>{stats.totalOrders} {t("টি মোট","total orders")}</p>
           </div>
         </div>
-        <Link to="/admin/orders"
+        <Link to="/manage-x9k2/orders"
           className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition"
           style={{ background:"rgba(129,140,248,0.08)", color:"#818cf8" }}>
           {t("সব দেখুন","View All")} <ArrowRight size={10}/>
@@ -361,7 +361,7 @@ function RecentOrders({ orders, loading, t }) {
             <p className="text-[10px]" style={{ color:"#475569" }}>{t("সর্বশেষ ৩টি","Latest 3 orders")}</p>
           </div>
         </div>
-        <Link to="/admin/delivery"
+        <Link to="/manage-x9k2/delivery"
           className="text-[10px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-xl transition"
           style={{ background:"rgba(232,164,39,0.08)", color:"#e8a427" }}>
           {t("সব দেখুন","View All")} <ArrowRight size={10}/>
@@ -486,12 +486,12 @@ function PerformanceSummary({ stats, loading, t }) {
 ══════════════════════════════════ */
 function QuickActions({ t }) {
   const actions = [
-    { to:"/admin/orders",    icon:ShoppingBag, label:t("অর্ডার","Orders"),        sub:t("ম্যানেজ করুন","Manage"),  color:"#e8a427", grad:"linear-gradient(135deg,#e8a427,#c9a84c)" },
-    { to:"/admin/products",  icon:Package,     label:t("পণ্য","Products"),         sub:t("স্টক দেখুন","View stock"),color:"#818cf8", grad:"linear-gradient(135deg,#818cf8,#6366f1)" },
-    { to:"/admin/delivery",  icon:Truck,       label:t("ডেলিভারি","Delivery"),     sub:t("কনফার্ম করুন","Confirm"), color:"#34d399", grad:"linear-gradient(135deg,#34d399,#10b981)" },
-    { to:"/admin/subadmins", icon:Users,       label:t("সাব-এডমিন","Sub-Admins"), sub:t("ম্যানেজ করুন","Manage"),  color:"#2dd4bf", grad:"linear-gradient(135deg,#2dd4bf,#0d9488)" },
-    { to:"/admin/links",     icon:Link2,       label:t("লিংক","Links"),            sub:t("নেভ লিংক","Nav links"),   color:"#38bdf8", grad:"linear-gradient(135deg,#38bdf8,#0284c7)" },
-    { to:"/admin/sublinks",  icon:Layers,      label:t("সাবলিংক","Sublinks"),      sub:t("ক্যাটাগরি","Categories"), color:"#a78bfa", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)" },
+    { to:"/manage-x9k2/orders",    icon:ShoppingBag, label:t("অর্ডার","Orders"),        sub:t("ম্যানেজ করুন","Manage"),  color:"#e8a427", grad:"linear-gradient(135deg,#e8a427,#c9a84c)" },
+    { to:"/manage-x9k2/products",  icon:Package,     label:t("পণ্য","Products"),         sub:t("স্টক দেখুন","View stock"),color:"#818cf8", grad:"linear-gradient(135deg,#818cf8,#6366f1)" },
+    { to:"/manage-x9k2/delivery",  icon:Truck,       label:t("ডেলিভারি","Delivery"),     sub:t("কনফার্ম করুন","Confirm"), color:"#34d399", grad:"linear-gradient(135deg,#34d399,#10b981)" },
+    { to:"/manage-x9k2/subadmins", icon:Users,       label:t("সাব-এডমিন","Sub-Admins"), sub:t("ম্যানেজ করুন","Manage"),  color:"#2dd4bf", grad:"linear-gradient(135deg,#2dd4bf,#0d9488)" },
+    { to:"/manage-x9k2/links",     icon:Link2,       label:t("লিংক","Links"),            sub:t("নেভ লিংক","Nav links"),   color:"#38bdf8", grad:"linear-gradient(135deg,#38bdf8,#0284c7)" },
+    { to:"/manage-x9k2/sublinks",  icon:Layers,      label:t("সাবলিংক","Sublinks"),      sub:t("ক্যাটাগরি","Categories"), color:"#a78bfa", grad:"linear-gradient(135deg,#a78bfa,#7c3aed)" },
   ];
 
   return (
