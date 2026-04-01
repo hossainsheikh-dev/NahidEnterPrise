@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Package, Zap, Heart, Loader2 } from "lucide-react";
+import { ShoppingCart, Package, Zap, Heart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { useT } from "../../context/LanguageContext";
@@ -14,23 +14,6 @@ const cardVariants = {
 };
 
 /* ════════════════════════════════
-   SKELETON
-════════════════════════════════ */
-function ProductSkeleton() {
-  return (
-    <div className="bg-white rounded-2xl overflow-hidden animate-pulse border border-gray-100 flex flex-col">
-      <div className="bg-gray-100 flex-shrink-0" style={{ height: "clamp(160px, 22vw, 260px)" }} />
-      <div className="p-3 space-y-2.5 flex-1">
-        <div className="h-3 bg-gray-100 rounded-full w-4/5" />
-        <div className="h-3 bg-gray-100 rounded-full w-3/5" />
-        <div className="h-5 bg-gray-100 rounded-full w-2/5 mt-1" />
-        <div className="h-9 bg-gray-100 rounded-xl w-full mt-1" />
-      </div>
-    </div>
-  );
-}
-
-/* ════════════════════════════════
    PRODUCT CARD
 ════════════════════════════════ */
 function ProductCard({ product }) {
@@ -40,8 +23,9 @@ function ProductCard({ product }) {
   const t                            = useT();
   const [added, setAdded]            = useState(false);
 
-  const inStock     = product.stock > 0;
-  const isLowStock  = inStock && product.stock <= 5;
+  // ✅ FIX: Number() দিয়ে string/undefined/null সব handle হবে
+  const inStock     = Number(product.stock) > 0;
+  const isLowStock  = inStock && Number(product.stock) <= 5;
   const hasDiscount = product.discountType !== "none" && product.discountValue > 0;
   const salePrice   = product.salePrice ?? product.price;
   const wished      = isWished(product._id);
@@ -88,7 +72,6 @@ function ProductCard({ product }) {
             </div>
           )}
 
-          {/* Bottom gradient */}
           <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
             style={{ background: "linear-gradient(to top, rgba(248,248,245,0.8), transparent)" }} />
 
@@ -191,12 +174,10 @@ function PublicProductShow({ products, loading }) {
   const [loadingMore,  setLoadingMore ] = useState(false);
   const loaderRef = useRef(null);
 
-  // Reset when products change
   useEffect(() => {
     setVisibleCount(ITEMS_PER_PAGE);
   }, [products]);
 
-  // Intersection Observer — auto load more
   const handleObserver = useCallback((entries) => {
     const [entry] = entries;
     if (entry.isIntersecting && visibleCount < products.length && !loadingMore) {
@@ -216,10 +197,21 @@ function PublicProductShow({ products, loading }) {
     return () => observer.disconnect();
   }, [handleObserver]);
 
+  // ✅ Skeleton সরিয়ে centered spinner
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
-        {Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
+      <div className="flex flex-col items-center justify-center py-28 gap-4">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 rounded-full border-2 border-gray-100" />
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#2e7d32]"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+        <p className="text-[13px] text-gray-400 font-medium">
+          {t("পণ্য লোড হচ্ছে...", "Loading products...")}
+        </p>
       </div>
     );
   }
@@ -240,17 +232,13 @@ function PublicProductShow({ products, loading }) {
 
   return (
     <div>
-      {/* Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
         {visibleProducts.map((product) => (
           <ProductCard key={product._id} product={product} />
         ))}
       </div>
 
-      {/* Loader trigger */}
       <div ref={loaderRef} className="mt-8 flex flex-col items-center gap-3">
-
-        {/* Loading spinner */}
         {loadingMore && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -271,7 +259,6 @@ function PublicProductShow({ products, loading }) {
           </motion.div>
         )}
 
-        {/* End message */}
         {!hasMore && products.length > ITEMS_PER_PAGE && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
