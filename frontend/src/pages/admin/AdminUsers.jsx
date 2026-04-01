@@ -4,32 +4,122 @@ import {
   Users, Search, Mail, Phone, ShoppingBag, Heart,
   ChevronDown, ChevronUp, X, Shield, ShieldOff,
   Calendar, Package, TrendingUp, RefreshCw,
-  MapPin, CreditCard, CheckCircle, Clock, XCircle,
-  UserCheck, UserX, ShoppingCart, Banknote, Star,
+  MapPin, CreditCard, CheckCircle, XCircle,
+  UserCheck, UserX, ShoppingCart, Star,
 } from "lucide-react";
 import { useAdminLang } from "../../context/AdminLangContext";
 
 const API = process.env.REACT_APP_API_URL || `${process.env.REACT_APP_BACKEND_URL}`;
 
+const PER_PAGE = 10;
+
 /* ══════════════════════════════
    STAT CARD
 ══════════════════════════════ */
-function StatCard({ icon, label, value, color, loading }) {
+function StatCard({ icon, label, value, color, loading, trend }) {
   return (
-    <div className="rounded-2xl p-5 flex items-center gap-4"
-      style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
-      <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: `${color}18`, border: `1px solid ${color}30` }}>
-        <span style={{ color }}>{icon}</span>
+    <motion.div
+      whileHover={{ y: -2, boxShadow: `0 8px 32px ${color}22` }}
+      transition={{ duration: 0.2 }}
+      style={{
+        background:   "#0d1426",
+        border:       "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 20,
+        boxShadow:    `0 2px 12px ${color}0f`,
+        overflow:     "hidden",
+        position:     "relative",
+        padding:      "18px 16px 16px",
+      }}
+    >
+      {/* top color bar */}
+      <div style={{
+        position:     "absolute", top: 0, left: 0, right: 0, height: 3,
+        background:   `linear-gradient(90deg, ${color}, ${color}88)`,
+        borderRadius: "20px 20px 0 0",
+      }}/>
+
+      {/* ambient glow blob */}
+      <div style={{
+        position:      "absolute", top: -20, right: -20,
+        width:         80, height: 80, borderRadius: "50%",
+        background:    `radial-gradient(circle, ${color}18 0%, transparent 70%)`,
+        pointerEvents: "none",
+      }}/>
+
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+        {/* left: value + label */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading ? (
+            <>
+              <div style={{ height: 28, width: "60%", borderRadius: 8, background: `${color}12`, marginBottom: 8, animation: "pulse 1.5s infinite" }}/>
+              <div style={{ height: 10, width: "80%", borderRadius: 6, background: "rgba(255,255,255,0.04)" }}/>
+            </>
+          ) : (
+            <>
+              <p style={{
+                fontSize:      "clamp(22px, 5vw, 30px)",
+                fontWeight:    900,
+                color:         "#f1f5f9",
+                lineHeight:    1.1,
+                fontFamily:    "'Plus Jakarta Sans', sans-serif",
+                letterSpacing: "-0.03em",
+              }}>
+                {value}
+              </p>
+              <p style={{
+                fontSize:      "clamp(10px, 2vw, 11px)",
+                fontWeight:    700,
+                color:         "#475569",
+                marginTop:     6,
+                textTransform: "uppercase",
+                letterSpacing: ".07em",
+                whiteSpace:    "nowrap",
+                overflow:      "hidden",
+                textOverflow:  "ellipsis",
+              }}>
+                {label}
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* right: icon circle */}
+        <div style={{
+          width:          40,
+          height:         40,
+          borderRadius:   12,
+          background:     `${color}12`,
+          border:         `1.5px solid ${color}28`,
+          display:        "flex",
+          alignItems:     "center",
+          justifyContent: "center",
+          flexShrink:     0,
+          boxShadow:      `0 4px 12px ${color}18`,
+        }}>
+          <span style={{ color, display: "flex" }}>{icon}</span>
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-widest truncate" style={{ color: "#475569" }}>{label}</p>
-        {loading
-          ? <div className="h-6 w-16 rounded-lg animate-pulse mt-1" style={{ background: "rgba(255,255,255,0.06)" }} />
-          : <p className="text-[22px] font-black" style={{ color: "#f1f5f9" }}>{value}</p>
-        }
-      </div>
-    </div>
+
+      {/* bottom divider + footer */}
+      {!loading && (
+        <div style={{
+          marginTop:  12,
+          paddingTop: 10,
+          borderTop:  `1px solid ${color}12`,
+          display:    "flex",
+          alignItems: "center",
+          gap:        4,
+        }}>
+          <div style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: color, boxShadow: `0 0 0 2px ${color}28`,
+          }}/>
+          <span style={{ fontSize: 10, color: `${color}cc`, fontWeight: 600 }}>
+            {trend || "\u00a0"}
+          </span>
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -58,7 +148,6 @@ function OrderRow({ order }) {
     <div className="rounded-xl overflow-hidden w-full"
       style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
       <div className="flex items-center justify-between px-3 py-2.5 gap-2 min-w-0">
-
         {/* বাম পাশ */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="font-black text-[11px] flex-shrink-0" style={{ color: "#c9a84c" }}>
@@ -72,10 +161,9 @@ function OrderRow({ order }) {
             {order.status}
           </span>
         </div>
-
         {/* ডান পাশ */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[11px] capitalize px-2 py-0.5 rounded-lg hidden xs:block flex-shrink-0"
+          <span className="text-[11px] capitalize px-2 py-0.5 rounded-lg hidden sm:block flex-shrink-0"
             style={{ background: `${payColor}18`, color: payColor, border: `1px solid ${payColor}30` }}>
             {order.paymentMethod?.toUpperCase()}
           </span>
@@ -92,8 +180,8 @@ function OrderRow({ order }) {
             <div key={i} className="flex items-center gap-1.5 flex-shrink-0 rounded-lg px-2 py-1"
               style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" }}>
               {item.image
-                ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white" />
-                : <Package size={12} style={{ color: "#334155" }} />
+                ? <img src={item.image} alt={item.name} className="w-5 h-5 rounded object-contain bg-white"/>
+                : <Package size={12} style={{ color: "#334155" }}/>
               }
               <span className="text-[10px] max-w-[80px] truncate" style={{ color: "#64748b" }}>
                 {item.name}
@@ -171,14 +259,14 @@ function UserCard({ user, index }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, duration: 0.35 }}
-      className="rounded-2xl overflow-hidden"
+      transition={{ delay: index * 0.03, duration: 0.3 }}
+      className="rounded-2xl overflow-hidden transition-all duration-200"
       style={{
         background: "#0d1426",
-        border: `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`,
-        transition: "border-color 0.2s",
+        border:     `1px solid ${expanded ? "rgba(201,168,76,0.15)" : "rgba(255,255,255,0.06)"}`,
+        boxShadow:  expanded ? "0 4px 24px rgba(201,168,76,0.08)" : "0 1px 6px rgba(0,0,0,0.2)",
       }}>
 
       {/* ── Header ── */}
@@ -189,29 +277,26 @@ function UserCard({ user, index }) {
           {user.avatar
             ? <img src={user.avatar} alt={user.name}
                 className="w-11 h-11 rounded-xl object-cover border-2"
-                style={{ borderColor: "rgba(201,168,76,0.25)" }} />
+                style={{ borderColor: "rgba(201,168,76,0.25)" }}/>
             : <div className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-black"
                 style={{
                   background: user.isGuest
                     ? "linear-gradient(135deg,#1e293b,#334155)"
                     : "linear-gradient(135deg,#1e3a5f,#1e40af)",
-                  color: "#c9a84c",
+                  color:  "#c9a84c",
                   border: "2px solid rgba(201,168,76,0.2)",
                 }}>
                 {initials}
               </div>
           }
-          {/* Online indicator */}
           <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2"
-            style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }} />
+            style={{ borderColor: "#0d1426", background: isBlocked ? "#ef4444" : user.isGuest ? "#64748b" : "#22c55e" }}/>
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-[13px] font-bold truncate" style={{ color: "#f1f5f9" }}>{user.name}</p>
-
-            {/* Provider badge */}
             <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0"
               style={{
                 background: `${providerColor[user.provider] || "#64748b"}18`,
@@ -220,16 +305,12 @@ function UserCard({ user, index }) {
               }}>
               {providerLabel[user.provider] || user.provider}
             </span>
-
-            {/* Verified badge */}
             {user.isVerified && !user.isGuest && (
               <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5 flex-shrink-0"
                 style={{ background: "rgba(34,197,94,0.1)", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}>
                 <CheckCircle size={8}/> {t("ভেরিফাইড", "Verified")}
               </span>
             )}
-
-            {/* Blocked badge */}
             {isBlocked && (
               <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full flex-shrink-0"
                 style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)" }}>
@@ -257,7 +338,7 @@ function UserCard({ user, index }) {
           </div>
         </div>
 
-        {/* Quick stats — শুধু md+ এ */}
+        {/* Quick stats — md+ only */}
         <div className="hidden md:flex items-center gap-4 flex-shrink-0">
           <div className="text-center">
             <p className="text-[16px] font-black" style={{ color: "#c9a84c" }}>{fetched ? orders.length : "—"}</p>
@@ -302,7 +383,6 @@ function UserCard({ user, index }) {
               }
             </button>
           )}
-
           <button onClick={handleExpand}
             className="w-8 h-8 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
             style={{
@@ -327,13 +407,13 @@ function UserCard({ user, index }) {
             <div className="px-4 pb-5 space-y-5"
               style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
 
-              {/* ── Summary cards ── */}
+              {/* Summary cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
                 {[
-                  { label: t("মোট অর্ডার",   "Total Orders"),    value: orders.length,                    color: "#c9a84c", icon: <ShoppingBag size={14}/> },
-                  { label: t("মোট খরচ",      "Total Spent"),     value: `৳${totalSpent.toLocaleString()}`, color: "#22c55e", icon: <TrendingUp size={14}/> },
-                  { label: t("ডেলিভার্ড",    "Delivered"),       value: deliveredCnt,                     color: "#06b6d4", icon: <CheckCircle size={14}/> },
-                  { label: t("বাতিল",         "Cancelled"),       value: cancelledCnt,                     color: "#ef4444", icon: <XCircle size={14}/> },
+                  { label: t("মোট অর্ডার",  "Total Orders"),  value: orders.length,                    color: "#c9a84c", icon: <ShoppingBag size={14}/> },
+                  { label: t("মোট খরচ",     "Total Spent"),   value: `৳${totalSpent.toLocaleString()}`, color: "#22c55e", icon: <TrendingUp size={14}/> },
+                  { label: t("ডেলিভার্ড",   "Delivered"),     value: deliveredCnt,                     color: "#06b6d4", icon: <CheckCircle size={14}/> },
+                  { label: t("বাতিল",        "Cancelled"),     value: cancelledCnt,                     color: "#ef4444", icon: <XCircle size={14}/> },
                 ].map(s => (
                   <div key={s.label} className="rounded-xl p-3.5 text-center"
                     style={{ background: `${s.color}08`, border: `1px solid ${s.color}18` }}>
@@ -344,49 +424,43 @@ function UserCard({ user, index }) {
                 ))}
               </div>
 
-              {/* ── Registered customer extra info ── */}
+              {/* Registered extra info */}
               {!user.isGuest && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                  {/* Account info */}
                   <div className="rounded-xl p-4 space-y-2.5"
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
                       {t("অ্যাকাউন্ট তথ্য", "Account Info")}
                     </p>
                     {[
-                      { icon: <Mail size={12}/>,       label: t("ইমেইল",    "Email"),    value: user.email    || "—" },
-                      { icon: <Phone size={12}/>,      label: t("ফোন",      "Phone"),    value: user.phone    || "—" },
-                      { icon: <Calendar size={12}/>,   label: t("যোগ দিয়েছেন","Joined"),  value: joined                },
-                      { icon: <CreditCard size={12}/>, label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
-                      { icon: <CheckCircle size={12}/>,label: t("ভেরিফাইড", "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
+                      { icon: <Mail size={12}/>,        label: t("ইমেইল",      "Email"),    value: user.email    || "—" },
+                      { icon: <Phone size={12}/>,       label: t("ফোন",        "Phone"),    value: user.phone    || "—" },
+                      { icon: <Calendar size={12}/>,    label: t("যোগ দিয়েছেন","Joined"),  value: joined               },
+                      { icon: <CreditCard size={12}/>,  label: t("প্রোভাইডার","Provider"), value: providerLabel[user.provider] || user.provider },
+                      { icon: <CheckCircle size={12}/>, label: t("ভেরিফাইড",   "Verified"), value: user.isVerified ? t("হ্যাঁ","Yes") : t("না","No") },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
                         <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
-                          <span style={{ color: "#334155" }}>{row.icon}</span>
-                          {row.label}
+                          <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
                         </span>
                         <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
                     ))}
                   </div>
-
-                  {/* Wishlist + Address */}
                   <div className="rounded-xl p-4 space-y-2.5"
                     style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                     <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
                       {t("অতিরিক্ত তথ্য", "Extra Info")}
                     </p>
                     {[
-                      { icon: <Heart size={12}/>,   label: t("উইশলিস্ট",  "Wishlist"),  value: `${user.wishlist?.length || 0} টি পণ্য` },
-                      { icon: <MapPin size={12}/>,  label: t("জেলা",      "District"),  value: user.address?.district || "—" },
-                      { icon: <MapPin size={12}/>,  label: t("থানা",      "Thana"),     value: user.address?.thana    || "—" },
-                      { icon: <Star size={12}/>,    label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label  || "—" },
+                      { icon: <Heart size={12}/>,  label: t("উইশলিস্ট",    "Wishlist"),   value: `${user.wishlist?.length || 0} টি পণ্য` },
+                      { icon: <MapPin size={12}/>, label: t("জেলা",        "District"),   value: user.address?.district || "—" },
+                      { icon: <MapPin size={12}/>, label: t("থানা",        "Thana"),      value: user.address?.thana    || "—" },
+                      { icon: <Star size={12}/>,   label: t("ঠিকানা লেবেল","Addr Label"), value: user.address?.label    || "—" },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between gap-2 text-[12px]">
                         <span className="flex items-center gap-2 flex-shrink-0" style={{ color: "#475569" }}>
-                          <span style={{ color: "#334155" }}>{row.icon}</span>
-                          {row.label}
+                          <span style={{ color: "#334155" }}>{row.icon}</span>{row.label}
                         </span>
                         <span className="font-semibold truncate text-right" style={{ color: "#94a3b8" }}>{row.value}</span>
                       </div>
@@ -395,7 +469,7 @@ function UserCard({ user, index }) {
                 </div>
               )}
 
-              {/* ── Guest info ── */}
+              {/* Guest info */}
               {user.isGuest && (
                 <div className="rounded-xl p-4"
                   style={{ background: "rgba(100,116,139,0.06)", border: "1px solid rgba(100,116,139,0.15)" }}>
@@ -406,17 +480,16 @@ function UserCard({ user, index }) {
                 </div>
               )}
 
-              {/* ── Orders ── */}
+              {/* Orders */}
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: "#334155" }}>
                   {t("অর্ডার ইতিহাস", "Order History")}
                 </p>
-
                 {loadingOrds ? (
                   <div className="space-y-2">
                     {[1,2,3].map(i => (
                       <div key={i} className="h-12 rounded-xl animate-pulse"
-                        style={{ background: "rgba(255,255,255,0.04)" }} />
+                        style={{ background: "rgba(255,255,255,0.04)" }}/>
                     ))}
                   </div>
                 ) : orders.length === 0 ? (
@@ -451,6 +524,7 @@ export default function AdminUsers() {
   const [search,  setSearch ] = useState("");
   const [filter,  setFilter ] = useState("all");
   const [stats,   setStats  ] = useState({ total: 0, registered: 0, guest: 0, blocked: 0 });
+  const [page,    setPage   ] = useState(1);
 
   const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
 
@@ -494,6 +568,11 @@ export default function AdminUsers() {
     return list;
   }, [users, filter, search]);
 
+  useEffect(() => { setPage(1); }, [filtered.length]);
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   const FILTERS = [
     { key: "all",        labelBn: "সব",            labelEn: "All"        },
     { key: "registered", labelBn: "রেজিস্টার্ড",  labelEn: "Registered" },
@@ -506,13 +585,13 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
 
-      {/* ── Header ── */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl overflow-hidden"
         style={{
           background: "linear-gradient(135deg,#0d1426,#111827)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+          border:     "1px solid rgba(255,255,255,0.07)",
+          boxShadow:  "0 8px 32px rgba(0,0,0,0.3)",
         }}>
         <div className="absolute top-0 left-0 right-0 h-px"
           style={{ background: "linear-gradient(90deg,transparent,rgba(201,168,76,0.5) 40%,rgba(59,130,246,0.5) 70%,transparent)" }}/>
@@ -537,19 +616,20 @@ export default function AdminUsers() {
         </div>
       </motion.div>
 
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
         {[
-          { icon: <Users size={18}/>,     label: t("মোট",           "Total"),       value: stats.total,      color: "#c9a84c" },
-          { icon: <UserCheck size={18}/>, label: t("রেজিস্টার্ড",   "Registered"),  value: stats.registered, color: "#22c55e" },
-          { icon: <UserX size={18}/>,     label: t("গেস্ট",         "Guest"),        value: stats.guest,      color: "#64748b" },
-          { icon: <ShieldOff size={18}/>, label: t("ব্লকড",         "Blocked"),      value: stats.blocked,    color: "#ef4444" },
+          { icon: <Users size={18}/>,     label: t("মোট কাস্টমার", "Total Customers"), value: stats.total,      color: "#c9a84c", trend: t("সকল ব্যবহারকারী", "All users")        },
+          { icon: <UserCheck size={18}/>, label: t("রেজিস্টার্ড",  "Registered"),      value: stats.registered, color: "#22c55e", trend: t("অ্যাকাউন্টধারী",  "Account holders")  },
+          { icon: <UserX size={18}/>,     label: t("গেস্ট",        "Guest"),            value: stats.guest,      color: "#64748b", trend: t("অ-রেজিস্টার্ড",   "Non-registered")   },
+          { icon: <ShieldOff size={18}/>, label: t("ব্লকড",        "Blocked"),          value: stats.blocked,    color: "#ef4444", trend: t("অ্যাক্সেস বন্ধ",  "Access disabled")  },
         ].map((s, i) => (
-          <StatCard key={i} icon={s.icon} label={s.label} value={s.value} color={s.color} loading={loading}/>
+          <StatCard key={i} icon={s.icon} label={s.label} value={s.value} color={s.color} loading={loading} trend={s.trend}/>
         ))}
       </div>
+      <style>{`@media(min-width:640px){.admin-stat-wrap>div{grid-template-columns:repeat(4,1fr)!important}}`}</style>
 
-      {/* ── Search + Filter ── */}
+      {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#475569" }}/>
@@ -558,8 +638,8 @@ export default function AdminUsers() {
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-[13px] outline-none"
             style={{
               background: "#0d1426",
-              border: "1px solid rgba(255,255,255,0.08)",
-              color: "#e2e8f0",
+              border:     "1px solid rgba(255,255,255,0.08)",
+              color:      "#e2e8f0",
               fontFamily: "'DM Sans',sans-serif",
             }}
           />
@@ -569,8 +649,6 @@ export default function AdminUsers() {
             </button>
           )}
         </div>
-
-        {/* Filter buttons — মোবাইলে scroll করা যাবে */}
         <div className="flex gap-1.5 p-1 rounded-xl overflow-x-auto"
           style={{ background: "#0d1426", border: "1px solid rgba(255,255,255,0.06)" }}>
           {FILTERS.map(f => (
@@ -586,14 +664,19 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* ── Count ── */}
+      {/* Count */}
       {!loading && (
         <p className="text-[11px]" style={{ color: "#334155" }}>
           {t(`${filtered.length}জন কাস্টমার`, `${filtered.length} customer${filtered.length !== 1 ? "s" : ""}`)}
+          {totalPages > 1 && (
+            <span style={{ marginLeft: 8 }}>
+              — {t(`পেজ ${page}/${totalPages}`, `Page ${page}/${totalPages}`)}
+            </span>
+          )}
         </p>
       )}
 
-      {/* ── List ── */}
+      {/* List */}
       {loading ? (
         <div className="space-y-3">
           {[1,2,3,4,5].map(i => (
@@ -620,13 +703,51 @@ export default function AdminUsers() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((user, i) => (
-            <UserCard key={user._id} user={user} index={i}/>
-          ))}
-        </div>
-      )}
+        <>
+          <div className="space-y-3">
+            {paginated.map((user, i) => (
+              <UserCard key={user._id} user={user} index={i}/>
+            ))}
+          </div>
 
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display:        "flex",
+              justifyContent: "center",
+              alignItems:     "center",
+              gap:            6,
+              padding:        "16px 0 4px",
+            }}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <motion.button
+                  key={p}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  style={{
+                    width:        32,
+                    height:       32,
+                    borderRadius: 8,
+                    fontSize:     12,
+                    fontWeight:   700,
+                    cursor:       "pointer",
+                    border:       "1px solid",
+                    borderColor:  page === p ? "#c9a84c" : "rgba(255,255,255,0.08)",
+                    background:   page === p ? "linear-gradient(135deg,#c9a84c,#a07c2e)" : "#0d1426",
+                    color:        page === p ? "#0d1426" : "#c9a84c",
+                    boxShadow:    page === p ? "0 4px 12px rgba(201,168,76,0.3)" : "none",
+                    transition:   "all .15s ease",
+                    fontFamily:   "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  {p}
+                </motion.button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
