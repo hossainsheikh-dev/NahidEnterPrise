@@ -218,8 +218,7 @@ exports.getSingleOrder = async (req, res) => {
 };
 
 
-
-//update ordr statsus
+//update order status
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status, cancellationReason } = req.body;
@@ -237,6 +236,22 @@ exports.updateOrderStatus = async (req, res) => {
     if (status === "cancelled" && cancellationReason?.trim()) {
       updateFields.cancellationReason = cancellationReason.trim();
       updateFields.paymentStatus = "failed";
+    }
+
+    // ✅ delivered হলে payment paid এবং stock কমাও
+    if (status === "delivered") {
+      updateFields.paymentStatus = "paid";
+
+      for (const item of existing.items) {
+        try {
+          let product = null;
+          if (item.productId) product = await Product.findById(item.productId);
+          if (!product && item.slug) product = await Product.findOne({ slug: item.slug });
+          if (!product) continue;
+          const newStock = Math.max(0, (product.stock || 0) - (item.quantity || 1));
+          await Product.findByIdAndUpdate(product._id, { $set: { stock: newStock } });
+        } catch (err) { console.log("Stock update error:", err.message); }
+      }
     }
 
     const order = await Order.findByIdAndUpdate(req.params.id, { $set: updateFields }, { returnDocument: "after" });
