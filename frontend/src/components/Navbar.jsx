@@ -255,8 +255,6 @@ const BD_LOCATIONS = {
   "নড়াইল / Narail": ["কালিয়া / Kalia","লোহাগড়া / Lohagara","নড়াইল সদর / Narail Sadar"],
   "সাতক্ষীরা / Satkhira": ["আশাশুনি / Assasuni","দেবহাটা / Debhata","কলারোয়া / Kalaroa","কালীগঞ্জ / Kaliganj","সাতক্ষীরা সদর / Satkhira Sadar","শ্যামনগর / Shyamnagar","তালা / Tala"],
   "বাগেরহাট / Bagerhat": ["বাগেরহাট সদর / Bagerhat Sadar","চিতলমারী / Chitalmari","ফকিরহাট / Fakirhat","কচুয়া / Kachua","মোল্লাহাট / Mollahat","মোংলা / Mongla","মোড়েলগঞ্জ / Morrelganj","রামপাল / Rampal","শরণখোলা / Sarankhola"],
-  "জামালপুর / Jamalpur (alt)": [],
-  "ময়মনসিংহ / Mymensingh (alt)": [],
   "শেরপুর / Sherpur": ["ঝিনাইগাতী / Jhenaigati","নকলা / Nakla","নালিতাবাড়ী / Nalitabari","শেরপুর সদর / Sherpur Sadar","শ্রীবরদী / Sreebardi"],
 };
 
@@ -288,7 +286,7 @@ function SelectField({ label, value, onChange, options, placeholder }) {
   );
 }
 
-/* ══ INFO PANEL — সব তথ্য + phone edit + address দেখায় ══ */
+/* ══ INFO PANEL ══ */
 function InfoPanel({ customer, t }) {
   const isOAuth     = customer?.provider === "google" || customer?.provider === "facebook";
   const hasNoPhone  = !customer?.phone;
@@ -341,8 +339,6 @@ function InfoPanel({ customer, t }) {
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("অ্যাকাউন্ট তথ্য","Account Information")}</h3>
-
-      {/* OAuth badge */}
       {isOAuth && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11.5px] font-semibold"
           style={{background:"rgba(66,133,244,0.07)",border:"1px solid rgba(66,133,244,0.2)",color:"#1565c0"}}>
@@ -355,14 +351,10 @@ function InfoPanel({ customer, t }) {
           {t("Google দিয়ে লগইন করা আছেন","Signed in with Google")}
         </div>
       )}
-
-      {/* Basic info */}
       <div className="space-y-2.5">
         {infoRow(t("নাম","Name"), customer?.name, User)}
         {infoRow(t("ইমেইল","Email"), customer?.email, Mail)}
         {joinDate && infoRow(t("সদস্য হয়েছেন","Member since"), joinDate, Info)}
-
-        {/* Phone — editable */}
         <div className="p-3.5 rounded-xl" style={{background:"rgba(248,250,252,0.8)",border:"1px solid rgba(148,163,184,0.12)"}}>
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:"rgba(46,125,50,0.08)"}}>
@@ -405,8 +397,6 @@ function InfoPanel({ customer, t }) {
           </div>
         </div>
       </div>
-
-      {/* Saved address section */}
       {hasAddr && (
         <div>
           <p className="text-[11px] font-black uppercase tracking-widest mb-2.5" style={{color:"#2e7d32"}}>
@@ -450,7 +440,6 @@ function InfoPanel({ customer, t }) {
           </div>
         </div>
       )}
-
       {!hasAddr && (
         <p className="text-[12px] text-slate-400 text-center py-2">
           {t("এখনো কোনো ঠিকানা সেভ করা হয়নি","No address saved yet")}
@@ -462,11 +451,10 @@ function InfoPanel({ customer, t }) {
   );
 }
 
-
 /* ══ ADDRESS PANEL ══ */
 function AddressPanel({ customer, t, onSaved }) {
   const saved      = customer?.address || {};
-  const hasPhone   = !!customer?.phone; // registration এ ফোন দিয়েছে কিনা
+  const hasPhone   = !!customer?.phone;
 
   const [street,   setStreet  ] = useState(saved.street   || "");
   const [district, setDistrict] = useState(saved.district || "");
@@ -491,23 +479,18 @@ function AddressPanel({ customer, t, onSaved }) {
       setLoading(true); setMsg({ type:"", text:"" });
       const token = localStorage.getItem("customerToken");
       const body  = { street, thana: upazila, district };
-      if (!hasPhone) body.phone = phone; // ফোন না থাকলেই পাঠাব
+      if (!hasPhone) body.phone = phone;
       const res  = await fetch(`${API}/api/customer/address`, {
         method:"PUT", headers:{"Content-Type":"application/json", Authorization:`Bearer ${token}`},
         body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
-      // localStorage update
       try {
         const info = JSON.parse(localStorage.getItem("customerInfo") || "{}");
         localStorage.setItem("customerInfo", JSON.stringify({ ...info, address: data.address }));
       } catch {}
-
-      // parent কে জানাও — InfoPanel auto-refresh হবে
       onSaved?.(data.address);
-
       setMsg({ type:"success", text:t("ঠিকানা সেভ হয়েছে!","Address saved!") });
     } catch(err) { setMsg({ type:"error", text:err.message }); }
     finally { setLoading(false); }
@@ -516,8 +499,6 @@ function AddressPanel({ customer, t, onSaved }) {
   return (
     <div className="space-y-4">
       <h3 className="text-[16px] font-black text-slate-800">{t("ম্যানেজ এড্রেস","Manage Address")}</h3>
-
-      {/* Current address display */}
       {hasAddress && (
         <div className="p-4 rounded-2xl" style={{ background:"#f0f7f0", border:"1px solid #a5d6a7" }}>
           <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color:"#2e7d32" }}>
@@ -529,18 +510,12 @@ function AddressPanel({ customer, t, onSaved }) {
           {saved.phone && <p className="text-[11.5px] text-slate-500 mt-1.5">📞 {saved.phone}</p>}
         </div>
       )}
-
       <AnimatePresence>{msg.text && <InlineAlert type={msg.type} msg={msg.text}/>}</AnimatePresence>
-
       <form onSubmit={submit} className="space-y-3.5">
-
-        {/* পুরো ঠিকানা */}
         <FieldWrap label={t("পুরো ঠিকানা","Full Address")}>
           <InputField icon={MapPin} value={street} onChange={e=>setStreet(e.target.value)}
             placeholder={t("বাড়ি/রাস্তা নম্বর, এলাকার নাম","House/Road no., Area name")}/>
         </FieldWrap>
-
-        {/* জেলা */}
         <SelectField
           label={t("জেলা","District")}
           value={district}
@@ -548,8 +523,6 @@ function AddressPanel({ customer, t, onSaved }) {
           options={districts}
           placeholder={t("জেলা বেছে নিন","Select district")}
         />
-
-        {/* উপজেলা */}
         <SelectField
           label={t("উপজেলা / থানা","Upazila / Thana")}
           value={upazila}
@@ -557,15 +530,12 @@ function AddressPanel({ customer, t, onSaved }) {
           options={upazilas}
           placeholder={district ? t("উপজেলা বেছে নিন","Select upazila") : t("আগে জেলা বেছে নিন","Select district first")}
         />
-
-        {/* ফোন — শুধু তখনই দেখাবে যখন customer এর phone নেই */}
         {!hasPhone && (
           <FieldWrap label={t("ডেলিভারি ফোন","Delivery Phone")}>
             <InputField icon={Phone} type="tel" value={phone}
               onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX"/>
           </FieldWrap>
         )}
-
         <SubmitBtn loading={loading}>
           {loading
             ? <><Loader2 size={14} className="animate-spin"/>{t("সেভ হচ্ছে…","Saving…")}</>
@@ -576,12 +546,7 @@ function AddressPanel({ customer, t, onSaved }) {
   );
 }
 
-
-/* ══════════════════════════════════════════════════════
-   PROFILE SIDEBAR — Navbar এর ভেতরে, সরাসরি render হয়
-   My Profile click → showProfile=true → sidebar opens
-   প্রতিটা tab click → setActiveTab → সাদা অংশে content
-══════════════════════════════════════════════════════ */
+/* ══ PROFILE SIDEBAR ══ */
 function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
   const [activeTab, setActiveTab] = useState("info");
   const [loading,   setLoading  ] = useState(false);
@@ -592,31 +557,26 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
   const [showCur,   setShowCur  ] = useState(false);
   const [showNew,   setShowNew  ] = useState(false);
 
-  /* Cart */
   const { cartItems, cartCount, cartSubtotal, cartTotal, deliveryCharge,
           addToCart, removeFromCart, updateQuantity } = useCart();
 
-  /* Orders state */
   const [orders,        setOrders       ] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersFetched, setOrdersFetched] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { id, orderId, isCancelled }
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  /* Wishlist state */
   const [wishlist,       setWishlist      ] = useState([]);
   const [wishlistLoading,setWishlistLoading] = useState(false);
   const [wishlistFetched,setWishlistFetched] = useState(false);
 
-  /* FAQ accordion */
   const [openFaq, setOpenFaq] = useState(null);
 
   const joinDate = customer?.createdAt
     ? new Date(customer.createdAt).toLocaleDateString("en-GB",{year:"numeric",month:"long",day:"numeric"})
     : null;
 
-  /* fetch orders when tab changes to "orders" */
   useEffect(() => {
     if (activeTab !== "orders" || ordersFetched) return;
     setOrdersLoading(true);
@@ -625,7 +585,7 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
       ? `phone=${encodeURIComponent(customer.phone)}`
       : `email=${encodeURIComponent(customer?.email||"")}`;
     fetch(`${API}/api/orders/track?${q}`, {
-      headers: { Authorization: `Bearer ${token}` },  // ← token পাঠাও যাতে hidden orders filter হয়
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then(r=>r.json())
       .then(json => { setOrders(json.success ? json.data : (Array.isArray(json)?json:(json.orders||[]))); })
@@ -633,7 +593,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
       .finally(()=>{ setOrdersLoading(false); setOrdersFetched(true); });
   }, [activeTab, ordersFetched, customer]);
 
-  /* fetch wishlist when tab changes to "wishlist" */
   useEffect(() => {
     if (activeTab !== "wishlist" || wishlistFetched) return;
     setWishlistLoading(true);
@@ -675,16 +634,11 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
     { id:"faq",      icon:HelpCircle,   label:t("FAQs","FAQs")              },
   ];
 
-  /* ── Content renderer ── */
   const renderContent = () => {
     switch(activeTab) {
-
-      /* ── INFO ── */
       case "info":
         return <InfoPanel customer={customer} t={t} />;
 
-
-      /* ── ORDERS ── */
       case "orders":
         return (
           <div className="space-y-4">
@@ -707,7 +661,7 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                   const isOpen = expandedOrder === i;
                   const isCancelled = order.status === "cancelled";
                   const isDelivered = order.status === "delivered";
-                  const canDelete   = isCancelled || isDelivered; // শুধু এই দুইটায় delete দেখাবে
+                  const canDelete   = isCancelled || isDelivered;
                   const date = order.createdAt
                     ? new Date(order.createdAt).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})
                     : "—";
@@ -717,7 +671,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                       style={{border:`1px solid ${cfg.border}`,background:isCancelled?"linear-gradient(135deg,#1a0a0a,#2d0f0f)":"#fff"}}>
                       <div className="h-[3px]" style={{background:`linear-gradient(90deg,${cfg.color},${cfg.color}88)`}}/>
                       <div className="flex items-start justify-between gap-2 px-4 py-3">
-                        {/* clickable left side */}
                         <div className="flex-1 min-w-0 cursor-pointer" onClick={()=>setExpandedOrder(isOpen?null:i)}>
                           <div className="flex items-center gap-2 flex-wrap mb-0.5">
                             <span className="text-[13px] font-bold truncate" style={{color:isCancelled?"#fff":"#1e293b"}}>
@@ -732,7 +685,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                             {date} · {qty} {t("টি","items")}
                           </p>
                         </div>
-
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <div className="text-right cursor-pointer" onClick={()=>setExpandedOrder(isOpen?null:i)}>
                             <p className="text-[15px] font-black" style={{color:isCancelled?"#fff":"#0f172a"}}>
@@ -744,8 +696,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                               <ChevronDown size={12} style={{color:isCancelled?"rgba(255,255,255,0.5)":"#94a3b8"}}/>
                             </motion.div>
                           </div>
-
-                          {/* Delete button — delivered বা cancelled হলে দেখাবে */}
                           {canDelete && (
                             <button
                               onClick={() => setConfirmDelete({ id: order._id, orderId: order.orderId||`#${String(order._id).slice(-6).toUpperCase()}`, isCancelled })}
@@ -836,6 +786,7 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
             )}
           </div>
         );
+
       case "wishlist":
         return (
           <div className="space-y-4">
@@ -893,12 +844,10 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
           </div>
         );
 
-      /* ── CART ── */
       case "cart":
         return (
           <div className="space-y-4">
             <h3 className="text-[16px] font-black text-slate-800">{t("আমার কার্ট","My Cart")}</h3>
-
             {cartItems.length === 0 && (
               <div className="text-center py-10 space-y-2">
                 <div className="text-4xl">🛒</div>
@@ -906,7 +855,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                 <p className="text-[12px] text-slate-400">{t("পণ্য যোগ করুন","Add products to cart")}</p>
               </div>
             )}
-
             {cartItems.length > 0 && (
               <>
                 <div className="space-y-2.5">
@@ -914,8 +862,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                     <motion.div key={item._id||i} whileHover={{scale:1.005}}
                       className="flex items-center gap-3 p-3 rounded-2xl"
                       style={{background:"#f8fafc",border:"1.5px solid #e2e8f0"}}>
-
-                      {/* Image */}
                       <Link to={`/product/${item.slug||item._id}`} onClick={onClose} className="no-underline flex-shrink-0">
                         <div className="w-[52px] h-[52px] rounded-xl overflow-hidden bg-white" style={{border:"1.5px solid #e2e8f0"}}>
                           {item.image
@@ -923,8 +869,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                             : <div className="w-full h-full flex items-center justify-center"><Package size={18} className="text-slate-200"/></div>}
                         </div>
                       </Link>
-
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <Link to={`/product/${item.slug||item._id}`} onClick={onClose} className="no-underline">
                           <p className="text-[13px] font-bold text-slate-800 truncate hover:text-emerald-700 transition-colors">{item.name}</p>
@@ -935,8 +879,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                           )}
                           <span className="text-[13px] font-black" style={{color:"#059669"}}>৳{item.salePrice.toLocaleString()}</span>
                         </div>
-
-                        {/* Quantity control */}
                         <div className="flex items-center gap-2 mt-1.5">
                           <div className="flex items-center rounded-xl overflow-hidden" style={{border:"1.5px solid #e2e8f0"}}>
                             <button onClick={()=> item.quantity === 1 ? removeFromCart(item._id) : updateQuantity(item._id, item.quantity-1)}
@@ -957,8 +899,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                     </motion.div>
                   ))}
                 </div>
-
-                {/* Summary */}
                 <div className="rounded-2xl p-4 space-y-2" style={{background:"#f0f7f0",border:"1px solid #a5d6a7"}}>
                   <div className="flex justify-between text-[12px] text-slate-500">
                     <span>{t("সাবটোটাল","Subtotal")} ({cartCount} {t("টি","items")})</span>
@@ -976,8 +916,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                     <span>৳{cartTotal.toLocaleString()}</span>
                   </div>
                 </div>
-
-                {/* Checkout button */}
                 <Link to="/checkout" onClick={onClose} className="no-underline block">
                   <motion.div whileHover={{scale:1.01}} whileTap={{scale:0.98}}
                     className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-[14px] font-black text-white"
@@ -991,12 +929,9 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
           </div>
         );
 
-      /* ── ADDRESS ── */
       case "address":
         return <AddressPanel customer={customer} t={t} onSaved={onAddressSaved} />;
 
-
-      /* ── PASSWORD ── */
       case "password":
         return (
           <div className="space-y-4">
@@ -1023,7 +958,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
           </div>
         );
 
-      /* ── FAQ ── */
       case "faq":
         return (
           <div className="space-y-5">
@@ -1082,7 +1016,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
         exit={{x:"100%",opacity:0,transition:{duration:0.24,ease:[0.4,0,1,1]}}}
         className="fixed right-0 top-0 h-full z-50 flex" style={{width:"520px"}}>
 
-        {/* Left nav */}
         <div className="w-[180px] flex flex-col shrink-0 h-full"
           style={{background:"linear-gradient(180deg,#1a2e1a 0%,#1e3620 100%)"}}>
           <div className="px-4 py-5 border-b border-white/10">
@@ -1122,7 +1055,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
           </div>
         </div>
 
-        {/* Right content — সাদা অংশ */}
         <div className="flex-1 h-full overflow-y-auto bg-white relative">
           <button onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer border-none z-10"
@@ -1144,7 +1076,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
       </motion.div>
     </AnimatePresence>
 
-    {/* ── Delete Confirmation Modal — sidebar এর বাইরে render হয় ── */}
     <AnimatePresence>
       {confirmDelete && (
         <>
@@ -1155,12 +1086,8 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
             initial={{opacity:0,scale:0.9,y:24}} animate={{opacity:1,scale:1,y:0}}
             exit={{opacity:0,scale:0.9,y:24}} transition={{type:"spring",stiffness:320,damping:28}}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-[290px] bg-white rounded-3xl shadow-2xl overflow-hidden">
-
-            {/* top bar */}
             <div className="h-1 w-full" style={{background:"linear-gradient(90deg,#dc2626,#ef4444)"}}/>
-
             <div className="p-6">
-              {/* icon */}
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
                 style={{background:"#fff1f2",border:"1px solid #fecdd3"}}>
                 <svg width="26" height="26" viewBox="0 0 14 14" fill="none">
@@ -1168,7 +1095,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                     stroke="#dc2626" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-
               <h3 className="text-[16px] font-black text-slate-800 text-center mb-1">
                 {t("তালিকা থেকে সরাবেন?","Remove from list?")}
               </h3>
@@ -1179,7 +1105,6 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                   {t("ডেটাবেজ থেকে মুছবে না।","Won't be deleted from database.")}
                 </span>
               </p>
-
               <div className="flex gap-2.5">
                 <button onClick={()=>!deleteLoading&&setConfirmDelete(null)} disabled={deleteLoading}
                   className="flex-1 py-2.5 rounded-2xl text-[13.5px] font-semibold text-slate-600 cursor-pointer border-none transition-all disabled:opacity-40"
@@ -1196,7 +1121,7 @@ function ProfileSidebar({ customer, onClose, onLogout, onAddressSaved, t }) {
                       });
                     } catch {}
                     setOrders(prev => prev.filter(o => o._id !== confirmDelete.id));
-                    setOrdersFetched(false); // পরের বার sidebar খুললে fresh fetch হবে
+                    setOrdersFetched(false);
                     setDeleteLoading(false);
                     setConfirmDelete(null);
                   }}
@@ -1366,7 +1291,6 @@ function CustomerDropdown({ customer, t, onOpenProfile, onLogout, cartCount }) {
               </div>
             </div>
             <div className="p-1.5 space-y-0.5">
-              {/* My Profile */}
               <button onClick={()=>{onOpenProfile();setOpen(false);}}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer border-none transition-colors hover:bg-[#f0f7f0]"
                 style={{background:"transparent"}}>
@@ -1375,8 +1299,6 @@ function CustomerDropdown({ customer, t, onOpenProfile, onLogout, cartCount }) {
                 </div>
                 <span className="text-[13px] font-semibold text-slate-700">{t("মাই প্রোফাইল","My Profile")}</span>
               </button>
-
-              {/* আমার কার্ট */}
               <Link to="/cart" onClick={()=>setOpen(false)}
                 className="no-underline w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors hover:bg-[#f0f7f0]"
                 style={{background:"transparent"}}>
@@ -1395,8 +1317,6 @@ function CustomerDropdown({ customer, t, onOpenProfile, onLogout, cartCount }) {
                   </span>
                 )}
               </Link>
-
-              {/* Sign Out */}
               <button onClick={()=>{onLogout();setOpen(false);}}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left cursor-pointer border-none transition-colors hover:bg-red-50"
                 style={{background:"transparent"}}>
@@ -1413,6 +1333,20 @@ function CustomerDropdown({ customer, t, onOpenProfile, onLogout, cartCount }) {
   );
 }
 
+/* ══ SIDEBAR LANG TOGGLE ══ */
+function SidebarLangToggle() {
+  const { lang, toggleLang } = useLang();
+  return (
+    <button
+      onClick={() => toggleLang(lang === "bn" ? "en" : "bn")}
+      className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold transition-all cursor-pointer border-none"
+      style={{ background:"#f8fafc", border:"1px solid #e2e8f0", color:"#374151" }}>
+      <Globe size={15} strokeWidth={1.8} style={{ color:"#2e7d32" }}/>
+      {lang === "bn" ? "বাংলা" : "English"}
+    </button>
+  );
+}
+
 /* ══ MAIN NAVBAR ══ */
 export default function Navbar() {
   const navigate=useNavigate();
@@ -1422,7 +1356,7 @@ export default function Navbar() {
   const [scrolled,setScrolled]=useState(false);
   const [mobileSearchOpen,setMobileSearchOpen]=useState(false);
   const [links,setLinks]=useState([]);
-  const [showProfile,setShowProfile]=useState(false); // ← ProfileSidebar state
+  const [showProfile,setShowProfile]=useState(false);
   const {cartCount}=useCart(); const {wishlistCount}=useWishlist(); const t=useT();
 
   const [customer,setCustomer]=useState(()=>{
@@ -1454,7 +1388,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Announcement */}
       <div className="bg-[#1a2e1a] text-[#c8e6c9] text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none">
         <div className="flex whitespace-nowrap animate-marquee">
           {[0,1].map(i=>(
@@ -1470,7 +1403,6 @@ export default function Navbar() {
         <style>{`@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}} .animate-marquee{animation:marquee 28s linear infinite} .animate-marquee:hover{animation-play-state:paused}`}</style>
       </div>
 
-      {/* Header */}
       <header className={`sticky top-0 z-50 transition-all duration-500 ${scrolled?"bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.06)]":"bg-white border-b border-black/[0.07]"}`}>
         <div className="max-w-[1440px] mx-auto px-6 xl:px-12">
           <div className="flex items-center justify-between h-[72px]">
@@ -1538,14 +1470,12 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ProfileSidebar — Navbar এর মধ্যে সরাসরি */}
       {showProfile && customer && (
         <ProfileSidebar
           customer={customer}
           onClose={()=>setShowProfile(false)}
           onLogout={()=>{handleLogout();setShowProfile(false);}}
           onAddressSaved={(newAddress) => {
-            // customer state update করো → InfoPanel auto re-render হবে
             setCustomer(prev => prev ? { ...prev, address: newAddress } : prev);
           }}
           t={t}
@@ -1589,81 +1519,59 @@ export default function Navbar() {
                   </div>
                 ))}
               </div>
+
+              {/* ══ Mobile Sidebar Footer ══ */}
               <div className="border-t border-gray-100 px-5 py-5 space-y-3">
-  {customer ? (
-    <>
-      <Link to="/account" 
-        className="flex items-center gap-3 no-underline group" 
-        onClick={()=>setSidebar(false)}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[13px] font-black shrink-0 shadow-md"
-          style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
-          {customer?.avatar
-            ? <img src={customer.avatar} alt="" className="w-full h-full object-cover rounded-xl"/>
-            : (customer?.name?.[0]||"U").toUpperCase()
-          }
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-bold text-slate-800 truncate group-hover:text-[#2e7d32] transition-colors">
-            {customer.name.split(" ")[0]}
-          </p>
-          <p className="text-[10.5px] text-slate-400 truncate">{customer.email}</p>
-        </div>
-        <ChevronRight size={14} className="text-slate-300 group-hover:text-[#2e7d32] transition-colors shrink-0"/>
-      </Link>
+                {customer ? (
+                  <Link to="/account"
+                    className="flex items-center gap-3 no-underline group"
+                    onClick={()=>setSidebar(false)}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[13px] font-black shrink-0"
+                      style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
+                      {customer?.avatar
+                        ? <img src={customer.avatar} alt="" className="w-full h-full object-cover rounded-xl"/>
+                        : (customer?.name?.[0]||"U").toUpperCase()
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-slate-800 truncate group-hover:text-[#2e7d32] transition-colors">
+                        {customer.name.split(" ")[0]}
+                      </p>
+                      <p className="text-[10.5px] text-slate-400 truncate">{customer.email}</p>
+                    </div>
+                    <ChevronRight size={14} className="text-slate-300 group-hover:text-[#2e7d32] transition-colors shrink-0"/>
+                  </Link>
+                ) : (
+                  <Link to="/account"
+                    className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline"
+                    onClick={()=>setSidebar(false)}>
+                    <User size={17} strokeWidth={1.7}/>{t("আমার অ্যাকাউন্ট","My Account")}
+                  </Link>
+                )}
 
-      <button 
-        onClick={()=>{handleLogout();setSidebar(false);}} 
-        className="flex items-center gap-2.5 text-[12.5px] font-semibold text-red-400 hover:text-red-500 bg-transparent border-none cursor-pointer w-full text-left transition-colors">
-        <LogOut size={14} strokeWidth={1.8}/>{t("সাইন আউট","Sign Out")}
-      </button>
-    </>
-  ) : (
-    <Link to="/account" 
-      className="flex items-center gap-3 px-4 py-3 rounded-2xl no-underline group transition-all"
-      style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)",boxShadow:"0 4px 16px rgba(46,125,50,0.25)"}}
-      onClick={()=>setSidebar(false)}>
-      <User size={16} strokeWidth={1.8} className="text-white/80"/>
-      <span className="text-[13px] font-bold text-white">{t("আমার অ্যাকাউন্ট","My Account")}</span>
-      <ChevronRight size={14} className="text-white/50 ml-auto"/>
-    </Link>
-  )}
+                <div className="pt-2 border-t border-gray-100">
+                  <div className="grid grid-cols-3 gap-2">
+                    <SidebarLangToggle/>
+                    <Link to="/wishlist"
+                      className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold no-underline transition-all text-gray-500 hover:text-[#2e7d32] hover:bg-[#f0f7f0]"
+                      style={{background:"#f8fafc", border:"1px solid #e2e8f0"}}
+                      onClick={()=>setSidebar(false)}>
+                      <Heart size={15} strokeWidth={1.8}/>{t("উইশলিস্ট","Wishlist")}
+                    </Link>
+                    <Link to="/order"
+                      className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold no-underline transition-all text-gray-500 hover:text-[#2e7d32] hover:bg-[#f0f7f0]"
+                      style={{background:"#f8fafc", border:"1px solid #e2e8f0"}}
+                      onClick={()=>setSidebar(false)}>
+                      <Package size={15} strokeWidth={1.8}/>{t("অর্ডার","Orders")}
+                    </Link>
+                  </div>
+                </div>
+              </div>
 
-  <div className="pt-2 border-t border-gray-100">
-    <div className="flex items-center gap-2 flex-wrap">
-      <SidebarLangButtons/>
-      <Link to="/wishlist" 
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-semibold border no-underline transition-all"
-        style={{background:"#fff5f5",border:"1px solid #fecdd3",color:"#e11d48"}}
-        onClick={()=>setSidebar(false)}>
-        <Heart size={12} strokeWidth={2}/>{t("উইশলিস্ট","Wishlist")}
-      </Link>
-      <Link to="/order" 
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11.5px] font-semibold border no-underline transition-all"
-        style={{background:"#eff6ff",border:"1px solid #bfdbfe",color:"#1d4ed8"}}
-        onClick={()=>setSidebar(false)}>
-        <Package size={12} strokeWidth={2}/>{t("অর্ডার","Orders")}
-      </Link>
-    </div>
-  </div>
-</div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
     </>
-  );
-}
-
-function SidebarLangButtons() {
-  const {lang,toggleLang}=useLang();
-  return (
-    <div className="flex gap-2">
-      {[{code:"bn",label:"বাংলা"},{code:"en",label:"English"}].map(opt=>(
-        <button key={opt.code} onClick={()=>toggleLang(opt.code)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium border transition-all ${lang===opt.code?"bg-[#f0f7f0] border-[#a5d6a7] text-[#1a2e1a] font-semibold":"bg-white border-gray-100 text-gray-500 hover:border-gray-200"}`}>
-          {opt.label}
-        </button>
-      ))}
-    </div>
   );
 }
