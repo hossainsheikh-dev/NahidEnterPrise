@@ -211,14 +211,30 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-[#f5f5f0]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
 
-        {/* Breadcrumb */}
+        
         <nav className="flex items-center gap-1 text-[11px] text-gray-400 py-4 flex-wrap">
           <Link to="/" className="hover:text-[#2e7d32] transition-colors font-medium">{t("হোম", "Home")}</Link>
           <ChevronRight size={10} className="text-gray-300 flex-shrink-0"/>
-          {product.sublink?.name && <>
-            <span className="font-medium">{product.sublink.name}</span>
-            <ChevronRight size={10} className="text-gray-300 flex-shrink-0"/>
-          </>}
+          {product.link?.slug && (
+            <>
+              <Link
+                to={`/${product.link.slug}`}
+                className="hover:text-[#2e7d32] transition-colors font-medium">
+                {product.link.name}
+              </Link>
+              <ChevronRight size={10} className="text-gray-300 flex-shrink-0"/>
+            </>
+          )}
+          {product.sublink?.slug && (
+            <>
+              <Link
+                to={`/${product.link?.slug}/${product.sublink.slug}`}
+                className="hover:text-[#2e7d32] transition-colors font-medium">
+                {product.sublink.name}
+              </Link>
+              <ChevronRight size={10} className="text-gray-300 flex-shrink-0"/>
+            </>
+          )}
           <span className="text-gray-600 font-semibold truncate max-w-[160px] sm:max-w-xs">{product.name}</span>
         </nav>
 
