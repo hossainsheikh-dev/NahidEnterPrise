@@ -1590,23 +1590,32 @@ export default function Navbar() {
                 ))}
               </div>
               <div className="border-t border-gray-100 px-5 py-5 space-y-3">
-                {customer?(
+                {customer ? (
                   <>
-                    <div className="flex items-center gap-3 px-3 py-3 rounded-xl mb-1" style={{background:"#f0f7f0",border:"1px solid #a5d6a7"}}>
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-black shrink-0" style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
-                        {customer?.avatar?<img src={customer.avatar} alt="" className="w-full h-full object-cover rounded-full"/>:(customer?.name?.[0]||"U").toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0"><p className="text-[12.5px] font-bold text-[#1a2e1a] truncate">{customer.name}</p><p className="text-[10.5px] text-green-600 truncate">{customer.email}</p></div>
-                    </div>
-                    <Link to="/account" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}><UserCircle size={17} strokeWidth={1.7}/>{t("মাই প্রোফাইল","My Profile")}</Link>
-                    <button onClick={()=>{handleLogout();setSidebar(false);}} className="flex items-center gap-3 text-[13.5px] font-medium text-red-500 hover:text-red-600 bg-transparent border-none cursor-pointer w-full text-left transition-colors"><LogOut size={17} strokeWidth={1.7}/>{t("সাইন আউট","Sign Out")}</button>
+                    <Link to="/account" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}>
+                      <UserCircle size={17} strokeWidth={1.7}/>
+                      {customer.name.split(" ")[0]}
+                    </Link>
+                    <button onClick={()=>{handleLogout();setSidebar(false);}} className="flex items-center gap-3 text-[13.5px] font-medium text-red-500 hover:text-red-600 bg-transparent border-none cursor-pointer w-full text-left transition-colors">
+                      <LogOut size={17} strokeWidth={1.7}/>{t("সাইন আউট","Sign Out")}
+                    </button>
                   </>
-                ):(
-                  <Link to="/account" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}><User size={17} strokeWidth={1.7}/>{t("আমার অ্যাকাউন্ট","My Account")}</Link>
+                ) : (
+                  <Link to="/account" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}>
+                    <User size={17} strokeWidth={1.7}/>{t("আমার অ্যাকাউন্ট","My Account")}
+                  </Link>
                 )}
-                <Link to="/wishlist" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}><Heart size={17} strokeWidth={1.7}/>{t("উইশলিস্ট","Wishlist")}</Link>
-                <Link to="/order" className="flex items-center gap-3 text-[13.5px] font-medium text-gray-700 hover:text-[#2e7d32] transition-colors no-underline" onClick={()=>setSidebar(false)}><Package size={17} strokeWidth={1.7}/>{t("অর্ডার ট্র্যাক করুন","Track Orders")}</Link>
-                <div className="pt-2 border-t border-gray-50"><SidebarLangButtons/></div>
+                <div className="pt-2 border-t border-gray-50">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <SidebarLangButtons/>
+                    <Link to="/wishlist" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium border border-gray-100 bg-white text-gray-500 hover:border-gray-200 transition-all no-underline" onClick={()=>setSidebar(false)}>
+                      <Heart size={13} strokeWidth={1.7}/>{t("উইশলিস্ট","Wishlist")}
+                    </Link>
+                    <Link to="/order" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-medium border border-gray-100 bg-white text-gray-500 hover:border-gray-200 transition-all no-underline" onClick={()=>setSidebar(false)}>
+                      <Package size={13} strokeWidth={1.7}/>{t("অর্ডার","Orders")}
+                    </Link>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </>
