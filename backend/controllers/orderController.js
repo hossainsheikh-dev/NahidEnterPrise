@@ -268,6 +268,8 @@ exports.confirmDelivery = async (req, res) => {
     const { success, note } = req.body;
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    console.log("ITEMS:", JSON.stringify(order.items.map(i => ({ name: i.name, productId: i.productId, slug: i.slug, qty: i.quantity }))));
+
     if (!["confirmed","shipped","processing","pending"].includes(order.status))
       return res.status(400).json({ success: false, message: `Cannot confirm delivery for status: ${order.status}` });
 
