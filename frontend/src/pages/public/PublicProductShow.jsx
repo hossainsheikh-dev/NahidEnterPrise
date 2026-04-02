@@ -68,15 +68,17 @@ function ProductCard({ product }) {
         {/* Image */}
         <div className="relative overflow-hidden bg-[#f8f8f5] flex-shrink-0"
           style={{ height: "clamp(160px, 22vw, 260px)" }}>
-          {product.images?.[0] ? (
-            <img src={product.images[0].url} alt={product.name}
-              loading="lazy"
-              className="w-full h-full object-contain p-3 group-hover:scale-[1.05] transition-transform duration-500" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package size={36} className="text-gray-200" />
-            </div>
-          )}
+            {(product.images?.[0]?.url || (typeof product.image === "string" ? product.image : product.image?.url) || "") ? (
+              <img
+                src={product.images?.[0]?.url || (typeof product.image === "string" ? product.image : product.image?.url)}
+                alt={product.name}
+                loading="lazy"
+                className="w-full h-full object-contain p-3 group-hover:scale-[1.05] transition-transform duration-500" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Package size={36} className="text-gray-200" />
+              </div>
+            )}
 
           <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
             style={{ background: "linear-gradient(to top, rgba(248,248,245,0.8), transparent)" }} />
