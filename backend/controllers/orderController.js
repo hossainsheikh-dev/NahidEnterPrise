@@ -280,13 +280,23 @@ exports.confirmDelivery = async (req, res) => {
 
       const stockErrors = [];
       for (const item of order.items) {
-        if (!item.productId) continue;
         try {
-          const product = await Product.findById(item.productId);
-          if (!product) { stockErrors.push(`Product not found: ${item.name}`); continue; }
+          let product = null;
+          if (item.productId) {
+            product = await Product.findById(item.productId);
+          }
+          if (!product && item.slug) {
+            product = await Product.findOne({ slug: item.slug });
+          }
+          if (!product) {
+            stockErrors.push(`Product not found: ${item.name}`);
+            continue;
+          }
           const newStock = Math.max(0, (product.stock || 0) - (item.quantity || 1));
-          await Product.findByIdAndUpdate(item.productId, { $set: { stock: newStock } });
-        } catch (err) { stockErrors.push(`Stock update failed for: ${item.name}`); }
+          await Product.findByIdAndUpdate(product._id, { $set: { stock: newStock } });
+        } catch (err) {
+          stockErrors.push(`Stock update failed for: ${item.name}`);
+        }
       }
 
       await order.save();
