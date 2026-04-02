@@ -280,14 +280,10 @@ function ProductShow({
   });
 
   /* stock — always just a number badge */
+  // পরে — ৫ এর নিচে হলে রেড
   const stockBadge = (stock) => {
-    if (stock === 0) return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#e11d48", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.15)", padding: "2px 8px", borderRadius: 99 }}>
-        0
-      </span>
-    );
     if (stock <= 5) return (
-      <span style={{ fontSize: 11, fontWeight: 700, color: "#d97706", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)", padding: "2px 8px", borderRadius: 99 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#e11d48", background: "rgba(244,63,94,0.08)", border: "1px solid rgba(244,63,94,0.15)", padding: "2px 8px", borderRadius: 99 }}>
         {stock}
       </span>
     );
