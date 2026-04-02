@@ -1552,12 +1552,16 @@ export default function Navbar() {
                 <div className="pt-2 border-t border-gray-100">
                   <div className="grid grid-cols-3 gap-2">
                     <SidebarLangToggle/>
-                    <Link to="/wishlist"
-                      className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold no-underline transition-all text-gray-500 hover:text-[#2e7d32] hover:bg-[#f0f7f0]"
-                      style={{background:"#f8fafc", border:"1px solid #e2e8f0"}}
-                      onClick={()=>setSidebar(false)}>
-                      <Heart size={15} strokeWidth={1.8}/>{t("উইশলিস্ট","Wishlist")}
-                    </Link>
+                      <Link to="/wishlist"
+                          className="relative flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold no-underline transition-all text-gray-500 hover:text-[#2e7d32] hover:bg-[#f0f7f0]"
+                          style={{background:"#f8fafc", border:"1px solid #e2e8f0"}}
+                          onClick={()=>setSidebar(false)}>
+                          <div className="relative">
+                            <Heart size={15} strokeWidth={1.8}/>
+                            {wishlistCount>0&&<span className="absolute -top-2 -right-2 bg-red-500 text-white text-[9px] font-bold min-w-[16px] h-[16px] px-0.5 rounded-full flex items-center justify-center">{wishlistCount>9?"9+":wishlistCount}</span>}
+                          </div>
+                          {t("উইশলিস্ট","Wishlist")}
+                      </Link>
                     <Link to="/order"
                       className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-semibold no-underline transition-all text-gray-500 hover:text-[#2e7d32] hover:bg-[#f0f7f0]"
                       style={{background:"#f8fafc", border:"1px solid #e2e8f0"}}
