@@ -47,7 +47,8 @@ const protectAny = async (req, res, next) => {
 };
 
 
-//most ordered product
+
+// পরে — $lookup দিয়ে product এর stock আনা হচ্ছে
 router.get("/most-ordered", async (req, res) => {
   try {
     const Order = require("../models/Order");
@@ -66,6 +67,19 @@ router.get("/most-ordered", async (req, res) => {
       }},
       { $sort: { orderCount: -1 } },
       { $limit: limit },
+      // ✅ FIX: Product থেকে stock, discountType, discountValue আনা হচ্ছে
+      { $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "productInfo",
+      }},
+      { $addFields: {
+        stock:         { $ifNull: [{ $arrayElemAt: ["$productInfo.stock",         0] }, 0]      },
+        discountType:  { $ifNull: [{ $arrayElemAt: ["$productInfo.discountType",  0] }, "none"] },
+        discountValue: { $ifNull: [{ $arrayElemAt: ["$productInfo.discountValue", 0] }, 0]      },
+      }},
+      { $project: { productInfo: 0 } },
     ]);
 
     res.json({ success: true, data: result });
@@ -73,6 +87,8 @@ router.get("/most-ordered", async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
 
 //most wishlist product
 router.get("/most-wishlisted", async (req, res) => {
