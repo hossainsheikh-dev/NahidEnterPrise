@@ -154,9 +154,14 @@ function App() {
           <Route path="*"         element={<SubAdmin404 />} />
         </Route>
 
-{/* admin/subadmin fallback - category route থেকে রক্ষা করতে */}
-<Route path="/manage-x9k2/*" element={<Navigate to="/manage-x9k2" replace />} />
-<Route path="/portal-v7m4/*" element={<Navigate to="/portal-v7m4" replace />} />
+        {/* admin/subadmin fallback - category route থেকে রক্ষা করতে */}
+        <Route path="/manage-x9k2/*" element={<Navigate to="/manage-x9k2" replace />} />
+        <Route path="/portal-v7m4/*" element={<Navigate to="/portal-v7m4" replace />} />
+
+
+        {/* category routes */}
+        <Route path="/:linkSlug"             element={<><Navbar /><CategoryPage /><Footer /></>} />
+        <Route path="/:linkSlug/:sublinkSlug" element={<><Navbar /><CategoryPage /><Footer /></>} />
 
         {/* 404 */}
         <Route path="*" element={<><Navbar /><NotFoundPage /><Footer /></>} />
