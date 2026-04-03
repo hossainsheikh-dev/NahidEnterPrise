@@ -76,7 +76,7 @@ export default function Footer() {
 
   return (
     <footer className="relative overflow-hidden"
-      style={{background:"linear-gradient(160deg,#1a0a0a 0%,#1f1111 40%,#1a0d0d 100%)"}}>
+      style={{background:"linear-gradient(160deg,#1a0000 0%,#7f1d1d 40%,#450a0a 100%)"}}>
 
       {/* Ambient blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
