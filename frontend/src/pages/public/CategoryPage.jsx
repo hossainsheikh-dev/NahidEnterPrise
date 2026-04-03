@@ -62,7 +62,7 @@ function FeaturedCard({ product, index }) {
             <span className="text-[15px] font-black text-gray-900">৳{salePrice.toLocaleString()}</span>
             {hasDisc && <span className="text-[11px] text-gray-400 line-through">৳{product.price.toLocaleString()}</span>}
           </div>
-          {salePrice >= 2500 && <p className="text-[10px] text-[#2e7d32] font-semibold mt-0.5">✓ {t("ফ্রি ডেলিভারি", "Free Delivery")}</p>}
+          {salePrice >= 2500 && <p className="text-[10px] text-[#dc2626] font-semibold mt-0.5">✓ {t("ফ্রি ডেলিভারি", "Free Delivery")}</p>}
         </div>
       </Link>
       <div className="px-3.5 pb-3.5">
@@ -70,8 +70,8 @@ function FeaturedCard({ product, index }) {
           onClick={() => { if (!inStock || added) return; addToCart({ ...product, salePrice }); setAdded(true); }}
           className={`w-full py-2 rounded-xl text-[11px] font-bold transition-all active:scale-[0.97] ${
             !inStock ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-            : added  ? "bg-[#2e7d32] text-white"
-                     : "bg-[#1a2e1a] hover:bg-[#2e7d32] text-white"
+            : added  ? "bg-[#dc2626] text-white"
+                     : "bg-[#3b0f0f] hover:bg-[#dc2626] text-white"
           }`}>
           {!inStock ? t("স্টক নেই", "Out of Stock") : added ? t("✓ যোগ হয়েছে", "✓ Added") : t("কার্টে যোগ করুন", "Add to Cart")}
         </button>
@@ -94,7 +94,7 @@ function SuggestionRow({ product, index }) {
       transition={{ delay: 0.35 + index * 0.06, duration: 0.4, ease: [0.22,1,0.36,1] }}
     >
       <Link to={`/product/${product.slug}`}
-        className="group flex items-center gap-3.5 bg-[#f8faf8] hover:bg-white border border-transparent hover:border-[#c8e6c9] rounded-2xl p-3 transition-all duration-200 hover:shadow-sm">
+        className="group flex items-center gap-3.5 bg-[#fdf5f5] hover:bg-white border border-transparent hover:border-[#fca5a5] rounded-2xl p-3 transition-all duration-200 hover:shadow-sm">
         <div className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-gray-100 flex-shrink-0">
           {image
             ? <img src={image} alt={product.name} className="w-full h-full object-contain p-1"/>
@@ -108,7 +108,7 @@ function SuggestionRow({ product, index }) {
             {hasDisc && <span className="text-[10px] text-gray-400 line-through">৳{product.price.toLocaleString()}</span>}
           </div>
         </div>
-        <ArrowRight size={13} className="text-gray-300 group-hover:text-[#2e7d32] group-hover:translate-x-0.5 transition-all flex-shrink-0"/>
+        <ArrowRight size={13} className="text-gray-300 group-hover:text-[#dc2626] group-hover:translate-x-0.5 transition-all flex-shrink-0"/>
       </Link>
     </motion.div>
   );
@@ -124,10 +124,10 @@ function EmptyState({ title, featuredProducts, suggestions }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
 
       <div className="relative overflow-hidden rounded-3xl mb-10"
-        style={{ background: "linear-gradient(135deg, #1a2e1a 0%, #2e5230 50%, #1a3d1a 100%)" }}>
+        style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 50%,#1a0a0a 100%)" }}>
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white opacity-[0.04]"/>
         <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white opacity-[0.03]"/>
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-[#4caf50] opacity-[0.08]"/>
+        <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-[#f87171] opacity-[0.08]"/>
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-8 px-8 sm:px-12 py-10 sm:py-12">
           <div className="flex-1 text-center sm:text-left">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-5">
@@ -138,14 +138,14 @@ function EmptyState({ title, featuredProducts, suggestions }) {
             </div>
             <h2 className="text-[26px] sm:text-[32px] font-black text-white leading-tight mb-3">
               {t("এই Category তে", "Products are")} <br/>
-              <span className="text-[#81c784]">{t("Products আসছে!", "coming soon!")}</span>
+              <span className="text-[#fca5a5]">{t("Products আসছে!", "coming soon!")}</span>
             </h2>
             <p className="text-[13px] text-white/60 leading-relaxed max-w-xs mx-auto sm:mx-0">
               <span className="text-white/90 font-semibold">"{title}"</span> — {t("এ এখনো কোনো product নেই। শীঘ্রই নতুন collection আসছে।", "has no products yet. A new collection is coming soon.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center sm:justify-start">
               <Link to="/"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#1a2e1a] hover:bg-[#e8f5e9] px-5 py-2.5 rounded-xl text-[13px] font-black transition-colors">
+                className="inline-flex items-center justify-center gap-2 bg-white text-[#3b0f0f] hover:bg-[#fee2e2] px-5 py-2.5 rounded-xl text-[13px] font-black transition-colors">
                 <Home size={14}/> {t("হোমে যান", "Go to Home")}
               </Link>
               <Link to="/search"
@@ -193,7 +193,7 @@ function EmptyState({ title, featuredProducts, suggestions }) {
                 <p className="text-[11px] text-gray-400">{t("আমাদের সেরা picks", "Our best picks")}</p>
               </div>
             </div>
-            <Link to="/" className="text-[11px] font-bold text-[#2e7d32] hover:underline flex items-center gap-1">
+            <Link to="/" className="text-[11px] font-bold text-[#dc2626] hover:underline flex items-center gap-1">
               {t("সব দেখুন", "View All")} <ArrowRight size={11}/>
             </Link>
           </div>
@@ -208,15 +208,15 @@ function EmptyState({ title, featuredProducts, suggestions }) {
           <div className="bg-white rounded-3xl border border-gray-100 p-6" style={{ boxShadow:"0 2px 20px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#e8f5e9] flex items-center justify-center">
-                  <ShoppingBag size={16} className="text-[#2e7d32]"/>
+                <div className="w-9 h-9 rounded-xl bg-[#fee2e2] flex items-center justify-center">
+                  <ShoppingBag size={16} className="text-[#dc2626]"/>
                 </div>
                 <div>
                   <h3 className="text-[15px] font-black text-gray-900">{t("আপনার পছন্দ হতে পারে", "You Might Like")}</h3>
                   <p className="text-[11px] text-gray-400">{t("আমাদের স্টোরের সর্বশেষ পণ্য", "Latest products from our store")}</p>
                 </div>
               </div>
-              <Link to="/" className="text-[11px] font-bold text-[#2e7d32] hover:underline flex items-center gap-1">
+              <Link to="/" className="text-[11px] font-bold text-[#dc2626] hover:underline flex items-center gap-1">
                 {t("সব দেখুন", "View All")} <ArrowRight size={11}/>
               </Link>
             </div>
@@ -341,13 +341,13 @@ export default function CategoryPage() {
         <motion.div key={location.pathname} initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.3 }}
           className="mb-7">
           <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-medium mb-3 flex-wrap">
-            <Link to="/" className="hover:text-[#2e7d32] transition-colors flex items-center gap-1">
+            <Link to="/" className="hover:text-[#dc2626] transition-colors flex items-center gap-1">
               <Home size={11}/> {t("হোম", "Home")}
             </Link>
             <ChevronRight size={10}/>
             {sublinkSlug ? (
               <>
-                <Link to={`/${linkSlug}`} className="hover:text-[#2e7d32] transition-colors capitalize">{linkSlug}</Link>
+                <Link to={`/${linkSlug}`} className="hover:text-[#dc2626] transition-colors capitalize">{linkSlug}</Link>
                 <ChevronRight size={10}/>
                 <span className="text-gray-600 capitalize">{title}</span>
               </>
@@ -366,7 +366,7 @@ export default function CategoryPage() {
               </span>
             )}
           </div>
-          <div className="mt-3 h-[3px] w-16 bg-[#1a2e1a] rounded-full"/>
+          <div className="mt-3 h-[3px] w-16 bg-[#3b0f0f] rounded-full"/>
         </motion.div>
 
         {/* Sort & Filter */}
