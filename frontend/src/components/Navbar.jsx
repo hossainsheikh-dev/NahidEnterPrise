@@ -1388,7 +1388,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="bg-[#1a2e1a] text-[#c8e6c9] text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none">
+      <div className="bg-[#3b0f0f] text-[#fca5a5] text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none">
         <div className="flex whitespace-nowrap animate-marquee">
           {[0,1].map(i=>(
             <span key={i} className="inline-flex items-center gap-10 px-10 flex-shrink-0">
