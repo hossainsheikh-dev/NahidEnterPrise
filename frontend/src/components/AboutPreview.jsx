@@ -65,7 +65,7 @@ export default function AboutPreview() {
         <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.15 }}
           className="rounded-3xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg,#0c0a0a 0%,#450a0a 60%,#0c0a0a 100%)" }}>
+          style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 60%,#1a0a0a 100%)" }}>
           <div className="px-6 sm:px-10 py-8 sm:py-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
 
