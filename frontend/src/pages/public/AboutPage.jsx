@@ -9,13 +9,13 @@ import {
 } from "lucide-react";
 
 const TEAM = [
-  { nameBn: "নাহিদ হোসেন", nameEn: "Nahid Hossain", roleBn: "প্রতিষ্ঠাতা ও সিইও", roleEn: "Founder & CEO", emoji: "👨‍💼", color: "#2e7d32", bg: "#e8f5e9" },
+  { nameBn: "নাহিদ হোসেন", nameEn: "Nahid Hossain", roleBn: "প্রতিষ্ঠাতা ও সিইও", roleEn: "Founder & CEO", emoji: "👨‍💼", color: "#dc2626", bg: "#fee2e2" },
   { nameBn: "সাপোর্ট টিম", nameEn: "Support Team", roleBn: "গ্রাহক সেবা", roleEn: "Customer Service", emoji: "🎧", color: "#1565c0", bg: "#e3f2fd" },
   { nameBn: "ডেলিভারি টিম", nameEn: "Delivery Team", roleBn: "লজিস্টিক্স", roleEn: "Logistics", emoji: "🚚", color: "#e65100", bg: "#fff3e0" },
 ];
 
 const STATS = [
-  { valueBn: "৫০০+", valueEn: "500+", labelBn: "সন্তুষ্ট গ্রাহক", labelEn: "Happy Customers", icon: Users, color: "#2e7d32" },
+  { valueBn: "৫০০+", valueEn: "500+", labelBn: "সন্তুষ্ট গ্রাহক", labelEn: "Happy Customers", icon: Users, color: "#dc2626" },
   { valueBn: "১০০০+", valueEn: "1000+", labelBn: "রেইনকোট বিক্রি", labelEn: "Raincoats Sold", icon: Umbrella, color: "#1565c0" },
   { valueBn: "৬৪", valueEn: "64", labelBn: "জেলায় ডেলিভারি", labelEn: "Districts Covered", icon: Truck, color: "#e65100" },
   { valueBn: "৫ বছর", valueEn: "5 Years", labelBn: "অভিজ্ঞতা", labelEn: "Experience", icon: Star, color: "#f59e0b" },
@@ -36,19 +36,19 @@ export default function AboutPage() {
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg,#0f1f0f 0%,#1a2e1a 50%,#0d1f0d 100%)" }}>
+        style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 50%,#1a0a0a 100%)" }}>
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.06] pointer-events-none"
-          style={{ background: "radial-gradient(circle,#4ade80,transparent)", transform: "translate(30%,-30%)" }} />
+          style={{ background: "radial-gradient(circle,#f87171,transparent)", transform: "translate(30%,-30%)" }} />
         <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-[0.04] pointer-events-none"
-          style={{ background: "radial-gradient(circle,#86efac,transparent)", transform: "translate(-30%,30%)" }} />
+          style={{ background: "radial-gradient(circle,#fca5a5,transparent)", transform: "translate(-30%,30%)" }} />
         <div className="absolute inset-0 pointer-events-none opacity-10"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234ade80' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f87171' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
-            <Umbrella size={12} className="text-emerald-400" />
-            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
+            <Umbrella size={12} className="text-red-400" />
+            <span className="text-xs font-bold text-red-400 uppercase tracking-widest">
               {t("আমাদের সম্পর্কে", "About Us")}
             </span>
           </motion.div>
@@ -56,8 +56,8 @@ export default function AboutPage() {
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
             {t(
-              <><span style={{ color: "#4ade80" }}>নাহিদ এন্টারপ্রাইজ</span> — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ</>,
-              <><span style={{ color: "#4ade80" }}>Nahid Enterprise</span> — Bangladesh's Trusted Raincoat Shop</>
+              <><span style={{ color: "#f87171" }}>নাহিদ এন্টারপ্রাইজ</span> — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ</>,
+              <><span style={{ color: "#f87171" }}>Nahid Enterprise</span> — Bangladesh's Trusted Raincoat Shop</>
             )}
           </motion.h1>
 
@@ -99,9 +99,9 @@ export default function AboutPage() {
           viewport={{ once: true }} transition={{ duration: 0.5 }}
           className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-50"
-            style={{ background: "rgba(46,125,50,0.04)" }}>
-            <div className="w-8 h-8 rounded-xl bg-[#e8f5e9] flex items-center justify-center">
-              <Heart size={15} className="text-[#2e7d32]" />
+            style={{ background: "rgba(220,38,38,0.04)" }}>
+            <div className="w-8 h-8 rounded-xl bg-[#fee2e2] flex items-center justify-center">
+              <Heart size={15} className="text-[#dc2626]" />
             </div>
             <h2 className="text-[15px] font-black text-gray-900">{t("আমাদের গল্প", "Our Story")}</h2>
           </div>
@@ -125,7 +125,7 @@ export default function AboutPage() {
               titleBn: "আমাদের মিশন", titleEn: "Our Mission",
               bodyBn: "বাংলাদেশের প্রতিটি মানুষের কাছে সাশ্রয়ী মূল্যে উন্নত মানের রেইনকোট পৌঁছে দেওয়া এবং বর্ষা মৌসুমে সবাইকে সুরক্ষিত রাখা।",
               bodyEn: "To deliver high-quality raincoats at affordable prices to every person in Bangladesh and keep everyone protected during the rainy season.",
-              color: "#2e7d32", bg: "#e8f5e9",
+              color: "#dc2626", bg: "#fee2e2",
             },
             {
               icon: Star,
@@ -216,9 +216,9 @@ export default function AboutPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.5 }}
           className="rounded-3xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg,#1a2e1a,#2e5230)" }}>
+          style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 60%,#1a0a0a 100%)" }}>
           <div className="px-6 sm:px-10 py-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400 mb-2">
               {t("কেন আমাদের বেছে নেবেন?", "Why choose us?")}
             </p>
             <h2 className="text-[20px] sm:text-[24px] font-black text-white mb-8">
@@ -236,7 +236,7 @@ export default function AboutPage() {
                 <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.06 }}
                   className="flex items-center gap-3">
-                  <CheckCircle size={15} className="text-emerald-400 flex-shrink-0" />
+                  <CheckCircle size={15} className="text-red-400 flex-shrink-0" />
                   <p className="text-[13px] text-white/80">{t(item.bn, item.en)}</p>
                 </motion.div>
               ))}
@@ -256,8 +256,8 @@ export default function AboutPage() {
             {t("আমাদের রেইনকোট কালেকশন দেখুন", "Browse our raincoat collection")}
           </p>
           <Link to="/"
-            className="inline-flex items-center gap-2 bg-[#1a2e1a] hover:bg-[#2e7d32] text-white px-6 py-3 rounded-xl text-[13px] font-black transition-colors"
-            style={{ boxShadow: "0 8px 24px rgba(26,46,26,0.25)" }}>
+            className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl text-[13px] font-black transition-colors hover:opacity-90"
+            style={{ background: "linear-gradient(135deg,#1a0a0a,#3b0f0f)", boxShadow: "0 8px 24px rgba(59,15,15,0.35)" }}>
             {t("কেনাকাটা করুন", "Shop Now")} <ArrowRight size={14} />
           </Link>
         </motion.div>
