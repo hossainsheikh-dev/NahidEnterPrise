@@ -18,7 +18,7 @@ const BRAND = {
   taglineEn:"Your Trusted Online Shop",
   address: "৮৮/৮৯ শামসুল হক টাওয়ার, মোগলটুলি, চকবাজার, ঢাকা-১২১১",
   addressEn:"88/89 Shamsul Haq Tower, Mogultuli, Chawkbazar, Dhaka-1211",
-  phones:  ["01896508790", "01938360134"],
+  phones:  ["01839666733", "01938360666"],
   email:   "nahidenterprise.store@gmail.com",
 };
 
@@ -61,8 +61,8 @@ function Divider() {
 function SectionHead({ bn, en, t }) {
   return (
     <div className="mb-4">
-      <p className="text-xs font-black uppercase tracking-[0.2em]" style={{color:"#f87171"}}>{t(bn,en)}</p>
-      <div className="h-0.5 w-8 mt-1.5 rounded-full" style={{background:"linear-gradient(90deg,#f87171,transparent)"}}/>
+      <p className="text-xs font-black uppercase tracking-[0.2em]" style={{color:"#ffffff"}}>{t(bn,en)}</p>
+      <div className="h-0.5 w-8 mt-1.5 rounded-full" style={{background:"linear-gradient(90deg,#ffffff,transparent)"}}/>
     </div>
   );
 }
