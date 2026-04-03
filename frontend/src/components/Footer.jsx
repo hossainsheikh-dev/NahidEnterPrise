@@ -18,7 +18,7 @@ const BRAND = {
   taglineEn:"Your Trusted Online Shop",
   address: "৮৮/৮৯ শামসুল হক টাওয়ার, মোগলটুলি, চকবাজার, ঢাকা-১২১১",
   addressEn:"88/89 Shamsul Haq Tower, Mogultuli, Chawkbazar, Dhaka-1211",
-  phones:  ["01839666733", "01938360666"],
+  phones:  ["01896508790", "01938360134"],
   email:   "nahidenterprise.store@gmail.com",
 };
 
