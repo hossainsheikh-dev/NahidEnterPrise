@@ -639,21 +639,21 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen" style={{background:"#f8f7f4"}}>
 
-      {/* ══ HERO — dark premium with #2CFF05 neon glow ══ */}
+      {/* ══ HERO — pure black with #2CFF05 neon glow ══ */}
       <div className="relative overflow-hidden"
-        style={{background:"linear-gradient(160deg,#060d08 0%,#091410 35%,#071209 65%,#040a05 100%)"}}>
+        style={{background:"#000000"}}>
 
         {/* Neon ambient glow — top right */}
         <div className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
-          style={{background:`radial-gradient(ellipse at top right, ${NEON_DIM}, transparent 70%)`,transform:"translate(15%,-15%)"}}/>
+          style={{background:`radial-gradient(ellipse at top right, rgba(44,255,5,0.11), transparent 70%)`,transform:"translate(15%,-15%)"}}/>
 
         {/* Neon ambient glow — bottom left */}
         <div className="absolute bottom-0 left-0 w-80 h-80 pointer-events-none"
-          style={{background:`radial-gradient(ellipse at bottom left, rgba(44,255,5,0.10), transparent 65%)`,transform:"translate(-20%,20%)"}}/>
+          style={{background:`radial-gradient(ellipse at bottom left, rgba(44,255,5,0.06), transparent 65%)`,transform:"translate(-20%,20%)"}}/>
 
         {/* Centre deep glow */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:`radial-gradient(ellipse 70% 55% at 50% 100%, rgba(44,255,5,0.07), transparent)`}}/>
+          style={{background:`radial-gradient(ellipse 70% 55% at 50% 100%, rgba(44,255,5,0.05), transparent)`}}/>
 
         {/* Fine dot-grid texture */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.07]"
