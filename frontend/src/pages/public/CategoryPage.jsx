@@ -124,10 +124,13 @@ function EmptyState({ title, featuredProducts, suggestions }) {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
 
       <div className="relative overflow-hidden rounded-3xl mb-10"
-        style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 50%,#1a0a0a 100%)" }}>
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white opacity-[0.04]"/>
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white opacity-[0.03]"/>
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-[#f87171] opacity-[0.08]"/>
+        style={{ background: "linear-gradient(135deg,#000000 0%,#0a0a0a 50%,#000000 100%)" }}>
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white opacity-[0.03]"/>
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-white opacity-[0.02]"/>
+        <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-white opacity-[0.03]"/>
+        {/* subtle grid */}
+        <div className="absolute inset-0 opacity-[0.018] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)", backgroundSize: "48px 48px" }}/>
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-8 px-8 sm:px-12 py-10 sm:py-12">
           <div className="flex-1 text-center sm:text-left">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-5">
@@ -138,14 +141,14 @@ function EmptyState({ title, featuredProducts, suggestions }) {
             </div>
             <h2 className="text-[26px] sm:text-[32px] font-black text-white leading-tight mb-3">
               {t("এই Category তে", "Products are")} <br/>
-              <span className="text-[#fca5a5]">{t("Products আসছে!", "coming soon!")}</span>
+              <span className="text-white/60">{t("Products আসছে!", "coming soon!")}</span>
             </h2>
             <p className="text-[13px] text-white/60 leading-relaxed max-w-xs mx-auto sm:mx-0">
               <span className="text-white/90 font-semibold">"{title}"</span> — {t("এ এখনো কোনো product নেই। শীঘ্রই নতুন collection আসছে।", "has no products yet. A new collection is coming soon.")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center sm:justify-start">
               <Link to="/"
-                className="inline-flex items-center justify-center gap-2 bg-white text-[#3b0f0f] hover:bg-[#fee2e2] px-5 py-2.5 rounded-xl text-[13px] font-black transition-colors">
+                className="inline-flex items-center justify-center gap-2 bg-white text-black hover:bg-gray-100 px-5 py-2.5 rounded-xl text-[13px] font-black transition-colors">
                 <Home size={14}/> {t("হোমে যান", "Go to Home")}
               </Link>
               <Link to="/search"
