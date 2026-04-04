@@ -133,12 +133,9 @@ function DeleteModal({ orderId, onClose, onConfirm, loading }) {
           <div className="flex justify-center pt-1 pb-4 sm:hidden">
             <div className="w-10 h-1 bg-slate-200 rounded-full"/>
           </div>
-
-          {/* Icon */}
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-red-50 border border-red-100">
             <Trash2 size={26} className="text-red-400"/>
           </div>
-
           <h3 className="text-base font-bold text-slate-800 text-center mb-1">
             {t("তালিকা থেকে সরাবেন?", "Remove from list?")}
           </h3>
@@ -149,7 +146,6 @@ function DeleteModal({ orderId, onClose, onConfirm, loading }) {
               {t("ডেটাবেজ থেকে মুছবে না — ডেলিভারি স্বাভাবিক থাকবে।","It won't be deleted — delivery continues normally.")}
             </span>
           </p>
-
           <div className="flex gap-2.5">
             <button onClick={onClose} disabled={loading}
               className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40">
@@ -637,33 +633,71 @@ export default function OrderPage() {
 
   return (
     <div className="min-h-screen" style={{background:"#f8f7f4"}}>
-      <div className="relative overflow-hidden" style={{background:"linear-gradient(135deg,#0f1f0f 0%,#1a2e1a 50%,#0d1f0d 100%)"}}>
-        <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full opacity-5 pointer-events-none"
-          style={{background:"radial-gradient(circle,#4ade80,transparent)",transform:"translate(30%,-30%)"}}/>
-        <div className="absolute bottom-0 left-0 w-48 sm:w-64 h-48 sm:h-64 rounded-full opacity-5 pointer-events-none"
-          style={{background:"radial-gradient(circle,#86efac,transparent)",transform:"translate(-30%,30%)"}}/>
+
+      {/* ══ HERO — smooth neon green ══ */}
+      <div className="relative overflow-hidden"
+        style={{background:"linear-gradient(135deg,#00c853 0%,#00e676 40%,#69f0ae 70%,#00c853 100%)"}}>
+
+        {/* Layered soft blobs for depth */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{background:"radial-gradient(ellipse 80% 60% at 60% 0%,rgba(255,255,255,0.18),transparent)"}}/>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{background:"radial-gradient(ellipse 50% 80% at 0% 100%,rgba(0,100,0,0.25),transparent)"}}/>
+
+        {/* Subtle grid texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
+          style={{backgroundImage:"linear-gradient(rgba(0,0,0,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.5) 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
+
+        {/* Top shimmer line */}
+        <div className="absolute top-0 left-0 right-0 h-px"
+          style={{background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent)"}}/>
+
+        {/* Floating blobs */}
+        <div className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
+          style={{background:"radial-gradient(circle,rgba(255,255,255,0.15),transparent)",transform:"translate(25%,-25%)"}}/>
+        <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full pointer-events-none"
+          style={{background:"radial-gradient(circle,rgba(0,80,0,0.2),transparent)",transform:"translate(-25%,25%)"}}/>
+
         <div className="relative max-w-2xl mx-auto px-4 sm:px-5 pt-8 sm:pt-12 pb-16 sm:pb-20">
+
+          {/* Badge */}
           <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{delay:0.1}}
             className="inline-flex items-center gap-2 mb-4 sm:mb-5">
-            <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 sm:px-4 py-1.5">
-              <Sparkles size={11} className="text-emerald-400"/>
-              <span className="text-xs font-semibold text-emerald-400 tracking-wide">{t("লাইভ ট্র্যাকিং","Live Tracking")}</span>
+            <div className="flex items-center gap-2 rounded-full px-3 sm:px-4 py-1.5"
+              style={{background:"rgba(0,0,0,0.12)",border:"1px solid rgba(0,0,0,0.1)"}}>
+              <motion.div animate={{rotate:360}} transition={{duration:3,repeat:Infinity,ease:"linear"}}>
+                <Sparkles size={11} style={{color:"#004d1a"}}/>
+              </motion.div>
+              <span className="text-xs font-black tracking-wide" style={{color:"#003d14"}}>
+                {t("লাইভ ট্র্যাকিং","Live Tracking")}
+              </span>
             </div>
           </motion.div>
+
+          {/* Heading */}
           <motion.h1 initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.15}}
-            className="text-2xl sm:text-3xl lg:text-4xl font-black text-white mb-2 leading-tight tracking-tight">
-            {t(<>আপনার অর্ডার <span style={{color:"#4ade80"}}>ট্র্যাক</span> করুন</>, <>Track Your <span style={{color:"#4ade80"}}>Order</span></>)}
+            className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 leading-tight tracking-tight"
+            style={{color:"#003d14",textShadow:"0 1px 2px rgba(255,255,255,0.3)"}}>
+            {t(
+              <>আপনার অর্ডার <span style={{color:"#ffffff",textShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>ট্র্যাক</span> করুন</>,
+              <>Track Your <span style={{color:"#ffffff",textShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>Order</span></>
+            )}
           </motion.h1>
+
+          {/* Subtitle */}
           <motion.p initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.2}}
-            className="text-xs sm:text-sm text-white/50 mb-6 sm:mb-8">
+            className="text-xs sm:text-sm mb-6 sm:mb-8 font-medium"
+            style={{color:"rgba(0,60,20,0.7)"}}>
             {t("ফোন নম্বর বা ইমেইল দিয়ে রিয়েল-টাইম ডেলিভারি আপডেট দেখুন","Enter your phone number or email to see real-time delivery updates")}
           </motion.p>
 
+          {/* Search box */}
           <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.25}} className="relative" ref={historyRef}>
-            <div className="flex items-center gap-2 bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden"
-              style={{boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div className="flex items-center gap-2 bg-white rounded-xl sm:rounded-2xl overflow-hidden"
+              style={{boxShadow:"0 8px 40px rgba(0,80,0,0.25), 0 2px 8px rgba(0,0,0,0.08)"}}>
               <div className="flex items-center justify-center w-12 sm:w-14 pl-2 flex-shrink-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center" style={{background:"#ecfdf5"}}>
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center"
+                  style={{background:"#ecfdf5"}}>
                   {phone.includes("@") ? <Mail size={14} style={{color:"#059669"}}/> : <Phone size={14} style={{color:"#059669"}}/>}
                 </div>
               </div>
@@ -681,7 +715,10 @@ export default function OrderPage() {
               )}
               <button onClick={() => doSearch(phone)} disabled={status === "loading" || phone.trim().length < 5}
                 className="m-1.5 sm:m-2 px-4 sm:px-6 h-9 sm:h-11 text-white text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-                style={{background:"linear-gradient(135deg,#16a34a,#15803d)", boxShadow: phone.trim().length >= 5 ? "0 4px 15px #16a34a55" : "none"}}>
+                style={{
+                  background:"linear-gradient(135deg,#00a040,#007a30)",
+                  boxShadow: phone.trim().length >= 5 ? "0 4px 15px rgba(0,160,64,0.45)" : "none"
+                }}>
                 {status === "loading"
                   ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
                   : <><Search size={13}/>{t("খুঁজুন","Search")}</>}
@@ -711,18 +748,20 @@ export default function OrderPage() {
             </AnimatePresence>
           </motion.div>
 
+          {/* Warning notice */}
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.35}}
             className="flex items-start gap-2 mt-3 sm:mt-4 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3"
-            style={{background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.2)"}}>
-            <AlertTriangle size={12} className="text-amber-400 flex-shrink-0 mt-0.5"/>
-            <p className="text-xs leading-relaxed" style={{color:"rgba(255,255,255,0.55)"}}>
-              <span className="font-bold text-amber-400">{t("গুরুত্বপূর্ণ:","Important:")}</span>{" "}
+            style={{background:"rgba(0,0,0,0.08)",border:"1px solid rgba(0,0,0,0.1)"}}>
+            <AlertTriangle size={12} style={{color:"#004d1a"}} className="flex-shrink-0 mt-0.5"/>
+            <p className="text-xs leading-relaxed" style={{color:"rgba(0,60,20,0.75)"}}>
+              <span className="font-black" style={{color:"#003d14"}}>{t("গুরুত্বপূর্ণ:","Important:")}</span>{" "}
               {t("bKash/Nagad পেমেন্টে Transaction ID ও স্ক্রিনশট বাধ্যতামূলক।","Transaction ID and screenshot are required for bKash/Nagad payments.")}
             </p>
           </motion.div>
         </div>
       </div>
 
+      {/* ══ CONTENT BELOW HERO ══ */}
       <div className="max-w-2xl mx-auto px-3 sm:px-4 mt-5 sm:mt-6 pb-20 sm:pb-24 space-y-4 sm:space-y-5">
         {status === "idle" && (
           <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} className="space-y-3 sm:space-y-4">
@@ -831,7 +870,7 @@ export default function OrderPage() {
               {t("এ কোনো অর্ডার নেই।","has no orders.")}
             </p>
             <Link to="/" className="inline-flex items-center gap-2 text-white text-sm font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all"
-              style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
+              style={{background:"linear-gradient(135deg,#00a040,#007a30)"}}>
               <ShoppingBag size={14}/> {t("কেনাকাটা করুন","Go Shopping")} <ArrowRight size={13}/>
             </Link>
           </motion.div>
@@ -847,7 +886,7 @@ export default function OrderPage() {
             <h3 className="text-base sm:text-lg font-black text-slate-800 mb-2">{t("সংযোগ সমস্যা","Connection Error")}</h3>
             <p className="text-xs sm:text-sm text-slate-400 mb-6">{t("ইন্টারনেট চেক করুন এবং আবার চেষ্টা করুন।","Check your internet connection and try again.")}</p>
             <button onClick={() => doSearch(searched)} className="inline-flex items-center gap-2 text-white text-sm font-bold px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all"
-              style={{background:"linear-gradient(135deg,#1a2e1a,#2e7d32)"}}>
+              style={{background:"linear-gradient(135deg,#00a040,#007a30)"}}>
               <RefreshCw size={13}/>{t("আবার চেষ্টা করুন","Try Again")}
             </button>
           </motion.div>
