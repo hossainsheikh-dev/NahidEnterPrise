@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useT } from "../../context/LanguageContext";
@@ -31,38 +32,48 @@ const VALUES = [
 export default function AboutPage() {
   const t = useT();
 
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f8f7f4]">
 
-      {/* ── Hero ── */}
+      {/* ── Hero — neon green bg + red font ── */}
       <div className="relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 50%,#1a0a0a 100%)" }}>
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.06] pointer-events-none"
-          style={{ background: "radial-gradient(circle,#f87171,transparent)", transform: "translate(30%,-30%)" }} />
-        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-[0.04] pointer-events-none"
-          style={{ background: "radial-gradient(circle,#fca5a5,transparent)", transform: "translate(-30%,30%)" }} />
-        <div className="absolute inset-0 pointer-events-none opacity-10"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f87171' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        style={{ background: "linear-gradient(135deg,#2CFF05 0%,#00e63a 50%,#00cc33 100%)" }}>
+        {/* subtle texture overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]"
+          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        {/* ambient blobs */}
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle,#ffffff,transparent)", transform: "translate(30%,-30%)" }} />
+        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle,#ffffff,transparent)", transform: "translate(-30%,30%)" }} />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
-            <Umbrella size={12} className="text-red-400" />
-            <span className="text-xs font-bold text-red-400 uppercase tracking-widest">
+            className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+            style={{ background: "rgba(0,0,0,0.12)", border: "1px solid rgba(0,0,0,0.15)" }}>
+            <Umbrella size={12} style={{ color: "#dc2626" }} />
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#dc2626" }}>
               {t("আমাদের সম্পর্কে", "About Us")}
             </span>
           </motion.div>
 
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
+            className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 tracking-tight"
+            style={{ color: "#dc2626" }}>
             {t(
-              <><span style={{ color: "#f87171" }}>নাহিদ এন্টারপ্রাইজ</span> — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ</>,
-              <><span style={{ color: "#f87171" }}>Nahid Enterprise</span> — Bangladesh's Trusted Raincoat Shop</>
+              "নাহিদ এন্টারপ্রাইজ — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ",
+              "Nahid Enterprise — Bangladesh's Trusted Raincoat Shop"
             )}
           </motion.h1>
 
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="text-sm sm:text-base text-white/60 max-w-2xl mx-auto leading-relaxed">
+            className="text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold"
+            style={{ color: "#dc2626" }}>
             {t(
               "২০১৯ সাল থেকে আমরা বাংলাদেশের প্রতিটি কোণে উন্নত মানের রেইনকোট পৌঁছে দিচ্ছি। বৃষ্টি থেকে সুরক্ষা আমাদের ব্যবসা, আপনার বিশ্বাস আমাদের পুঁজি।",
               "Since 2019, we have been delivering high-quality raincoats to every corner of Bangladesh. Protection from rain is our business, your trust is our capital."
@@ -212,11 +223,11 @@ export default function AboutPage() {
           </div>
         </motion.div>
 
-        {/* ── Why Choose Us ── */}
+        {/* ── Why Choose Us — black bg + white font ── */}
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.5 }}
           className="rounded-3xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 60%,#1a0a0a 100%)" }}>
+          style={{ background: "linear-gradient(135deg,#000000 0%,#0a0a0a 60%,#000000 100%)" }}>
           <div className="px-6 sm:px-10 py-10">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400 mb-2">
               {t("কেন আমাদের বেছে নেবেন?", "Why choose us?")}
@@ -257,7 +268,7 @@ export default function AboutPage() {
           </p>
           <Link to="/"
             className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl text-[13px] font-black transition-colors hover:opacity-90"
-            style={{ background: "linear-gradient(135deg,#1a0a0a,#3b0f0f)", boxShadow: "0 8px 24px rgba(59,15,15,0.35)" }}>
+            style={{ background: "linear-gradient(135deg,#000000,#1a1a1a)", boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}>
             {t("কেনাকাটা করুন", "Shop Now")} <ArrowRight size={14} />
           </Link>
         </motion.div>
