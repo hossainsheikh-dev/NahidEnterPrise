@@ -42,20 +42,20 @@ export default function AboutPage() {
 
       {/* ── Hero — neon green bg + red font ── */}
       <div className="relative overflow-hidden"
-        style={{ background: "linear-gradient(135deg,#2CFF05 0%,#00e63a 50%,#00cc33 100%)" }}>
-        {/* subtle texture overlay */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.07]"
-          style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
+        style={{ background: "linear-gradient(135deg,#000000 0%,#0a0a0a 50%,#000000 100%)" }}>
+        {/* subtle grid texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.018]"
+          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.6) 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
         {/* ambient blobs */}
-        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-20 pointer-events-none"
+        <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-[0.025] pointer-events-none"
           style={{ background: "radial-gradient(circle,#ffffff,transparent)", transform: "translate(30%,-30%)" }} />
-        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-10 pointer-events-none"
+        <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full opacity-[0.02] pointer-events-none"
           style={{ background: "radial-gradient(circle,#ffffff,transparent)", transform: "translate(-30%,30%)" }} />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
-            style={{ background: "rgba(0,0,0,0.12)", border: "1px solid rgba(0,0,0,0.15)" }}>
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
             <Umbrella size={12} style={{ color: "#dc2626" }} />
             <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#dc2626" }}>
               {t("আমাদের সম্পর্কে", "About Us")}
@@ -64,7 +64,7 @@ export default function AboutPage() {
 
           <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 tracking-tight"
-            style={{ color: "#dc2626" }}>
+            style={{ color: "#ffffff" }}>
             {t(
               "নাহিদ এন্টারপ্রাইজ — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ",
               "Nahid Enterprise — Bangladesh's Trusted Raincoat Shop"
@@ -73,7 +73,7 @@ export default function AboutPage() {
 
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-semibold"
-            style={{ color: "#dc2626" }}>
+            style={{ color: "rgba(255,255,255,0.6)" }}>
             {t(
               "২০১৯ সাল থেকে আমরা বাংলাদেশের প্রতিটি কোণে উন্নত মানের রেইনকোট পৌঁছে দিচ্ছি। বৃষ্টি থেকে সুরক্ষা আমাদের ব্যবসা, আপনার বিশ্বাস আমাদের পুঁজি।",
               "Since 2019, we have been delivering high-quality raincoats to every corner of Bangladesh. Protection from rain is our business, your trust is our capital."
