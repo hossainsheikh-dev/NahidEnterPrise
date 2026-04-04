@@ -26,8 +26,8 @@ export default function AboutPreview() {
           </p>
           <h2 className="text-[22px] sm:text-[28px] font-black text-gray-900 leading-tight mb-3">
             {t(
-              <><span className="text-[#dc2626]">নাহিদ এন্টারপ্রাইজ</span> — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ</>,
-              <><span className="text-[#dc2626]">Nahid Enterprise</span> — Bangladesh's Trusted Raincoat Shop</>
+              <><span className="text-[#dc2626]">নাহিদ এন্টারপ্রাইজ — বাংলাদেশের বিশ্বস্ত রেইনকোট শপ</span></>,
+              <><span className="text-[#dc2626]">Nahid Enterprise — Bangladesh's Trusted Raincoat Shop</span></>
             )}
           </h2>
           <p className="text-[13px] text-gray-500 max-w-2xl mx-auto leading-relaxed">
@@ -65,7 +65,7 @@ export default function AboutPreview() {
         <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.15 }}
           className="rounded-3xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg,#1a0a0a 0%,#3b0f0f 60%,#1a0a0a 100%)" }}>
+          style={{ background: "linear-gradient(135deg,#000000 0%,#0a0a0a 60%,#000000 100%)" }}>
           <div className="px-6 sm:px-10 py-8 sm:py-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
 
