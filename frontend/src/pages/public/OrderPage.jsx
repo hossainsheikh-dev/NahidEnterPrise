@@ -61,6 +61,11 @@ const getPayLabel = (t) => ({
 });
 const PAY_COLOR = { cod:"#6b7280", bkash:"#e2136e", nagad:"#f7941d" };
 
+/* ══ Neon green palette ══ */
+const NEON = "#2CFF05";
+const NEON_DIM = "rgba(44,255,5,0.18)";
+const NEON_MID = "rgba(44,255,5,0.45)";
+
 /* ══ Product Image Modal ══ */
 function ProductModal({ item, onClose }) {
   const t = useT();
@@ -634,29 +639,33 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen" style={{background:"#f8f7f4"}}>
 
-      {/* ══ HERO — smooth neon green ══ */}
+      {/* ══ HERO — dark premium with #2CFF05 neon glow ══ */}
       <div className="relative overflow-hidden"
-        style={{background:"linear-gradient(135deg,#00c853 0%,#00e676 40%,#69f0ae 70%,#00c853 100%)"}}>
+        style={{background:"linear-gradient(160deg,#060d08 0%,#091410 35%,#071209 65%,#040a05 100%)"}}>
 
-        {/* Layered soft blobs for depth */}
+        {/* Neon ambient glow — top right */}
+        <div className="absolute top-0 right-0 w-96 h-96 pointer-events-none"
+          style={{background:`radial-gradient(ellipse at top right, ${NEON_DIM}, transparent 70%)`,transform:"translate(15%,-15%)"}}/>
+
+        {/* Neon ambient glow — bottom left */}
+        <div className="absolute bottom-0 left-0 w-80 h-80 pointer-events-none"
+          style={{background:`radial-gradient(ellipse at bottom left, rgba(44,255,5,0.10), transparent 65%)`,transform:"translate(-20%,20%)"}}/>
+
+        {/* Centre deep glow */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:"radial-gradient(ellipse 80% 60% at 60% 0%,rgba(255,255,255,0.18),transparent)"}}/>
-        <div className="absolute inset-0 pointer-events-none"
-          style={{background:"radial-gradient(ellipse 50% 80% at 0% 100%,rgba(0,100,0,0.25),transparent)"}}/>
+          style={{background:`radial-gradient(ellipse 70% 55% at 50% 100%, rgba(44,255,5,0.07), transparent)`}}/>
 
-        {/* Subtle grid texture */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.06]"
-          style={{backgroundImage:"linear-gradient(rgba(0,0,0,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.5) 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
+        {/* Fine dot-grid texture */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.07]"
+          style={{backgroundImage:`radial-gradient(circle, ${NEON} 1px, transparent 1px)`,backgroundSize:"28px 28px"}}/>
 
-        {/* Top shimmer line */}
-        <div className="absolute top-0 left-0 right-0 h-px"
-          style={{background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent)"}}/>
+        {/* Top shimmer */}
+        <div className="absolute top-0 left-0 right-0 h-px pointer-events-none"
+          style={{background:`linear-gradient(90deg,transparent,${NEON_MID},transparent)`}}/>
 
-        {/* Floating blobs */}
-        <div className="absolute top-0 right-0 w-72 h-72 rounded-full pointer-events-none"
-          style={{background:"radial-gradient(circle,rgba(255,255,255,0.15),transparent)",transform:"translate(25%,-25%)"}}/>
-        <div className="absolute bottom-0 left-0 w-56 h-56 rounded-full pointer-events-none"
-          style={{background:"radial-gradient(circle,rgba(0,80,0,0.2),transparent)",transform:"translate(-25%,25%)"}}/>
+        {/* Bottom shimmer */}
+        <div className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
+          style={{background:`linear-gradient(90deg,transparent,rgba(44,255,5,0.25),transparent)`}}/>
 
         <div className="relative max-w-2xl mx-auto px-4 sm:px-5 pt-8 sm:pt-12 pb-16 sm:pb-20">
 
@@ -664,11 +673,15 @@ export default function OrderPage() {
           <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} transition={{delay:0.1}}
             className="inline-flex items-center gap-2 mb-4 sm:mb-5">
             <div className="flex items-center gap-2 rounded-full px-3 sm:px-4 py-1.5"
-              style={{background:"rgba(0,0,0,0.12)",border:"1px solid rgba(0,0,0,0.1)"}}>
+              style={{
+                background:"rgba(44,255,5,0.08)",
+                border:`1px solid rgba(44,255,5,0.25)`,
+                boxShadow:`0 0 12px rgba(44,255,5,0.12)`,
+              }}>
               <motion.div animate={{rotate:360}} transition={{duration:3,repeat:Infinity,ease:"linear"}}>
-                <Sparkles size={11} style={{color:"#004d1a"}}/>
+                <Sparkles size={11} style={{color:NEON}}/>
               </motion.div>
-              <span className="text-xs font-black tracking-wide" style={{color:"#003d14"}}>
+              <span className="text-xs font-black tracking-wide" style={{color:NEON}}>
                 {t("লাইভ ট্র্যাকিং","Live Tracking")}
               </span>
             </div>
@@ -677,28 +690,45 @@ export default function OrderPage() {
           {/* Heading */}
           <motion.h1 initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.15}}
             className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 leading-tight tracking-tight"
-            style={{color:"#003d14",textShadow:"0 1px 2px rgba(255,255,255,0.3)"}}>
+            style={{color:"rgba(255,255,255,0.92)"}}>
             {t(
-              <>আপনার অর্ডার <span style={{color:"#ffffff",textShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>ট্র্যাক</span> করুন</>,
-              <>Track Your <span style={{color:"#ffffff",textShadow:"0 2px 12px rgba(0,0,0,0.15)"}}>Order</span></>
+              <>আপনার অর্ডার{" "}
+                <span style={{
+                  color:NEON,
+                  textShadow:`0 0 20px rgba(44,255,5,0.55), 0 0 40px rgba(44,255,5,0.25)`,
+                }}>ট্র্যাক</span>{" "}করুন
+              </>,
+              <>Track Your{" "}
+                <span style={{
+                  color:NEON,
+                  textShadow:`0 0 20px rgba(44,255,5,0.55), 0 0 40px rgba(44,255,5,0.25)`,
+                }}>Order</span>
+              </>
             )}
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.2}}
             className="text-xs sm:text-sm mb-6 sm:mb-8 font-medium"
-            style={{color:"rgba(0,60,20,0.7)"}}>
+            style={{color:"rgba(255,255,255,0.38)"}}>
             {t("ফোন নম্বর বা ইমেইল দিয়ে রিয়েল-টাইম ডেলিভারি আপডেট দেখুন","Enter your phone number or email to see real-time delivery updates")}
           </motion.p>
 
           {/* Search box */}
           <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.25}} className="relative" ref={historyRef}>
-            <div className="flex items-center gap-2 bg-white rounded-xl sm:rounded-2xl overflow-hidden"
-              style={{boxShadow:"0 8px 40px rgba(0,80,0,0.25), 0 2px 8px rgba(0,0,0,0.08)"}}>
+            <div className="flex items-center gap-2 rounded-xl sm:rounded-2xl overflow-hidden"
+              style={{
+                background:"rgba(255,255,255,0.04)",
+                border:`1.5px solid rgba(44,255,5,0.22)`,
+                boxShadow:`0 0 0 1px rgba(44,255,5,0.06), 0 8px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3)`,
+                backdropFilter:"blur(12px)",
+              }}>
               <div className="flex items-center justify-center w-12 sm:w-14 pl-2 flex-shrink-0">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center"
-                  style={{background:"#ecfdf5"}}>
-                  {phone.includes("@") ? <Mail size={14} style={{color:"#059669"}}/> : <Phone size={14} style={{color:"#059669"}}/>}
+                  style={{background:"rgba(44,255,5,0.1)",border:`1px solid rgba(44,255,5,0.2)`}}>
+                  {phone.includes("@")
+                    ? <Mail size={14} style={{color:NEON}}/>
+                    : <Phone size={14} style={{color:NEON}}/>}
                 </div>
               </div>
               <input ref={inputRef} type="text" value={phone}
@@ -707,20 +737,31 @@ export default function OrderPage() {
                 onFocus={() => history.length > 0 && setShowHistory(true)}
                 placeholder={t("ফোন নম্বর বা ইমেইল লিখুন", "Phone number or email")}
                 maxLength={80}
-                className="flex-1 bg-transparent text-slate-800 text-sm sm:text-base font-bold py-3 sm:py-4 pr-2 outline-none placeholder:text-slate-300 placeholder:font-normal min-w-0"/>
+                style={{
+                  flex:1,background:"transparent",color:"rgba(255,255,255,0.9)",
+                  fontSize:"0.875rem",fontWeight:600,
+                  padding:"0.75rem 0.5rem",outline:"none",minWidth:0,
+                }}
+                className="placeholder:text-slate-600 placeholder:font-normal"/>
               {phone && (
                 <button onClick={() => { setPhone(""); inputRef.current?.focus(); }} className="px-2 flex-shrink-0">
-                  <X size={14} className="text-slate-300 hover:text-slate-500"/>
+                  <X size={14} style={{color:"rgba(255,255,255,0.3)"}}/>
                 </button>
               )}
               <button onClick={() => doSearch(phone)} disabled={status === "loading" || phone.trim().length < 5}
-                className="m-1.5 sm:m-2 px-4 sm:px-6 h-9 sm:h-11 text-white text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                className="m-1.5 sm:m-2 px-4 sm:px-6 h-9 sm:h-11 text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl flex items-center gap-1.5 sm:gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
                 style={{
-                  background:"linear-gradient(135deg,#00a040,#007a30)",
-                  boxShadow: phone.trim().length >= 5 ? "0 4px 15px rgba(0,160,64,0.45)" : "none"
+                  background: phone.trim().length >= 5
+                    ? `linear-gradient(135deg, #1fd400, #17a800)`
+                    : "rgba(44,255,5,0.12)",
+                  color: phone.trim().length >= 5 ? "#030f02" : "rgba(44,255,5,0.5)",
+                  boxShadow: phone.trim().length >= 5
+                    ? `0 0 20px rgba(44,255,5,0.35), 0 4px 12px rgba(0,0,0,0.4)`
+                    : "none",
+                  border: `1px solid ${phone.trim().length >= 5 ? "rgba(44,255,5,0.4)" : "rgba(44,255,5,0.15)"}`,
                 }}>
                 {status === "loading"
-                  ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"/>
+                  ? <div className="w-4 h-4 border-2 border-black/30 border-t-black/80 rounded-full animate-spin"/>
                   : <><Search size={13}/>{t("খুঁজুন","Search")}</>}
               </button>
             </div>
@@ -729,18 +770,27 @@ export default function OrderPage() {
               {showHistory && history.length > 0 && (
                 <motion.div initial={{opacity:0,y:-4,scale:0.98}} animate={{opacity:1,y:0,scale:1}}
                   exit={{opacity:0,y:-4,scale:0.98}} transition={{duration:0.15}}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-50 border border-slate-100">
-                  <div className="px-4 py-2 border-b border-slate-50">
-                    <p className="text-[10px] font-semibold text-slate-400 flex items-center gap-1.5">
+                  className="absolute top-full left-0 right-0 mt-2 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden z-50"
+                  style={{
+                    background:"rgba(8,18,10,0.97)",
+                    border:`1px solid rgba(44,255,5,0.18)`,
+                    backdropFilter:"blur(16px)",
+                    boxShadow:`0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(44,255,5,0.06)`,
+                  }}>
+                  <div className="px-4 py-2" style={{borderBottom:"1px solid rgba(44,255,5,0.08)"}}>
+                    <p className="text-[10px] font-semibold flex items-center gap-1.5" style={{color:"rgba(44,255,5,0.5)"}}>
                       <History size={10}/>{t("সাম্প্রতিক অনুসন্ধান","Recent Searches")}
                     </p>
                   </div>
                   {history.map((p, i) => (
                     <button key={i} onClick={() => { setPhone(p); doSearch(p); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left">
-                      <Phone size={12} className="text-slate-300 flex-shrink-0"/>
-                      <span className="text-sm font-semibold text-slate-700">{p}</span>
-                      <ArrowRight size={11} className="text-slate-300 ml-auto"/>
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                      style={{"--hover-bg":"rgba(44,255,5,0.06)"}}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(44,255,5,0.06)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <Phone size={12} style={{color:"rgba(44,255,5,0.35)"}} className="flex-shrink-0"/>
+                      <span className="text-sm font-semibold" style={{color:"rgba(255,255,255,0.75)"}}>{p}</span>
+                      <ArrowRight size={11} style={{color:"rgba(44,255,5,0.3)"}} className="ml-auto"/>
                     </button>
                   ))}
                 </motion.div>
@@ -751,10 +801,13 @@ export default function OrderPage() {
           {/* Warning notice */}
           <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.35}}
             className="flex items-start gap-2 mt-3 sm:mt-4 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2.5 sm:py-3"
-            style={{background:"rgba(0,0,0,0.08)",border:"1px solid rgba(0,0,0,0.1)"}}>
-            <AlertTriangle size={12} style={{color:"#004d1a"}} className="flex-shrink-0 mt-0.5"/>
-            <p className="text-xs leading-relaxed" style={{color:"rgba(0,60,20,0.75)"}}>
-              <span className="font-black" style={{color:"#003d14"}}>{t("গুরুত্বপূর্ণ:","Important:")}</span>{" "}
+            style={{
+              background:"rgba(44,255,5,0.05)",
+              border:"1px solid rgba(44,255,5,0.14)",
+            }}>
+            <AlertTriangle size={12} style={{color:"rgba(44,255,5,0.6)"}} className="flex-shrink-0 mt-0.5"/>
+            <p className="text-xs leading-relaxed" style={{color:"rgba(255,255,255,0.4)"}}>
+              <span className="font-black" style={{color:"rgba(44,255,5,0.75)"}}>{t("গুরুত্বপূর্ণ:","Important:")}</span>{" "}
               {t("bKash/Nagad পেমেন্টে Transaction ID ও স্ক্রিনশট বাধ্যতামূলক।","Transaction ID and screenshot are required for bKash/Nagad payments.")}
             </p>
           </motion.div>
