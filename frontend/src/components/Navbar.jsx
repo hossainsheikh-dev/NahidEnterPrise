@@ -1395,15 +1395,15 @@ export default function Navbar() {
   return (
     <>
       <div className="fixed top-0 left-0 right-0 z-50">
-      <div className={`text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none transition-all duration-300 bg-[#1a2e1a] text-[#a5d6a7] ${scrolled?"lg:block hidden":"block"}`}>
+      <div className={`text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none transition-all duration-300 ${scrolled?"lg:block hidden":"block"}`} style={{background:"linear-gradient(160deg,#000000 0%,#0a0a0a 50%,#000000 100%)",color:"rgba(255,255,255,0.45)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
         <div className="flex whitespace-nowrap animate-marquee">
           {[0,1].map(i=>(
             <span key={i} className="inline-flex items-center gap-10 px-10 flex-shrink-0">
-              <span>{t("প্রোডাক্টের সাথে ওয়ারেন্টি","Get warranty")}</span><span className="opacity-30">•</span>
-              <span>{t("অনলাইন পেমেন্ট সিস্টেম","Online payment")}</span><span className="opacity-30">•</span>
-              <span>{t("১০০% অরিজিনাল","100% Authentic")}</span><span className="opacity-30">•</span>
-              <span>{t("সহজেই অর্ডার করা","Easily order")}</span><span className="opacity-30">•</span>
-              <span>{t("ক্যাশ অন ডেলিভারি","Cash on Delivery")}</span><span className="opacity-30">•</span>
+              <span>{t("প্রোডাক্টের সাথে ওয়ারেন্টি","Get warranty")}</span><span style={{color:"rgba(255,255,255,0.18)"}}>•</span>
+              <span>{t("অনলাইন পেমেন্ট সিস্টেম","Online payment")}</span><span style={{color:"rgba(255,255,255,0.18)"}}>•</span>
+              <span>{t("১০০% অরিজিনাল","100% Authentic")}</span><span style={{color:"rgba(255,255,255,0.18)"}}>•</span>
+              <span>{t("সহজেই অর্ডার করা","Easily order")}</span><span style={{color:"rgba(255,255,255,0.18)"}}>•</span>
+              <span>{t("ক্যাশ অন ডেলিভারি","Cash on Delivery")}</span><span style={{color:"rgba(255,255,255,0.18)"}}>•</span>
             </span>
           ))}
         </div>
