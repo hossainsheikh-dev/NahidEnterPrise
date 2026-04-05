@@ -1394,7 +1394,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="sticky top-0 z-50 flex flex-col">
+      <div className="sticky top-0 z-50">
       <div className="bg-[#3b0f0f] text-[#fca5a5] text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none">
         <div className="flex whitespace-nowrap animate-marquee">
           {[0,1].map(i=>(
@@ -1410,7 +1410,7 @@ export default function Navbar() {
         <style>{`@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}} .animate-marquee{animation:marquee 28s linear infinite} .animate-marquee:hover{animation-play-state:paused}`}</style>
       </div>
 
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled?"bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.06)]":"bg-white border-b border-black/[0.07]"}`}>
+      <header className={`transition-all duration-300 ${scrolled?"bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.06)]":"bg-white border-b border-black/[0.07]"}`}>
         <div className="max-w-[1440px] mx-auto px-6 xl:px-12">
           <div className="flex items-center justify-between h-[72px]">
             <Link to="/" className="flex-shrink-0 group"><img src={logo} alt="Brand" className="h-10 md:h-12 object-contain group-hover:opacity-70 transition-opacity"/></Link>

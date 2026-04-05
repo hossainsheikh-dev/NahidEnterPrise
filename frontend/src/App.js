@@ -60,10 +60,15 @@ import SubAdminDelivery  from "./pages/subadmin/subadminDelivery/SubAdminDeliver
 import SubAdmin404       from "./pages/subadmin/SubAdmin404";
 import SubAdminProfile   from "./pages/subadmin/SubAdminProfile";
 import SubAdminUsers     from "./pages/subadmin/SubAdminUsers";
-import SubAdminHome from "./pages/subadmin/SubAdminHome";
+import SubAdminHome      from "./pages/subadmin/SubAdminHome";
 import SubAdminAnalytics from "./pages/subadmin/SubAdminAnalytics";
 
-
+/* ── wrapper: Navbar sticky কাজ করার জন্য ── */
+const W = ({ children }) => (
+  <div className="flex flex-col min-h-screen">
+    {children}
+  </div>
+);
 
 function FloatingContactWrapper() {
   const location       = useLocation();
@@ -73,9 +78,6 @@ function FloatingContactWrapper() {
   return <FloatingContact />;
 }
 
-
-
-//app
 function App() {
   return (
     <Router>
@@ -83,24 +85,24 @@ function App() {
       <FloatingContactWrapper />
       <Routes>
 
-        {/* public routes  */}
-        <Route path="/"              element={<><Navbar /><Home /><AboutPreview /><Footer /></>} />
-        <Route path="/cart"          element={<><Navbar /><Cart /><Footer /></>} />
-        <Route path="/checkout"      element={<><Navbar /><Checkout /><Footer /></>} />
-        <Route path="/search"        element={<><Navbar /><SearchPage /><Footer /></>} />
-        <Route path="/order"         element={<><Navbar /><OrderPage /><Footer /></>} />
-        <Route path="/product/:slug" element={<><Navbar /><ProductDetail /><Footer /></>} />
-        <Route path="/privacy"       element={<><Navbar /><PolicyPage /><Footer /></>} />
-        <Route path="/terms"         element={<><Navbar /><PolicyPage /><Footer /></>} />
-        <Route path="/refund"        element={<><Navbar /><PolicyPage /><Footer /></>} />
-        <Route path="/faq"           element={<><Navbar /><PolicyPage /><Footer /></>} />
-        <Route path="/about"         element={<><Navbar /><AboutPage /><Footer /></>} />
-        <Route path="/wishlist"      element={<><Navbar /><WishlistPage /><Footer /></>} />
+        {/* public routes */}
+        <Route path="/"              element={<W><Navbar /><Home /><AboutPreview /><Footer /></W>} />
+        <Route path="/cart"          element={<W><Navbar /><Cart /><Footer /></W>} />
+        <Route path="/checkout"      element={<W><Navbar /><Checkout /><Footer /></W>} />
+        <Route path="/search"        element={<W><Navbar /><SearchPage /><Footer /></W>} />
+        <Route path="/order"         element={<W><Navbar /><OrderPage /><Footer /></W>} />
+        <Route path="/product/:slug" element={<W><Navbar /><ProductDetail /><Footer /></W>} />
+        <Route path="/privacy"       element={<W><Navbar /><PolicyPage /><Footer /></W>} />
+        <Route path="/terms"         element={<W><Navbar /><PolicyPage /><Footer /></W>} />
+        <Route path="/refund"        element={<W><Navbar /><PolicyPage /><Footer /></W>} />
+        <Route path="/faq"           element={<W><Navbar /><PolicyPage /><Footer /></W>} />
+        <Route path="/about"         element={<W><Navbar /><AboutPage /><Footer /></W>} />
+        <Route path="/wishlist"      element={<W><Navbar /><WishlistPage /><Footer /></W>} />
 
         {/* account routes */}
-        <Route path="/account"          element={<><Navbar /><AccountPage /><Footer /></>} />
-        <Route path="/account/edit"     element={<><Navbar /><AccountPage /><Footer /></>} />
-        <Route path="/account/password" element={<><Navbar /><AccountPage /><Footer /></>} />
+        <Route path="/account"          element={<W><Navbar /><AccountPage /><Footer /></W>} />
+        <Route path="/account/edit"     element={<W><Navbar /><AccountPage /><Footer /></W>} />
+        <Route path="/account/password" element={<W><Navbar /><AccountPage /><Footer /></W>} />
 
         {/* payment routes */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -154,17 +156,16 @@ function App() {
           <Route path="*"         element={<SubAdmin404 />} />
         </Route>
 
-        {/* admin/subadmin fallback - category route থেকে রক্ষা করতে */}
+        {/* fallback redirects */}
         <Route path="/manage-x9k2/*" element={<Navigate to="/manage-x9k2" replace />} />
         <Route path="/portal-v7m4/*" element={<Navigate to="/portal-v7m4" replace />} />
 
-
         {/* category routes */}
-        <Route path="/:linkSlug"             element={<><Navbar /><CategoryPage /><Footer /></>} />
-        <Route path="/:linkSlug/:sublinkSlug" element={<><Navbar /><CategoryPage /><Footer /></>} />
+        <Route path="/:linkSlug"              element={<W><Navbar /><CategoryPage /><Footer /></W>} />
+        <Route path="/:linkSlug/:sublinkSlug" element={<W><Navbar /><CategoryPage /><Footer /></W>} />
 
         {/* 404 */}
-        <Route path="*" element={<><Navbar /><NotFoundPage /><Footer /></>} />
+        <Route path="*" element={<W><Navbar /><NotFoundPage /><Footer /></W>} />
 
       </Routes>
     </Router>
