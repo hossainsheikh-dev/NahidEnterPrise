@@ -1380,8 +1380,8 @@ export default function Navbar() {
       const current=window.scrollY;
       setScrolled(current>40);
       // ── Only hide navbar on desktop (md+), always show on mobile ──
-      const isMobile = window.innerWidth < 768;
-      if(!isMobile && current>lastScrollY.current && current>80){
+      const isSmallScreen = window.innerWidth < 1024;
+      if(!isSmallScreen && current>lastScrollY.current && current>80){
         setHidden(true);
       } else {
         setHidden(false);
