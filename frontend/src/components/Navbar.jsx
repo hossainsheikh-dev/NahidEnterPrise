@@ -1394,7 +1394,7 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="sticky top-0 z-50">
+      <div className="fixed top-0 left-0 right-0 z-50">
       <div className="bg-[#3b0f0f] text-[#fca5a5] text-[10px] sm:text-[11px] font-medium tracking-[0.15em] uppercase py-2 overflow-hidden select-none">
         <div className="flex whitespace-nowrap animate-marquee">
           {[0,1].map(i=>(

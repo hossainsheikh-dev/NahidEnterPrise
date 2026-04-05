@@ -64,8 +64,15 @@ import SubAdminHome      from "./pages/subadmin/SubAdminHome";
 import SubAdminAnalytics from "./pages/subadmin/SubAdminAnalytics";
 
 /* ── wrapper: Navbar sticky কাজ করার জন্য ── */
-const W = ({ children }) => (
+const W = ({ children, noNav }) => (
   <div className="flex flex-col min-h-screen">
+    {children}
+  </div>
+);
+
+/* Content wrapper — pushes content below fixed navbar */
+const C = ({ children }) => (
+  <div className="pt-[104px] flex flex-col flex-1">
     {children}
   </div>
 );
@@ -86,23 +93,23 @@ function App() {
       <Routes>
 
         {/* public routes */}
-        <Route path="/"              element={<W><Navbar /><Home /><AboutPreview /><Footer /></W>} />
-        <Route path="/cart"          element={<W><Navbar /><Cart /><Footer /></W>} />
-        <Route path="/checkout"      element={<W><Navbar /><Checkout /><Footer /></W>} />
-        <Route path="/search"        element={<W><Navbar /><SearchPage /><Footer /></W>} />
-        <Route path="/order"         element={<W><Navbar /><OrderPage /><Footer /></W>} />
-        <Route path="/product/:slug" element={<W><Navbar /><ProductDetail /><Footer /></W>} />
-        <Route path="/privacy"       element={<W><Navbar /><PolicyPage /><Footer /></W>} />
-        <Route path="/terms"         element={<W><Navbar /><PolicyPage /><Footer /></W>} />
-        <Route path="/refund"        element={<W><Navbar /><PolicyPage /><Footer /></W>} />
-        <Route path="/faq"           element={<W><Navbar /><PolicyPage /><Footer /></W>} />
-        <Route path="/about"         element={<W><Navbar /><AboutPage /><Footer /></W>} />
-        <Route path="/wishlist"      element={<W><Navbar /><WishlistPage /><Footer /></W>} />
+        <Route path="/"              element={<W><Navbar /><C><Home /><AboutPreview /></C><Footer /></W>} />
+        <Route path="/cart"          element={<W><Navbar /><C><Cart /></C><Footer /></W>} />
+        <Route path="/checkout"      element={<W><Navbar /><C><Checkout /></C><Footer /></W>} />
+        <Route path="/search"        element={<W><Navbar /><C><SearchPage /></C><Footer /></W>} />
+        <Route path="/order"         element={<W><Navbar /><C><OrderPage /></C><Footer /></W>} />
+        <Route path="/product/:slug" element={<W><Navbar /><C><ProductDetail /></C><Footer /></W>} />
+        <Route path="/privacy"       element={<W><Navbar /><C><PolicyPage /></C><Footer /></W>} />
+        <Route path="/terms"         element={<W><Navbar /><C><PolicyPage /></C><Footer /></W>} />
+        <Route path="/refund"        element={<W><Navbar /><C><PolicyPage /></C><Footer /></W>} />
+        <Route path="/faq"           element={<W><Navbar /><C><PolicyPage /></C><Footer /></W>} />
+        <Route path="/about"         element={<W><Navbar /><C><AboutPage /></C><Footer /></W>} />
+        <Route path="/wishlist"      element={<W><Navbar /><C><WishlistPage /></C><Footer /></W>} />
 
         {/* account routes */}
-        <Route path="/account"          element={<W><Navbar /><AccountPage /><Footer /></W>} />
-        <Route path="/account/edit"     element={<W><Navbar /><AccountPage /><Footer /></W>} />
-        <Route path="/account/password" element={<W><Navbar /><AccountPage /><Footer /></W>} />
+        <Route path="/account"          element={<W><Navbar /><C><AccountPage /></C><Footer /></W>} />
+        <Route path="/account/edit"     element={<W><Navbar /><C><AccountPage /></C><Footer /></W>} />
+        <Route path="/account/password" element={<W><Navbar /><C><AccountPage /></C><Footer /></W>} />
 
         {/* payment routes */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -161,11 +168,11 @@ function App() {
         <Route path="/portal-v7m4/*" element={<Navigate to="/portal-v7m4" replace />} />
 
         {/* category routes */}
-        <Route path="/:linkSlug"              element={<W><Navbar /><CategoryPage /><Footer /></W>} />
-        <Route path="/:linkSlug/:sublinkSlug" element={<W><Navbar /><CategoryPage /><Footer /></W>} />
+        <Route path="/:linkSlug"              element={<W><Navbar /><C><CategoryPage /></C><Footer /></W>} />
+        <Route path="/:linkSlug/:sublinkSlug" element={<W><Navbar /><C><CategoryPage /></C><Footer /></W>} />
 
         {/* 404 */}
-        <Route path="*" element={<W><Navbar /><NotFoundPage /><Footer /></W>} />
+        <Route path="*" element={<W><Navbar /><C><NotFoundPage /></C><Footer /></W>} />
 
       </Routes>
     </Router>
