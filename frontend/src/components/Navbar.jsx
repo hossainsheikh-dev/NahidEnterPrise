@@ -1354,7 +1354,6 @@ export default function Navbar() {
   const [dropdownOpen,setDropdownOpen]=useState(null);
   const [mobileOpen,setMobileOpen]=useState(null);
   const [scrolled,setScrolled]=useState(false);
-  const [hidden,setHidden]=useState(false);
   const [mobileSearchOpen,setMobileSearchOpen]=useState(false);
   const [links,setLinks]=useState([]);
   const [showProfile,setShowProfile]=useState(false);
@@ -1379,13 +1378,6 @@ export default function Navbar() {
     const h=()=>{
       const current=window.scrollY;
       setScrolled(current>40);
-      // ── Only hide navbar on desktop (md+), always show on mobile ──
-      const isSmallScreen = window.innerWidth < 1024;
-      if(!isSmallScreen && current>lastScrollY.current && current>80){
-        setHidden(true);
-      } else {
-        setHidden(false);
-      }
       lastScrollY.current=current;
     };
     window.addEventListener("scroll",h,{passive:true});
@@ -1417,7 +1409,7 @@ export default function Navbar() {
         <style>{`@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}} .animate-marquee{animation:marquee 28s linear infinite} .animate-marquee:hover{animation-play-state:paused}`}</style>
       </div>
 
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled?"bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.06)]":"bg-white border-b border-black/[0.07]"} ${hidden?"lg:-translate-y-full":"translate-y-0"}`}>
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled?"bg-white/80 backdrop-blur-2xl border-b border-black/[0.06] shadow-[0_2px_24px_rgba(0,0,0,0.06)]":"bg-white border-b border-black/[0.07]"`}>
         <div className="max-w-[1440px] mx-auto px-6 xl:px-12">
           <div className="flex items-center justify-between h-[72px]">
             <Link to="/" className="flex-shrink-0 group"><img src={logo} alt="Brand" className="h-10 md:h-12 object-contain group-hover:opacity-70 transition-opacity"/></Link>
